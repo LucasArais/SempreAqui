@@ -15,8 +15,7 @@
           "NSAllowsLocalNetworking": true
         }
       },
-      "bundleIdentifier": "com.lucasarais.sempreaqui",
-      "appleTeamId": "HUWV9ZY577"
+      "bundleIdentifier": "com.lucasarais.sempreaqui"
     },
     "android": {
       "adaptiveIcon": {
@@ -42,7 +41,8 @@
           "microphonePermission": "O SempreAqui usa o microfone para você contar como foi o dia por voz."
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      "expo-asset"
     ],
     "scheme": "sempreaqui",
     "experiments": {

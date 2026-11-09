@@ -1,11 +1,13 @@
 import { router } from 'expo-router';
-import { Share, View } from 'react-native';
+import { useState } from 'react';
+import { View } from 'react-native';
 
 import {
   Avatar,
   Coluna,
   ListGroup,
   ListRow,
+  mostrarToast,
   Photo,
   PrimaryButton,
   Screen,
@@ -14,6 +16,9 @@ import {
   Text,
 } from '@/components';
 import { fotos, pessoa } from '@/data/familia';
+import { compartilharArquivo } from '@/lib/compartilhar';
+import { haptic } from '@/lib/haptics';
+import { gerarPassaportePdf } from '@/lib/passaporte-pdf';
 import { espaco } from '@/theme';
 
 function GradeDeFotos() {
@@ -35,6 +40,21 @@ function GradeDeFotos() {
 }
 
 export default function Memorias() {
+  const [gerando, setGerando] = useState(false);
+
+  async function compartilharPassaporte() {
+    setGerando(true);
+    try {
+      const uri = await gerarPassaportePdf();
+      haptic.sucesso();
+      await compartilharArquivo(uri, `Passaporte de Memória da ${pessoa.comoGostaDeSerChamada}`, 'application/pdf');
+    } catch {
+      mostrarToast('Não consegui preparar o passaporte agora. Tente de novo em instantes.');
+    } finally {
+      setGerando(false);
+    }
+  }
+
   return (
     <Screen>
       <Coluna centro gap="s1">
@@ -106,18 +126,14 @@ export default function Memorias() {
 
       <Coluna gap="s1">
         <PrimaryButton
-          titulo="Compartilhar o passaporte"
+          titulo={gerando ? 'Preparando o passaporte...' : 'Compartilhar o passaporte'}
           icone="compartilhar"
-          dica="Envia um link somente leitura para cuidadores, centro-dia ou hospital"
-          onPress={() =>
-            Share.share({
-              // Fase 0: o link somente leitura real chega com o backend do Passaporte.
-              message: `Passaporte de Memória da ${pessoa.comoGostaDeSerChamada}. ${pessoa.quemEla}`,
-            })
-          }
+          desativado={gerando}
+          dica="Gera um PDF de uma página para cuidadores, centro-dia ou hospital"
+          onPress={compartilharPassaporte}
         />
         <Text variante="footnote" cor="secondaryLabel" centro>
-          Organizado automaticamente a partir de {pessoa.fontesDoPassaporte}. Quem recebe o link só pode ler.
+          Organizado automaticamente a partir de {pessoa.fontesDoPassaporte}. Vai como PDF de uma página.
         </Text>
       </Coluna>
     </Screen>
