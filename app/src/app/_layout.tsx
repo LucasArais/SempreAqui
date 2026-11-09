@@ -1,14 +1,19 @@
 import { Inter_400Regular, Inter_600SemiBold, Inter_700Bold, useFonts } from '@expo-google-fonts/inter';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as SplashScreen from 'expo-splash-screen';
 import * as SystemUI from 'expo-system-ui';
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 
 import { ToastHost } from '@/components';
+import { Abertura } from '@/components/Abertura';
 import { iniciarDiario } from '@/lib/diario';
 import { entrar } from '@/lib/entrar';
 import { useTema } from '@/theme';
+
+// A tela de abertura nativa fica até a animação em JS assumir, sem piscar.
+SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 // Os modais (gravar, corrigir, onboarding) sempre abrem por cima das abas.
 export const unstable_settings = { anchor: '(tabs)' };
@@ -26,6 +31,13 @@ export default function Raiz() {
 
   useEffect(() => {
     void entrar().then(iniciarDiario);
+  }, []);
+
+  const [abrindo, setAbrindo] = useState(true);
+  const terminarAbertura = useCallback(() => setAbrindo(false), []);
+  useEffect(() => {
+    // A animação já está montada por cima: pode esconder a tela nativa.
+    SplashScreen.hideAsync().catch(() => undefined);
   }, []);
 
   if (Platform.OS === 'android' && !fontesProntas) return null;
@@ -81,6 +93,7 @@ export default function Raiz() {
         <Stack.Screen name="termo" options={{ presentation: 'modal' }} />
       </Stack>
       <ToastHost />
+      {abrindo && <Abertura aoTerminar={terminarAbertura} />}
     </ThemeProvider>
   );
 }

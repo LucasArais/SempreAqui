@@ -39,6 +39,9 @@ export type Cores = {
   attentionSoft: string;
   emergency: string;
   onEmergency: string;
+  /** Cores da marca (o nome SempreAqui na logo). Só para a marca, nunca para interface */
+  marcaAzul: string;
+  marcaVerde: string;
   /** Tons para fotos de exemplo e avatares */
   tons: readonly string[];
 };
@@ -61,6 +64,8 @@ export const claro: Cores = {
   attentionSoft: '#FFF2D6',
   emergency: '#C4291C',
   onEmergency: '#FFFFFF',
+  marcaAzul: '#1767A0',
+  marcaVerde: '#1E9C96',
   tons: ['#F6E3D7', '#E2ECE6', '#E4E6F2', '#F3E6EC', '#EFEBDD'],
 };
 
@@ -82,6 +87,8 @@ export const escuro: Cores = {
   attentionSoft: '#3A2F12',
   emergency: '#FF6961',
   onEmergency: '#1C1C1E',
+  marcaAzul: '#5AA9E0',
+  marcaVerde: '#4CC3BC',
   tons: ['#3A2B24', '#24302A', '#272A38', '#352830', '#33302A'],
 };
 
