@@ -12,6 +12,17 @@ export async function ligarEmergencia() {
   }
 }
 
+/** Abre a música no YouTube (app ou navegador): o vídeo escolhido pela família ou a busca. */
+export async function abrirMusica(musica: { titulo: string; artista: string; link?: string }) {
+  const busca = encodeURIComponent(`${musica.titulo} ${musica.artista}`);
+  const url = musica.link ?? `https://www.youtube.com/results?search_query=${busca}`;
+  try {
+    await Linking.openURL(url);
+  } catch {
+    Alert.alert('Não consegui abrir o YouTube', `Procure por "${musica.titulo}, ${musica.artista}" no YouTube.`);
+  }
+}
+
 /** Abre um link de fonte oficial no navegador. */
 export async function abrirLink(url: string) {
   try {

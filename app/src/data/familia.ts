@@ -150,7 +150,8 @@ export const feed = [
 export const sessao = {
   tema: 'Os vestidos de noiva',
   duracao: '5 a 10 minutos',
-  musica: '"Detalhes", Roberto Carlos',
+  // link: o vídeo exato escolhido pela família. Sem link, abre a busca no YouTube.
+  musica: { titulo: 'Detalhes', artista: 'Roberto Carlos', link: undefined as string | undefined },
   foto: { legenda: 'O ateliê de costura, 1978', tom: 0, icone: 'foto' as NomeIcone, fonte: fotos.atelie },
   passos: [
     'Olha que foto bonita. O que a senhora vê aqui?',

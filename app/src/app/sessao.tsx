@@ -5,6 +5,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { Coluna, Icon, Logo, Photo, PrimaryButton, SecondaryButton, Text } from '@/components';
 import { pessoa, reacoes, sessao } from '@/data/familia';
+import { abrirMusica } from '@/lib/abrir';
 import { api } from '@/lib/api';
 import { haptic } from '@/lib/haptics';
 import { useMargensSeguras } from '@/lib/insets';
@@ -19,7 +20,6 @@ export default function Sessao() {
   const { topo, base } = useMargensSeguras();
   const params = useLocalSearchParams<{ passo?: string }>();
   const [passo, setPasso] = useState(Number(params.passo ?? 0));
-  const [tocando, setTocando] = useState(false);
   const [reacao, setReacao] = useState<string | null>(null);
   const terminou = passo >= sessao.passos.length;
 
@@ -50,9 +50,10 @@ export default function Sessao() {
           </Animated.View>
           <Coluna gap="s1">
             <SecondaryButton
-              titulo={tocando ? 'Pausar a música' : `Tocar ${sessao.musica}`}
-              icone={tocando ? 'parar' : 'musica'}
-              onPress={() => setTocando((t) => !t)}
+              titulo={`Ouvir "${sessao.musica.titulo}" no YouTube`}
+              icone="musica"
+              dica="Abre o YouTube. Depois é só voltar para o SempreAqui e continuar a conversa"
+              onPress={() => abrirMusica(sessao.musica)}
             />
             <PrimaryButton
               titulo={passo === sessao.passos.length - 1 ? 'Terminar' : 'Próxima'}
