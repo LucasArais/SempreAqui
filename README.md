@@ -195,10 +195,6 @@ Detalhes em [docs/roadmap.md](docs/roadmap.md).
 
 Mais em [docs/ods.md](docs/ods.md).
 
-## Inspiração
-
-O SempreAqui foi inspirado pelo [AlwaysThere](https://devpost.com/software/alwaysthere), projeto que ajuda famílias a apoiar quem vive com Alzheimer ou demência, especialmente quando moram em outra cidade ou país. Partimos da mesma ideia de manter a família por perto e a levamos para a realidade brasileira, com voz em português, IA no centro de cada função e foco em dividir o cuidado que hoje recai sobre uma pessoa só.
-
 ## Como contribuir
 
 Contribuições são muito bem-vindas, de código a revisão de texto e indicação de fontes oficiais. Leia o [guia de contribuição](CONTRIBUTING.md) e o [código de conduta](CODE_OF_CONDUCT.md). Se você cuida ou cuidou de alguém com demência e quer conversar sobre o projeto, abra uma issue. Sua experiência vale mais que qualquer linha de código.
