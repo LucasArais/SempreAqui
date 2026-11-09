@@ -18,10 +18,14 @@ EXEMPLOS = RAIZ_REPO / "poc" / "exemplos"
 
 
 def _quando(dias_atras: int, hora: int, minuto: int) -> str:
-    base = datetime.now(UTC).astimezone() - timedelta(days=dias_atras)
-    return (
-        base.replace(hour=hora, minute=minuto, second=0, microsecond=0).astimezone(UTC).isoformat()
+    """Horário local do relato. Nunca no futuro: hoje, no máximo uma hora atrás."""
+    agora = datetime.now(UTC).astimezone()
+    base = (agora - timedelta(days=dias_atras)).replace(
+        hour=hora, minute=minuto, second=0, microsecond=0
     )
+    if base > agora - timedelta(hours=1):
+        base = (agora - timedelta(hours=1)).replace(second=0, microsecond=0)
+    return base.astimezone(UTC).isoformat()
 
 
 RELATOS = [
