@@ -47,13 +47,33 @@ uv run python -m evals.avaliar_guardrails
 
 Leitura honesta: este conjunto foi escrito junto com as regras, então mede se as regras fazem o que se propõem, não o quanto generalizam. O próximo passo é um conjunto cego, escrito por pessoas de fora da equipe e revisado por profissionais de saúde, e um conjunto com resumos gerados pela própria IA rotulados à mão.
 
+### Escolha do modelo de transcrição (9/11/2026)
+
+Primeira rodada com modelos reais, pelo OpenRouter. Três relatos fictícios, duas rodadas cada, mesmas instruções. Script: `uv run python -m evals.comparar_transcricao <modelos>`.
+
+| Modelo | WER médio | Pior WER | Tempo médio | Queda transcrita |
+|---|---|---|---|---|
+| **google/gemini-3-flash-preview** | **3,4%** | 5% | 2,7 s | **2/2** |
+| google/gemini-3.1-flash-lite | 8,6% | 16% | 2,3 s | 2/2 |
+| google/gemini-3.5-flash | 9,1% | 17% | 37,0 s | 2/2 |
+| qwen/qwen3.8-omni-flash | 14,5% | 30% | 13,2 s | 0/2 |
+| google/gemini-2.5-flash | 29,2% | 103% | 3,4 s | 0/2 |
+| google/gemini-3.5-flash-lite | 29,9% | 49% | 2,3 s | 0/2 |
+
+O que aprendemos:
+
+- **O modelo que tínhamos como padrão era perigoso.** O `gemini-2.5-flash` inventou o começo do relato da queda ("Hoje, Graça dormiu até as 10:30") e perdeu a batida na cabeça nas duas rodadas. Sem a queda na transcrição, não há alerta de 192. Trocamos o padrão para `gemini-3-flash-preview`.
+- **A ordem importa.** Com as instruções antes do áudio, os modelos repetem menos o prompt na resposta. O provedor envia sempre nessa ordem, e há teste para isso.
+- **"Queda transcrita" virou critério de corte.** Um modelo que perde uma situação de risco não entra, mesmo que seja mais rápido ou mais barato.
+- **Limite honesto:** os áudios são de voz sintética. O próximo conjunto terá gravações de voluntários com ruído de casa.
+
 ### Diário Inteligente
 
-Resultados com o Gemini serão publicados aqui na primeira rodada com chave de API, com modelo, data e versão dos prompts. A tabela abaixo será preenchida com a saída de `evals.avaliar_diario`.
+Resultados completos do Diário serão publicados aqui na primeira rodada com chave de API, com modelo, data e versão dos prompts. A tabela abaixo será preenchida com a saída de `evals.avaliar_diario`.
 
 | Data | Modelo | Prompts | WER | Acurácia por campo | Episódios (P / R) | Risco | Violações | Latência |
 |---|---|---|---|---|---|---|---|---|
-| pendente | gemini-2.5-flash | v1 | | | | | | |
+| pendente | gemini-3-flash-preview | v1 | | | | | | |
 
 ## Limitações e próximos passos
 

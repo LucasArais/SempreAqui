@@ -23,15 +23,24 @@ class Config:
     gemini_embedding_model: str
     database_url: str | None
     log_level: str
+    openrouter_api_key: str | None
+    openrouter_model: str
+    openrouter_coleta_dados: str
+    dados_dir: Path
 
 
 @lru_cache
 def config() -> Config:
     return Config(
-        llm_provider=os.getenv("LLM_PROVIDER", "gemini"),
+        llm_provider=os.getenv("LLM_PROVIDER", "openrouter"),
         gemini_api_key=os.getenv("GEMINI_API_KEY") or None,
         gemini_model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
         gemini_embedding_model=os.getenv("GEMINI_EMBEDDING_MODEL", "gemini-embedding-001"),
         database_url=os.getenv("DATABASE_URL") or None,
         log_level=os.getenv("LOG_LEVEL", "info"),
+        openrouter_api_key=os.getenv("OPENROUTER_API_KEY") or None,
+        openrouter_model=os.getenv("OPENROUTER_MODEL", "google/gemini-3-flash-preview"),
+        # "deny": só provedores que não guardam nem treinam com os dados. Obrigatório com dados reais.
+        openrouter_coleta_dados=os.getenv("OPENROUTER_COLETA_DADOS", "deny"),
+        dados_dir=RAIZ_BACKEND / os.getenv("DADOS_DIR", "dados"),
     )
