@@ -6,6 +6,7 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useSyncExternalStore } from 'react';
 
 import { api, enviarRelato, ErroApi, type EnvioRelato, type Relato } from './api';
+import { sessaoAtual } from './sessao';
 
 /**
  * Estado do Diário compartilhado entre as telas.
@@ -15,7 +16,20 @@ import { api, enviarRelato, ErroApi, type EnvioRelato, type Relato } from './api
  * O envio é idempotente pelo id, então tentar de novo nunca duplica um relato.
  */
 
-export type Pendente = EnvioRelato & { tentativas: number };
+/**
+ * Guardamos só o nome do arquivo: o caminho absoluto da pasta do app muda entre execuções
+ * (e entre atualizações no iOS). O caminho é montado na hora de enviar.
+ */
+export type Pendente = Omit<EnvioRelato, 'uri'> & { arquivo: string; tentativas: number };
+
+function arquivoDoPendente(p: Pendente & { uri?: string }) {
+  const nome = p.arquivo ?? p.uri?.split('/').pop() ?? `${p.id}.m4a`;
+  return new File(PASTA, nome);
+}
+
+export function uriDoPendente(p: Pendente) {
+  return arquivoDoPendente(p).uri;
+}
 
 type Estado = {
   pendentes: Pendente[];
@@ -116,6 +130,7 @@ export async function iniciarDiario() {
 }
 
 export async function atualizarRelatos() {
+  if (!sessaoAtual().pronta) return;
   try {
     const relatos = await api.relatos();
     definir({ relatos, online: true });
@@ -146,7 +161,7 @@ export async function guardarGravacao(uriTemporaria: string, duracaoS: number): 
   }
   const pendente: Pendente = {
     id,
-    uri: destino.uri,
+    arquivo: `${id}.m4a`,
     mime: 'audio/mp4',
     duracao_s: Math.round(duracaoS * 10) / 10,
     gravado_em: new Date().toISOString(),
@@ -161,16 +176,26 @@ export async function guardarGravacao(uriTemporaria: string, duracaoS: number): 
 
 /** Envia o que está na fila. Para no primeiro sinal de falta de conexão. */
 export async function sincronizar() {
-  if (sincronizando || !estado.pendentes.length) return;
+  if (sincronizando || !estado.pendentes.length || !sessaoAtual().pronta) return;
   sincronizando = true;
   try {
     for (const pendente of [...estado.pendentes]) {
+      const arquivo = arquivoDoPendente(pendente);
+      if (!arquivo.exists) {
+        // Sem o áudio no celular não há o que reenviar. Se o servidor já tem o relato, ótimo.
+        await salvarFila(estado.pendentes.filter((p) => p.id !== pendente.id));
+        continue;
+      }
       try {
-        const relato = await enviarRelato({ ...pendente, enviado_offline: pendente.tentativas > 0 });
+        const relato = await enviarRelato({
+          ...pendente,
+          uri: arquivo.uri,
+          enviado_offline: pendente.tentativas > 0,
+        });
         substituirRelato(relato);
         await salvarFila(estado.pendentes.filter((p) => p.id !== pendente.id));
         try {
-          new File(pendente.uri).delete();
+          arquivo.delete();
         } catch {
           // O servidor já tem o áudio; se não der para apagar a cópia local, tudo bem.
         }

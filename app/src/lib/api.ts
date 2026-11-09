@@ -1,6 +1,8 @@
 import Constants from 'expo-constants';
 import { File } from 'expo-file-system';
 
+import { sessaoAtual, supabase } from './sessao';
+
 /**
  * Cliente da API do SempreAqui.
  *
@@ -20,7 +22,13 @@ function descobrirBase(): string {
 }
 
 export const API_BASE = descobrirBase();
-export const CABECALHOS = { 'X-Familia': FAMILIA_DEMO };
+
+/** Com login: o token. Sem Supabase configurado: a família de demonstração local. */
+export function cabecalhos(): Record<string, string> {
+  const { token } = sessaoAtual();
+  if (token) return { Authorization: `Bearer ${token}` };
+  return supabase ? {} : { 'X-Familia': FAMILIA_DEMO };
+}
 
 export type Etapa = 'recebido' | 'transcrevendo' | 'organizando' | 'resumindo' | 'pronto' | 'erro';
 
@@ -71,7 +79,7 @@ async function chamar<T>(caminho: string, init: RequestInit = {}): Promise<T> {
   try {
     resposta = await fetch(`${API_BASE}${caminho}`, {
       ...init,
-      headers: { ...CABECALHOS, ...(init.headers ?? {}) },
+      headers: { ...cabecalhos(), ...(init.headers ?? {}) },
     });
   } catch (erro) {
     // Só em desenvolvimento, e só o motivo técnico: nunca conteúdo do relato.
@@ -132,5 +140,17 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tipo, valor, rotulo }),
     }).catch(() => undefined),
-  fonteAudio: (id: string) => ({ uri: `${API_BASE}/diario/relatos/${id}/audio`, headers: CABECALHOS }),
+  fonteAudio: (id: string) => ({ uri: `${API_BASE}/diario/relatos/${id}/audio`, headers: cabecalhos() }),
+  sessao: (nome_exibicao?: string) =>
+    chamar<{ familia: string; papel: string }>('/sessao', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(nome_exibicao ? { nome_exibicao } : {}),
+    }),
+  consentir: (versao_termo: string, finalidades: string[]) =>
+    chamar<void>('/consentimentos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ versao_termo, finalidades }),
+    }),
 };

@@ -34,7 +34,8 @@
         {
           "microphonePermission": "O SempreAqui usa o microfone para você contar como foi o dia por voz."
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "scheme": "sempreaqui",
     "experiments": {

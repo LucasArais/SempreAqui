@@ -11,6 +11,7 @@ A chave secret do Supabase só é usada aqui, no servidor, para o Storage.
 from __future__ import annotations
 
 import json
+import uuid
 from datetime import datetime
 from typing import Any
 from uuid import UUID
@@ -197,6 +198,40 @@ class RepositorioSupabase:
             (self.grupo(familia_id), relato_ids),
         )
         return {linha["relato_id"]: list(linha["campos"]) for linha in linhas}
+
+    # Famílias e membros ----------------------------------------------------
+
+    def familia_do_usuario(self, usuario_id: str) -> dict | None:
+        linhas = self._sql(
+            "select g.codigo, m.papel from membros m join grupos_familiares g on g.id = m.grupo_id "
+            "where m.usuario_id = %s order by m.criado_em limit 1",
+            (usuario_id,),
+        )
+        return {"familia": linhas[0]["codigo"], "papel": linhas[0]["papel"]} if linhas else None
+
+    def entrar_na_familia(self, usuario_id: str, familia_id: str, nome: str, papel: str) -> None:
+        self._sql(
+            "insert into membros (grupo_id, usuario_id, nome_exibicao, papel) values (%s, %s, %s, %s) "
+            "on conflict (grupo_id, usuario_id) do nothing",
+            (self.grupo(familia_id), usuario_id, nome, papel),
+        )
+
+    def criar_familia(self, usuario_id: str, nome_familia: str, nome: str) -> str:
+        codigo = f"familia-{uuid.uuid4().hex[:12]}"
+        self.garantir_grupo(codigo, nome_familia)
+        self.entrar_na_familia(usuario_id, codigo, nome, "quem_cuida")
+        return codigo
+
+    def registrar_consentimento(
+        self, usuario_id: str, familia_id: str, finalidades: list[str], versao: str
+    ) -> None:
+        grupo = self.grupo(familia_id)
+        for finalidade in finalidades:
+            self._sql(
+                "insert into consentimentos (grupo_id, usuario_id, finalidade, versao_termo) "
+                "values (%s, %s, %s, %s)",
+                (grupo, usuario_id, finalidade, versao),
+            )
 
     # Correções -------------------------------------------------------------
 

@@ -1,3 +1,10 @@
+import os
+
+# Testes sempre no modo local: SQLite e cabeçalho X-Familia aceito. Nunca tocam o Supabase.
+os.environ["REPOSITORIO"] = "local"
+os.environ["ACEITAR_X_FAMILIA"] = "1"
+os.environ.pop("FAMILIA_DEMO_PARA_NOVOS", None)
+
 import pytest
 
 from core.llm import ProvedorFalso

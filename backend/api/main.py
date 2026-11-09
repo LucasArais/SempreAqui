@@ -30,6 +30,7 @@ from agents.diario import (
     resumo_seguro,
 )
 from core import campos
+from core.auth import TokenInvalido, usuario_do_token
 from core.config import config
 from core.llm import ErroProvedorIA, ProvedorIA, provedor_padrao
 from core.repositorio import (
@@ -96,10 +97,34 @@ def obter_provedor() -> ProvedorIA:
         raise HTTPException(status_code=503, detail=MSG_IA_INDISPONIVEL) from erro
 
 
-def obter_familia(x_familia: str = Header(..., description="Id da família")) -> str:
-    if not re.fullmatch(r"[A-Za-z0-9-]{3,64}", x_familia):
-        raise HTTPException(400, "Família inválida.")
-    return x_familia
+def obter_usuario(authorization: str | None = Header(None)) -> str | None:
+    """Id do usuário do Supabase, se veio um token válido. None se não veio token."""
+    if not authorization:
+        return None
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(401, "Sua sessão expirou. Abra o app de novo.")
+    try:
+        return usuario_do_token(authorization.removeprefix("Bearer ").strip())
+    except TokenInvalido as erro:
+        raise HTTPException(401, "Sua sessão expirou. Abra o app de novo.") from erro
+
+
+def obter_familia(
+    usuario: str | None = Depends(obter_usuario),
+    x_familia: str | None = Header(None, description="Só em testes e uso local"),
+    repo: Repositorio = Depends(obter_repositorio),
+) -> str:
+    """Família de quem está usando. Com login, vem da tabela de membros; nunca do cliente."""
+    if usuario:
+        membro = repo.familia_do_usuario(usuario)
+        if not membro:
+            raise HTTPException(403, "Você ainda não entrou numa família.")
+        return membro["familia"]
+    if x_familia and config().aceitar_cabecalho_familia:
+        if not re.fullmatch(r"[A-Za-z0-9-]{3,64}", x_familia):
+            raise HTTPException(400, "Família inválida.")
+        return x_familia
+    raise HTTPException(401, "Entre no app para continuar.")
 
 
 # Modelos de resposta -------------------------------------------------------
@@ -217,6 +242,65 @@ def processar_em_segundo_plano(
 @app.get("/saude")
 def saude() -> dict:
     return {"status": "ok"}
+
+
+class PedidoSessao(BaseModel):
+    nome_exibicao: str = "Quem cuida"
+
+
+class Sessao(BaseModel):
+    familia: str
+    papel: str
+
+
+@app.post("/sessao", response_model=Sessao)
+def iniciar_sessao(
+    pedido: PedidoSessao,
+    usuario: str | None = Depends(obter_usuario),
+    repo: Repositorio = Depends(obter_repositorio),
+) -> Sessao:
+    """Primeira chamada do app depois do login anônimo: entra na família ou cria uma."""
+    if not usuario:
+        raise HTTPException(401, "Entre no app para continuar.")
+    membro = repo.familia_do_usuario(usuario)
+    if not membro:
+        nome = pedido.nome_exibicao.strip()[:60] or "Quem cuida"
+        demo = config().familia_demo_para_novos
+        if demo:
+            repo.entrar_na_familia(usuario, demo, nome, "quem_cuida")
+        else:
+            repo.criar_familia(usuario, "Minha família", nome)
+        membro = repo.familia_do_usuario(usuario)
+    return Sessao(**membro)
+
+
+class Consentimento(BaseModel):
+    versao_termo: str
+    finalidades: list[str]
+
+
+FINALIDADES = {
+    "dados_de_saude_diario",
+    "passaporte_memoria",
+    "audio_e_fotos",
+    "compartilhamento_link",
+}
+
+
+@app.post("/consentimentos", status_code=204)
+def registrar_consentimento(
+    consentimento: Consentimento,
+    usuario: str | None = Depends(obter_usuario),
+    familia_id: str = Depends(obter_familia),
+    repo: Repositorio = Depends(obter_repositorio),
+) -> None:
+    """Consentimento explícito por finalidade, com a versão do termo (LGPD, art. 11)."""
+    if not usuario:
+        raise HTTPException(401, "Entre no app para continuar.")
+    finalidades = [f for f in consentimento.finalidades if f in FINALIDADES]
+    if not finalidades:
+        raise HTTPException(422, "Nenhuma finalidade válida.")
+    repo.registrar_consentimento(usuario, familia_id, finalidades, consentimento.versao_termo[:20])
 
 
 @app.get("/diario/campos")

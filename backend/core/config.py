@@ -31,6 +31,9 @@ class Config:
     supabase_url: str | None
     supabase_secret_key: str | None
     supabase_database_url: str | None
+    aceitar_cabecalho_familia: bool
+    familia_demo_para_novos: str | None
+    fuso: str
 
 
 @lru_cache
@@ -52,4 +55,12 @@ def config() -> Config:
         supabase_url=os.getenv("SUPABASE_URL") or None,
         supabase_secret_key=os.getenv("SUPABASE_SECRET_KEY") or None,
         supabase_database_url=os.getenv("SUPABASE_DATABASE_URL") or None,
+        # Cabeçalho X-Familia sem login: só para testes e uso local, nunca em produção.
+        aceitar_cabecalho_familia=os.getenv(
+            "ACEITAR_X_FAMILIA", "1" if os.getenv("REPOSITORIO", "supabase") == "local" else "0"
+        )
+        == "1",
+        # Modo demonstração: todo celular novo entra nesta família em vez de criar uma.
+        familia_demo_para_novos=os.getenv("FAMILIA_DEMO_PARA_NOVOS") or None,
+        fuso=os.getenv("FUSO", "America/Sao_Paulo"),
     )

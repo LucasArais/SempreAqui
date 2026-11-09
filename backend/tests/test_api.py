@@ -127,9 +127,32 @@ def test_tipo_generico_usa_a_extensao(ambiente):
     assert resposta.status_code == 202
 
 
-def test_sem_familia_e_recusado(ambiente):
+def test_sem_login_e_recusado(ambiente):
     cliente, *_ = ambiente
-    assert enviar(cliente, cabecalhos={}).status_code == 422
+    assert enviar(cliente, cabecalhos={}).status_code == 401
+
+
+def test_token_invalido_e_recusado(ambiente):
+    cliente, *_ = ambiente
+    assert enviar(cliente, cabecalhos={"Authorization": "Bearer nao-e-um-token"}).status_code == 401
+
+
+def test_sessao_coloca_usuario_numa_familia(ambiente, monkeypatch):
+    cliente, repo, *_ = ambiente
+    monkeypatch.setattr("api.main.usuario_do_token", lambda token: "usuario-anonimo-1")
+    login = {"Authorization": "Bearer token-falso"}
+    sessao = cliente.post("/sessao", json={"nome_exibicao": "Cláudia"}, headers=login).json()
+    assert sessao["papel"] == "quem_cuida" and sessao["familia"].startswith("familia-")
+    # A família vem do login, não do cliente: X-Familia de outra família é ignorado.
+    enviar(cliente, cabecalhos={**login, "X-Familia": "outra-familia"})
+    assert len(cliente.get("/diario/relatos", headers=login).json()) == 1
+    assert cliente.get("/diario/relatos", headers=OUTRA).json() == []
+    resposta = cliente.post(
+        "/consentimentos",
+        json={"versao_termo": "1", "finalidades": ["dados_de_saude_diario", "audio_e_fotos"]},
+        headers=login,
+    )
+    assert resposta.status_code == 204
 
 
 def test_ia_fora_do_ar_guarda_audio_e_permite_tentar_de_novo(ambiente):

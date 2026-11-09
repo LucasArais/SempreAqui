@@ -55,6 +55,24 @@ create table if not exists correcoes (
 );
 create index if not exists correcoes_familia on correcoes (familia_id, criado_em);
 
+create table if not exists membros (
+  usuario_id text not null,
+  familia_id text not null,
+  nome_exibicao text,
+  papel text not null,
+  criado_em text not null,
+  primary key (usuario_id, familia_id)
+);
+
+create table if not exists consentimentos (
+  id integer primary key autoincrement,
+  usuario_id text not null,
+  familia_id text not null,
+  finalidade text not null,
+  versao_termo text not null,
+  aceito_em text not null
+);
+
 create table if not exists eventos (
   id integer primary key autoincrement,
   tipo text not null,
@@ -256,6 +274,39 @@ class Repositorio:
         for linha in linhas:
             resultado.setdefault(linha["relato_id"], []).append(linha["campo"])
         return {k: sorted(set(v)) for k, v in resultado.items()}
+
+    # Famílias e membros ----------------------------------------------------
+
+    def familia_do_usuario(self, usuario_id: str) -> dict | None:
+        with self._conexao() as c:
+            linha = c.execute(
+                "select familia_id, papel from membros where usuario_id = ? order by criado_em limit 1",
+                (usuario_id,),
+            ).fetchone()
+        return {"familia": linha["familia_id"], "papel": linha["papel"]} if linha else None
+
+    def entrar_na_familia(self, usuario_id: str, familia_id: str, nome: str, papel: str) -> None:
+        with self._conexao() as c:
+            c.execute(
+                "insert or ignore into membros (usuario_id, familia_id, nome_exibicao, papel, criado_em) "
+                "values (?, ?, ?, ?, ?)",
+                (usuario_id, familia_id, nome, papel, agora()),
+            )
+
+    def criar_familia(self, usuario_id: str, nome_familia: str, nome: str) -> str:
+        codigo = f"familia-{uuid.uuid4().hex[:12]}"
+        self.entrar_na_familia(usuario_id, codigo, nome, "quem_cuida")
+        return codigo
+
+    def registrar_consentimento(
+        self, usuario_id: str, familia_id: str, finalidades: list[str], versao: str
+    ) -> None:
+        with self._conexao() as c:
+            c.executemany(
+                "insert into consentimentos (usuario_id, familia_id, finalidade, versao_termo, aceito_em) "
+                "values (?, ?, ?, ?, ?)",
+                [(usuario_id, familia_id, f, versao, agora()) for f in finalidades],
+            )
 
     # Correções -------------------------------------------------------------
 
