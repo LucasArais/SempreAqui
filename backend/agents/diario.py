@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from typing import TypedDict
 
 from langgraph.graph import END, START, StateGraph
@@ -24,6 +25,13 @@ from core.llm import ProvedorIA
 from core.schemas.diario import RegistroDiario
 
 MAX_TENTATIVAS_RESUMO = 2
+
+# Versão de cada prompt usada em produção. Mudar aqui é mudar o comportamento: rode as evals.
+VERSOES = {"transcricao": "v1", "extracao": "v2", "resumo_familia": "v1"}
+
+# Etapas mostradas para quem gravou, na ordem em que acontecem.
+ETAPAS = ("recebido", "transcrevendo", "organizando", "resumindo", "pronto")
+_ETAPA_DEPOIS_DO_NO = {"transcrever": "organizando", "avaliar_risco": "resumindo"}
 
 
 class EstadoDiario(TypedDict, total=False):
@@ -59,7 +67,67 @@ def resumo_seguro(registro: RegistroDiario, alertas: list[str]) -> str:
     return " ".join(partes) or "Registro do dia salvo."
 
 
-def construir_grafo(provedor: ProvedorIA, versao_prompts: str = "v1"):
+def _prompt_resumo(registro: RegistroDiario, transcricao: str, violacoes: list[str]) -> str:
+    registro_json = json.dumps(registro.model_dump(exclude_none=True), ensure_ascii=False, indent=2)
+    prompt = prompts.preencher(
+        prompts.carregar("diario/resumo_familia", VERSOES["resumo_familia"]),
+        registro=registro_json,
+        transcricao=transcricao,
+    )
+    if violacoes:
+        prompt += (
+            "\n\nA versão anterior foi recusada pela revisão por: "
+            + "; ".join(violacoes)
+            + ". Reescreva sem esses problemas."
+        )
+    return prompt
+
+
+def _violacoes(resumo: str, alertas: list[str]) -> list[str]:
+    violacoes = [f"{v.regra} ({v.trecho})" for v in guardrails.verificar_texto_familia(resumo)]
+    if alertas and not guardrails.menciona_192(resumo):
+        violacoes.append("alerta de risco sem orientação de ligar 192")
+    if not resumo.strip():
+        violacoes.append("resumo vazio")
+    return violacoes
+
+
+def refazer_resumo(
+    provedor: ProvedorIA, registro: RegistroDiario, transcricao: str, alertas: list[str]
+) -> tuple[str, bool]:
+    """Escreve de novo o resumo para a família (por exemplo, depois de uma correção).
+
+    Mesmas regras do grafo: até duas tentativas e, se a IA insistir em violar uma regra,
+    o resumo seguro montado sem IA. Devolve (resumo, resumo_seguro_usado).
+    """
+    sistema = prompts.sistema()
+    violacoes: list[str] = []
+    for _ in range(MAX_TENTATIVAS_RESUMO):
+        texto = guardrails.remover_travessoes(
+            provedor.gerar_texto(_prompt_resumo(registro, transcricao, violacoes), sistema)
+        )
+        violacoes = _violacoes(texto, alertas)
+        if not violacoes:
+            return texto, False
+    return resumo_seguro(registro, alertas), True
+
+
+def formatar_correcoes(correcoes: list[dict]) -> str:
+    """Correções anteriores da família, no formato que entra no prompt de extração."""
+    if not correcoes:
+        return "Nenhuma correção ainda."
+    linhas = []
+    for c in correcoes:
+        trecho = (c.get("trecho") or "").strip().replace("\n", " ")[:160]
+        linhas.append(
+            f'- Campo "{c["campo"]}": a IA marcou {json.dumps(c["valor_anterior"], ensure_ascii=False)}, '
+            f"a família corrigiu para {json.dumps(c['valor_novo'], ensure_ascii=False)}"
+            + (f' (relato: "{trecho}")' if trecho else "")
+        )
+    return "\n".join(linhas)
+
+
+def construir_grafo(provedor: ProvedorIA, correcoes: str = ""):
     sistema = prompts.sistema()
 
     def transcrever(estado: EstadoDiario) -> EstadoDiario:
@@ -68,14 +136,15 @@ def construir_grafo(provedor: ProvedorIA, versao_prompts: str = "v1"):
         texto = provedor.transcrever_audio(
             estado["audio"] or b"",
             estado.get("mime_type", "audio/mpeg"),
-            prompts.carregar("diario/transcricao", versao_prompts),
+            prompts.carregar("diario/transcricao", VERSOES["transcricao"]),
         )
         return {"transcricao": texto}
 
     def extrair(estado: EstadoDiario) -> EstadoDiario:
         prompt = prompts.preencher(
-            prompts.carregar("diario/extracao", versao_prompts),
+            prompts.carregar("diario/extracao", VERSOES["extracao"]),
             transcricao=estado["transcricao"],
+            correcoes=correcoes or formatar_correcoes([]),
         )
         return {"registro": provedor.gerar_estruturado(prompt, sistema, RegistroDiario)}
 
@@ -88,20 +157,9 @@ def construir_grafo(provedor: ProvedorIA, versao_prompts: str = "v1"):
         return {"alertas": alertas}
 
     def resumir(estado: EstadoDiario) -> EstadoDiario:
-        registro_json = json.dumps(
-            estado["registro"].model_dump(exclude_none=True), ensure_ascii=False, indent=2
+        prompt = _prompt_resumo(
+            estado["registro"], estado["transcricao"], estado.get("violacoes") or []
         )
-        prompt = prompts.preencher(
-            prompts.carregar("diario/resumo_familia", versao_prompts),
-            registro=registro_json,
-            transcricao=estado["transcricao"],
-        )
-        if estado.get("violacoes"):
-            prompt += (
-                "\n\nA versão anterior foi recusada pela revisão por: "
-                + "; ".join(estado["violacoes"])
-                + ". Reescreva sem esses problemas."
-            )
         texto = provedor.gerar_texto(prompt, sistema)
         return {
             "resumo": guardrails.remover_travessoes(texto),
@@ -109,12 +167,7 @@ def construir_grafo(provedor: ProvedorIA, versao_prompts: str = "v1"):
         }
 
     def revisar(estado: EstadoDiario) -> EstadoDiario:
-        resumo = estado["resumo"]
-        violacoes = [f"{v.regra} ({v.trecho})" for v in guardrails.verificar_texto_familia(resumo)]
-        if estado["alertas"] and not guardrails.menciona_192(resumo):
-            violacoes.append("alerta de risco sem orientação de ligar 192")
-        if not resumo.strip():
-            violacoes.append("resumo vazio")
+        violacoes = _violacoes(estado["resumo"], estado["alertas"])
         if violacoes and estado["tentativas_resumo"] >= MAX_TENTATIVAS_RESUMO:
             return {
                 "resumo": resumo_seguro(estado["registro"], estado["alertas"]),
@@ -148,11 +201,28 @@ def processar_relato(
     audio: bytes | None = None,
     mime_type: str = "audio/mpeg",
     transcricao: str | None = None,
+    correcoes: str = "",
+    ao_mudar_etapa: Callable[[str], None] | None = None,
 ) -> EstadoDiario:
-    """Atalho: roda o grafo inteiro a partir de um áudio ou de uma transcrição pronta."""
+    """Roda o grafo inteiro a partir de um áudio ou de uma transcrição pronta.
+
+    ao_mudar_etapa recebe "transcrevendo", "organizando" e "resumindo" conforme o grafo avança,
+    para quem gravou ver o progresso real em linguagem humana.
+    """
     if audio is None and not transcricao:
         raise ValueError("Envie um áudio ou uma transcrição.")
     estado: EstadoDiario = {"audio": audio, "mime_type": mime_type}
     if transcricao:
         estado["transcricao"] = transcricao
-    return construir_grafo(provedor).invoke(estado)
+    avisar = ao_mudar_etapa or (lambda _etapa: None)
+    avisar("organizando" if transcricao else "transcrevendo")
+    final: EstadoDiario = estado
+    grafo = construir_grafo(provedor, correcoes)
+    for modo, pedaco in grafo.stream(estado, stream_mode=["updates", "values"]):
+        if modo == "updates":
+            for no in pedaco:
+                if no in _ETAPA_DEPOIS_DO_NO:
+                    avisar(_ETAPA_DEPOIS_DO_NO[no])
+        else:
+            final = pedaco
+    return final

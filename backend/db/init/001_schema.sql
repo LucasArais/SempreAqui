@@ -85,6 +85,19 @@ create table registros_diario (
 );
 create index on registros_diario (pessoa_id, data);
 
+-- Correções feitas pela família nos campos da IA. Alimentam o prompt de extração seguinte.
+create table correcoes (
+  id uuid primary key default gen_random_uuid(),
+  grupo_id uuid not null references grupos_familiares(id) on delete cascade,
+  relato_id uuid not null references registros_diario(id) on delete cascade,
+  campo text not null,
+  valor_anterior jsonb,
+  valor_novo jsonb,
+  resumo_anterior text,
+  desfeita boolean not null default false,
+  criado_em timestamptz not null default now()
+);
+
 create table sessoes_reminiscencia (
   id uuid primary key default gen_random_uuid(),
   grupo_id uuid not null references grupos_familiares(id) on delete cascade,
@@ -105,6 +118,17 @@ create table tarefas (
   concluida boolean not null default false
 );
 
+-- Métricas anônimas: sem conteúdo, família só como hash.
+create table eventos (
+  id bigserial primary key,
+  tipo text not null,
+  familia_hash text not null,
+  semana text not null,
+  valor double precision,
+  rotulo text,
+  criado_em timestamptz not null default now()
+);
+
 -- Trechos de fontes oficiais. Não é dado de família, então é legível por todos os usuários.
 create table fontes_trechos (
   id bigserial primary key,
@@ -123,7 +147,7 @@ declare t text;
 begin
   foreach t in array array[
     'membros', 'consentimentos', 'pessoas', 'passaportes',
-    'registros_diario', 'sessoes_reminiscencia', 'tarefas'
+    'registros_diario', 'correcoes', 'sessoes_reminiscencia', 'tarefas'
   ] loop
     execute format('alter table %I enable row level security', t);
     execute format('alter table %I force row level security', t);
