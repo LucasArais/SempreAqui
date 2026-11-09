@@ -75,6 +75,22 @@ Código: [`backend/agents/diario.py`](../backend/agents/diario.py).
 
 **docker-compose para o ambiente local.** `docker compose up` sobe Postgres com pgvector e a API. Para o demo, deploy em Railway ou Cloud Run com o mesmo Dockerfile.
 
+## Decisões do Ciclo 1
+
+**O áudio é guardado antes de qualquer IA.** O celular grava, salva o arquivo na pasta do app e só então tenta enviar. O backend guarda o áudio primeiro e processa em segundo plano. Se a IA cair ou ficar sem saldo, nada se perde: o relato fica com uma mensagem humana e um "Tentar de novo".
+
+**Fila offline idempotente.** O id do relato nasce no celular. Reenviar o mesmo relato (porque a conexão caiu no meio) nunca duplica nada.
+
+**Progresso real, não um cronômetro.** O grafo do Diário avisa cada etapa concluída (`transcrevendo`, `organizando`, `resumindo`) e o app mostra essa etapa em linguagem humana.
+
+**A família ensina a IA.** Cada correção fica guardada com o valor anterior e o novo. As correções mais recentes da família entram no prompt de extração seguinte (`extracao.v2`), como exemplos de como aquela família fala. A taxa de correção é medida semana a semana.
+
+**Desfazer em vez de confirmar.** Correções e descarte de gravação têm "Desfazer" logo depois. O único "tem certeza?" é para apagar dados.
+
+**Repositório trocável.** Por enquanto os relatos ficam num SQLite local do backend. A interface (`core/repositorio.py`) é pequena para a troca pelo Postgres do Supabase, com RLS, não mexer em mais nada.
+
+**Modelo escolhido por benchmark.** O benchmark de transcrição mostrou que o modelo padrão anterior perdia a queda do relato de risco. Escolhemos o modelo pela métrica que importa para a segurança, não pela fama.
+
 ## Estrutura do repositório
 
 ```

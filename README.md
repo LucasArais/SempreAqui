@@ -42,10 +42,10 @@ O SempreAqui é um app de celular, pensado para ser usado por voz, que faz três
 | **Rede da Família** | Grupo com papéis, divisão de tarefas (consultas, visitas, cobrir a folga de quem cuida), lembretes e um feed com os resumos. | Os resumos da IA viram o feed que mantém todos por perto |
 
 <p align="center">
-  <img src="design/screens/01-hoje-claro.png" alt="Hoje: botão de gravar o dia e resumo da semana" width="190">
-  <img src="design/screens/04-gravar-resultado-claro.png" alt="Diário organizado pela IA, pronto para enviar à família" width="190">
-  <img src="design/screens/05-memorias-claro.png" alt="Passaporte de Memória da Dona Isabel" width="190">
-  <img src="design/screens/10-ajuda-resposta-escuro.png" alt="Ajuda na hora difícil, em modo escuro" width="190">
+  <img src="design/screens/01-hoje-claro.png" alt="Hoje: botão de gravar o dia e último relato" width="190">
+  <img src="design/screens/04-relato-claro.png" alt="Relato organizado pela IA, cada campo corrigível com um toque" width="190">
+  <img src="design/screens/05-corrigir-claro.png" alt="Corrigir um campo com um toque" width="190">
+  <img src="design/screens/07-relato-risco-escuro.png" alt="Relato com situação de risco e botão de 192, em modo escuro" width="190">
 </p>
 
 <p align="center"><sub>Telas rodando no iPhone (iOS 26). Família fictícia, retratos gerados por IA. Todas as telas, em modo claro e escuro, estão em <a href="design/screens">design/screens</a>.</sub></p>
@@ -92,7 +92,7 @@ flowchart LR
         E[(Fontes oficiais<br/>com URL)]
     end
 
-    M[Gemini]
+    M[Modelos via OpenRouter<br/>Gemini 3 Flash]
 
     V --> API
     P & D & R & A --> L --> M
@@ -110,30 +110,43 @@ Cada função é um grafo LangGraph com etapas pequenas e verificáveis. O do Di
 | App | React Native com Expo (TypeScript) e Expo Router. Roda no celular pelo Expo Go |
 | Backend | Python, FastAPI |
 | Orquestração de IA | LangGraph, um grafo por função |
-| Modelos | Gemini (multimodal, bom com áudio em português), atrás de uma camada de provedores trocável por configuração |
+| Modelos | Gemini 3 Flash via OpenRouter (escolhido por benchmark próprio de transcrição), atrás de uma camada de provedores trocável por configuração. Só provedores que não guardam dados |
 | RAG | Embeddings e pgvector, com fonte e URL em cada trecho |
 | Banco | Postgres com Row Level Security por grupo familiar (local via Docker ou Supabase) |
 | Qualidade | pytest, ruff, avaliações próprias e CI no GitHub Actions |
 
 ## Experimente
 
-**Prova de conceito do Diário** (precisa de uma [chave gratuita do Gemini](https://aistudio.google.com/apikey) e do [uv](https://docs.astral.sh/uv/)):
+Precisa do [uv](https://docs.astral.sh/uv/), do Node 22+ e de uma chave do [OpenRouter](https://openrouter.ai/keys).
+
+**Backend e família de demonstração:**
 
 ```bash
-cp .env.example .env    # preencha GEMINI_API_KEY
-uv sync --project backend
-uv run --project backend python poc/diario_poc.py --todos
+cp .env.example .env               # preencha OPENROUTER_API_KEY
+bash scripts/instalar-hooks.sh     # bloqueia commits com chaves
+cd backend
+uv sync
+uv run python -m demo.seed         # Dona Isabel, Cláudia e Rafael, com relatos de exemplo
+uv run uvicorn api.main:app --host 0.0.0.0 --port 8000
 ```
 
-Recebe três áudios fictícios de quem cuida e devolve a transcrição, o registro estruturado e o resumo para a família. Veja [poc/README.md](poc/README.md).
-
-**App** (instale o Expo Go no celular):
+**App** (instale o Expo Go no celular, na mesma rede Wi-Fi do computador):
 
 ```bash
 cd app
 npm install
 npx expo start          # escaneie o QR code com o Expo Go
 ```
+
+O app encontra o backend sozinho, pelo mesmo IP do Metro. Grave um relato, veja a IA organizar, corrija um campo e ouça o áudio original.
+
+**Prova de conceito pela linha de comando:**
+
+```bash
+uv run --project backend python poc/diario_poc.py --todos
+```
+
+Veja [poc/README.md](poc/README.md).
 
 **Ambiente completo** (Postgres com pgvector e API):
 
@@ -148,20 +161,33 @@ cd backend
 uv run pytest
 uv run python -m evals.avaliar_guardrails
 uv run python -m evals.avaliar_diario
+uv run python -m evals.comparar_transcricao google/gemini-3-flash-preview
 ```
+
+Métricas anônimas de uso, incluindo a taxa de correção dos campos da IA: `curl localhost:8000/metricas` ([docs/metricas.md](docs/metricas.md)).
 
 ## Como medimos a IA
 
-Cada etapa tem métrica e gabarito versionados: taxa de erro de palavras da transcrição, acurácia por campo do Diário, detecção de episódios e de risco, e zero violações de guardrail no texto que a família recebe. O conjunto adversarial de guardrails roda no CI. Metodologia e resultados em [docs/avaliacao.md](docs/avaliacao.md).
+Cada etapa tem métrica e gabarito versionados: taxa de erro de palavras da transcrição, acurácia por campo do Diário, detecção de episódios e de risco, e zero violações de guardrail no texto que a família recebe. O conjunto adversarial de guardrails roda no CI.
+
+O primeiro benchmark com modelos reais mudou uma decisão: o modelo que usávamos inventava o começo de um relato e perdia uma queda, o que apagaria o alerta de 192. Trocamos para o que transcreve com 3,4% de erro e capta a queda sempre. Na prática, a família também avalia a IA: cada campo corrigido vira dado, e a taxa de correção é acompanhada semana a semana. Metodologia e resultados em [docs/avaliacao.md](docs/avaliacao.md).
 
 ## Roadmap até o Demo Day
 
-| Quando | Entrega |
-|---|---|
-| Fase 0 (inscrição) | PoC do Diário, guardrails com avaliação, app navegável, schema com RLS, documentação |
-| Semana 1 | Diário ponta a ponta no celular, linha de base e mudança de padrão, Passaporte de Memória |
-| Semana 2 | Conversas de Reminiscência, RAG de fontes oficiais, Apoio na Hora Difícil |
-| Semana 3 | Rede da Família, resumo semanal, PDF do Passaporte, exportar e apagar, testes com famílias |
+Trabalhamos em ciclos curtos, cada um entregando uma funcionalidade de ponta a ponta no celular.
+
+| Ciclo | Entrega | Estado |
+|---|---|---|
+| Fase 0 | Documentação, PoC, guardrails com avaliação, app navegável | concluído |
+| 1 | Diário redondo: gravação real, offline, correção com um toque, histórico | concluído |
+| 2 | Resumo da semana, mudanças de padrão, lista para a consulta em PDF | próximo |
+| 3 | Passaporte de Memória montado só falando | |
+| 4 | Conversas de Reminiscência geradas a partir do Passaporte | |
+| 5 | Apoio na Hora Difícil com fontes oficiais e 192 | |
+| 6 | Rede da Família: convite, tarefas e "obrigado" | |
+| 7 | Polimento, acessibilidade, deploy e roteiro do Demo Day | |
+
+O que mudou em cada ciclo está no [CHANGELOG](CHANGELOG.md).
 
 Detalhes em [docs/roadmap.md](docs/roadmap.md).
 

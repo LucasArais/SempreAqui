@@ -50,7 +50,9 @@ Dados de saúde são dados pessoais sensíveis (LGPD, art. 5º, II, e art. 11).
 - **Mínimo necessário.** O Passaporte compartilhado é somente leitura, pode ser desligado a qualquer momento e não inclui o Diário.
 - **Nada de dado real em logs.** Logs registram rotas, tempos, contagens e erros. Nunca transcrições, nomes, áudios ou conteúdo de prompts.
 - **Exportar e apagar tudo.** A família pode baixar todos os seus dados em formato aberto e apagar o grupo inteiro, o que remove tudo em cascata (LGPD, art. 18).
-- **Provedor de IA.** Com famílias reais, usaremos o plano pago da API do Gemini, em que, segundo os termos do Google, o conteúdo enviado não é usado para melhorar os produtos deles. O plano gratuito não dá essa garantia, por isso só recebe dados fictícios. Isso é informado à família no termo de consentimento.
+- **Provedor de IA.** Usamos modelos pelo OpenRouter com a opção `data_collection: deny` em toda chamada: o pedido só vai para provedores que não guardam os dados nem os usam para treinar modelos. Se nenhum provedor do modelo atender, a chamada falha em vez de cair num provedor que guarda dados. Isso é informado à família no termo de consentimento.
+- **Chaves e segredos.** Ficam só no `.env`, ignorado pelo git. Um hook de pre-commit e o gitleaks no CI bloqueiam qualquer commit com algo parecido com uma chave. O app nunca recebe chave secreta.
+- **Correções da família.** Quando alguém corrige um campo, a correção fica guardada no grupo da própria família e só é usada para melhorar os próximos relatos dessa mesma família.
 - **Desenvolvimento sem dado real.** Testes, exemplos e avaliações usam somente relatos fictícios. Segredos ficam apenas em `.env`.
 
 ## A pessoa que vive com Alzheimer

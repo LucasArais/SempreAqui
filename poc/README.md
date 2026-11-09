@@ -12,7 +12,7 @@ Esta pasta prova que a parte mais difícil do SempreAqui funciona: transformar u
 
 Para cada áudio, a PoC devolve:
 
-1. **Transcrição** do relato em português, feita pelo Gemini (modelo multimodal, recebe o áudio direto).
+1. **Transcrição** do relato em português, feita por um modelo multimodal que recebe o áudio direto (hoje o Gemini 3 Flash, escolhido por benchmark).
 2. **Registro do Diário** com sono, alimentação, hidratação, humor, agitação, episódios, medicação tomada (sim, não, parcial), o que ajudou, momentos bons, cansaço de quem cuida e sinais de alerta. O JSON segue o schema [`RegistroDiario`](../backend/core/schemas/diario.py) e é validado com Pydantic. Se a validação falhar, o modelo recebe o erro e tenta de novo uma vez.
 3. **Resumo para a família**, em até 5 frases, conferido pelos guardrails: sem diagnóstico, sem orientação de remédio, sem "paciente" ou "fardo", sem travessão e com orientação de ligar 192 quando há risco. Se a IA falhar duas vezes, entra um resumo seguro montado sem IA.
 
@@ -20,11 +20,11 @@ A PoC chama o mesmo grafo LangGraph usado pela API ([`backend/agents/diario.py`]
 
 ## Como rodar
 
-Pré-requisitos: [uv](https://docs.astral.sh/uv/) e uma chave gratuita do Gemini ([Google AI Studio](https://aistudio.google.com/apikey)).
+Pré-requisitos: [uv](https://docs.astral.sh/uv/) e uma chave do [OpenRouter](https://openrouter.ai/keys) (ou do Gemini direto, com `LLM_PROVIDER=gemini`).
 
 ```bash
 # na raiz do repositório
-cp .env.example .env            # coloque sua GEMINI_API_KEY
+cp .env.example .env            # coloque sua OPENROUTER_API_KEY
 uv sync --project backend
 
 # um áudio
