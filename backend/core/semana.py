@@ -87,6 +87,14 @@ def _num(valor: float) -> str:
     return (f"{valor:.1f}".rstrip("0").rstrip(".")).replace(".", ",")
 
 
+def _minuscula(texto: str) -> str:
+    return texto[:1].lower() + texto[1:]
+
+
+def _dias(n: int) -> str:
+    return f"{n} {'dia' if n == 1 else 'dias'}"
+
+
 def _vezes(valor: float) -> str:
     n = max(0, round(valor))
     return "nenhuma vez" if n == 0 else f"{n} {'vez' if n == 1 else 'vezes'}"
@@ -214,7 +222,7 @@ def detectar_mudancas(
         mudancas.append(
             Mudanca(
                 "remedios",
-                f"Não tomou todos os remédios em {len(incompletos)} dias ({_lista_dias([d.data for d in incompletos])})",
+                f"Não tomou todos os remédios em {_dias(len(incompletos))} ({_lista_dias([d.data for d in incompletos])})",
                 [d.data.isoformat() for d in incompletos],
             )
         )
@@ -223,7 +231,7 @@ def detectar_mudancas(
         mudancas.append(
             Mudanca(
                 "alimentacao",
-                f"Comeu pouco em {len(pouca)} dias",
+                f"Comeu pouco em {_dias(len(pouca))}",
                 [d.data.isoformat() for d in pouca],
             )
         )
@@ -234,7 +242,7 @@ def detectar_mudancas(
         mudancas.append(
             Mudanca(
                 "agitacao",
-                f"Agitação moderada ou forte em {len(agitacao)} dias",
+                f"Agitação moderada ou forte em {_dias(len(agitacao))}",
                 [d.data.isoformat() for d in agitacao],
             )
         )
@@ -245,7 +253,7 @@ def detectar_mudancas(
         mudancas.append(
             Mudanca(
                 "quem_cuida",
-                f"{quem_cuida} relatou muito cansaço em {len(cansaco)} dias",
+                f"{quem_cuida} relatou muito cansaço em {_dias(len(cansaco))}",
                 [d.data.isoformat() for d in cansaco],
             )
         )
@@ -276,30 +284,30 @@ def para_consulta(semana: list[Dia]) -> list[str]:
     if despertares:
         maior = max(despertares, key=lambda x: x[1])
         itens.append(
-            f"Acordou durante a noite em {len(despertares)} dias, até {maior[1]} vezes ({DIAS[maior[0].data.weekday()]})"
+            f"Acordou durante a noite em {_dias(len(despertares))}, até {maior[1]} vezes ({DIAS[maior[0].data.weekday()]})"
         )
     incompletos = [d for d in com_relato if d.valor("medicacao.tomou") in ("parcial", "nao")]
     itens.append(
-        f"Remédios: não tomou todos em {len(incompletos)} dias ({_lista_dias([d.data for d in incompletos])})"
+        f"Remédios: não tomou todos em {_dias(len(incompletos))} ({_lista_dias([d.data for d in incompletos])})"
         if incompletos
         else "Remédios: tomou todos nos dias com relato"
     )
     pouca = [d for d in com_relato if d.valor("alimentacao.qualidade") in ("pouca", "recusou")]
     if pouca:
         itens.append(
-            f"Alimentação: comeu pouco ou recusou em {len(pouca)} dias ({_lista_dias([d.data for d in pouca])})"
+            f"Alimentação: comeu pouco ou recusou em {_dias(len(pouca))} ({_lista_dias([d.data for d in pouca])})"
         )
     agitacao = [d for d in com_relato if d.valor("agitacao.nivel") in ("moderada", "intensa")]
     if agitacao:
         itens.append(
-            f"Agitação moderada ou forte em {len(agitacao)} dias ({_lista_dias([d.data for d in agitacao])})"
+            f"Agitação moderada ou forte em {_dias(len(agitacao))} ({_lista_dias([d.data for d in agitacao])})"
         )
     episodios = [(d, e) for d in com_relato for e in d.valor("episodios") or []]
     if episodios:
         itens.append(
             "Episódios: "
             + "; ".join(
-                f"{DIAS[d.data.weekday()]}, {e.get('descricao', '').rstrip('.')}"
+                f"{DIAS[d.data.weekday()]}, {_minuscula(e.get('descricao', '').rstrip('.'))}"
                 for d, e in episodios
             )
         )

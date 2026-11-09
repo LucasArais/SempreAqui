@@ -9,7 +9,14 @@ QUALIDADE = {"boa": "Boa", "regular": "Regular", "ruim": "Ruim", "nao_informado"
 
 def _latin(texto: str) -> str:
     # As fontes padrão do PDF usam latin-1: cobre o português, mas não aspas curvas e afins.
-    trocas = {"\u201c": '"', "\u201d": '"', "\u2018": "'", "\u2019": "'", "\u2014": ",", "\u2013": ","}
+    trocas = {
+        "\u201c": '"',
+        "\u201d": '"',
+        "\u2018": "'",
+        "\u2019": "'",
+        "\u2014": ",",
+        "\u2013": ",",
+    }
     for a, b in trocas.items():
         texto = texto.replace(a, b)
     return texto.encode("latin-1", "replace").decode("latin-1")
@@ -40,14 +47,16 @@ def pdf_consulta(fatos: dict, nome: str) -> bytes:
     pdf.cell(largura, 7, _latin("O que a família observou"), new_x="LMARGIN", new_y="NEXT")
     pdf.set_font("Helvetica", "", 11)
     for item in fatos["para_consulta"]:
-        pdf.multi_cell(largura, 6, _latin(f"-  {item}."), new_x="LMARGIN", new_y="NEXT")
+        pdf.multi_cell(largura, 6, _latin(f"-  {item}."), align="L", new_x="LMARGIN", new_y="NEXT")
     if fatos["mudancas"]:
         pdf.ln(2)
         pdf.set_font("Helvetica", "B", 12)
         pdf.cell(largura, 7, _latin("Diferente do habitual"), new_x="LMARGIN", new_y="NEXT")
         pdf.set_font("Helvetica", "", 11)
         for m in fatos["mudancas"]:
-            pdf.multi_cell(largura, 6, _latin(f"-  {m['texto']}."), new_x="LMARGIN", new_y="NEXT")
+            pdf.multi_cell(
+                largura, 6, _latin(f"-  {m['texto']}."), align="L", new_x="LMARGIN", new_y="NEXT"
+            )
 
     pdf.ln(4)
     pdf.set_font("Helvetica", "B", 12)
@@ -70,6 +79,19 @@ def pdf_consulta(fatos: dict, nome: str) -> bytes:
         horas = f"{d['sono_horas']:g} h".replace(".", ",") if d.get("sono_horas") else "-"
         pdf.cell(col, 6, _latin(horas), border=1, align="C")
     pdf.ln()
+
+    # Espaço para quem leva a folha impressa anotar perguntas e o que a equipe disser.
+    pdf.ln(8)
+    pdf.set_font("Helvetica", "B", 12)
+    pdf.cell(
+        largura, 7, _latin("Perguntas e anotações para a consulta"), new_x="LMARGIN", new_y="NEXT"
+    )
+    pdf.set_draw_color(200, 200, 205)
+    y = pdf.get_y() + 9
+    while y < pdf.h - 34:
+        pdf.line(18, y, 18 + largura, y)
+        y += 9
+    pdf.set_draw_color(0, 0, 0)
 
     pdf.set_y(-26)
     pdf.set_font("Helvetica", "I", 9)
