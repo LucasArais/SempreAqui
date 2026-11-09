@@ -1,6 +1,5 @@
 import { File, Paths } from 'expo-file-system';
 import { router } from 'expo-router';
-import * as Sharing from 'expo-sharing';
 import { useState } from 'react';
 import { View } from 'react-native';
 
@@ -21,6 +20,7 @@ import {
 } from '@/components';
 import { pessoa } from '@/data/familia';
 import { api, cabecalhos } from '@/lib/api';
+import { compartilharArquivo } from '@/lib/compartilhar';
 import { haptic } from '@/lib/haptics';
 import { type Semana, useSemana } from '@/lib/semana';
 import { espaco, useTema } from '@/theme';
@@ -82,7 +82,7 @@ export default function SemanaTela() {
         headers: cabecalhos(),
       });
       haptic.sucesso();
-      await Sharing.shareAsync(arquivo.uri, { mimeType: 'application/pdf', dialogTitle: 'Para levar na consulta' });
+      await compartilharArquivo(arquivo.uri, 'Para levar na consulta', 'application/pdf');
     } catch {
       mostrarToast('Não consegui gerar o PDF agora. Tente de novo em instantes.');
     } finally {

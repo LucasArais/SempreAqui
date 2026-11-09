@@ -1,13 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { File, Paths } from 'expo-file-system';
 import { router } from 'expo-router';
-import * as Sharing from 'expo-sharing';
 import { useState } from 'react';
 import { Alert } from 'react-native';
 
 import { Coluna, ListGroup, ListRow, mostrarToast, PrimaryButton, Screen, SecondaryButton, Section, Text } from '@/components';
 import { api, cabecalhos } from '@/lib/api';
 import { CHAVE_ONBOARDING } from '@/lib/chaves';
+import { compartilharArquivo } from '@/lib/compartilhar';
 import { limparTudoLocal } from '@/lib/diario';
 import { haptic } from '@/lib/haptics';
 import { sair } from '@/lib/sessao';
@@ -24,7 +24,7 @@ export default function Privacidade() {
       if (destino.exists) destino.delete();
       const arquivo = await File.downloadFileAsync(api.urlExportar(), destino, { headers: cabecalhos() });
       haptic.sucesso();
-      await Sharing.shareAsync(arquivo.uri, { mimeType: 'application/zip', dialogTitle: 'Cópia dos dados da família' });
+      await compartilharArquivo(arquivo.uri, 'Cópia dos dados da família', 'application/zip');
     } catch {
       mostrarToast('Não consegui preparar a cópia agora. Tente de novo em instantes.');
     } finally {
