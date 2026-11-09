@@ -38,7 +38,7 @@ export default function Memorias() {
   return (
     <Screen>
       <Coluna centro gap="s1">
-        <Avatar nome={pessoa.comoGostaDeSerChamada.replace('Dona ', '')} tom={0} grande fonte={fotos.donaCida} />
+        <Avatar nome={pessoa.comoGostaDeSerChamada.replace('Dona ', '')} tom={0} grande fonte={fotos.donaIsabel} />
         <Text variante="title2" centro>
           {pessoa.comoGostaDeSerChamada}
         </Text>

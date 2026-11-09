@@ -44,7 +44,7 @@ O SempreAqui é um app de celular, pensado para ser usado por voz, que faz três
 <p align="center">
   <img src="design/screens/01-hoje-claro.png" alt="Hoje: botão de gravar o dia e resumo da semana" width="190">
   <img src="design/screens/04-gravar-resultado-claro.png" alt="Diário organizado pela IA, pronto para enviar à família" width="190">
-  <img src="design/screens/05-memorias-claro.png" alt="Passaporte de Memória da Dona Cida" width="190">
+  <img src="design/screens/05-memorias-claro.png" alt="Passaporte de Memória da Dona Isabel" width="190">
   <img src="design/screens/10-ajuda-resposta-escuro.png" alt="Ajuda na hora difícil, em modo escuro" width="190">
 </p>
 

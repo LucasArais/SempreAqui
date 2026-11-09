@@ -9,29 +9,29 @@ import type { NomeIcone } from '@/components';
 
 /** Retratos gerados por IA. São pessoas fictícias, sem relação com ninguém real. */
 export const fotos: Record<string, ImageSource> = {
-  donaCida: require('../../assets/fotos/dona-cida.jpg'),
-  marcia: require('../../assets/fotos/marcia.jpg'),
-  joao: require('../../assets/fotos/joao.jpg'),
+  donaIsabel: require('../../assets/fotos/dona-isabel.jpg'),
+  claudia: require('../../assets/fotos/claudia.jpg'),
   rafael: require('../../assets/fotos/rafael.jpg'),
-  bia: require('../../assets/fotos/bia.jpg'),
+  neta: require('../../assets/fotos/neta.jpg'),
+  cuidador: require('../../assets/fotos/cuidador.jpg'),
 };
 
-export const quemUsa = { nome: 'Márcia', papel: 'Quem cuida' };
+export const quemUsa = { nome: 'Cláudia', papel: 'Quem cuida' };
 
 export const pessoa = {
-  nome: 'Aparecida',
-  comoGostaDeSerChamada: 'Dona Cida',
-  idade: 78,
-  cidade: 'Itapetininga, SP',
+  nome: 'Isabel',
+  comoGostaDeSerChamada: 'Dona Isabel',
+  idade: 81,
+  cidade: 'São Paulo, SP',
   quemEla:
     'Costureira por 40 anos, fez vestidos de noiva para meia cidade. Gosta de casa cheia, de café passado na hora e de conversar sobre o tempo do ateliê.',
   comoSeComunica:
-    'Entende melhor frases curtas, uma coisa de cada vez. Quando aperta a mão da gente, quer companhia. Chama a Márcia de "minha menina".',
+    'Entende melhor frases curtas, uma coisa de cada vez. Quando aperta a mão da gente, quer companhia. Chama a Cláudia de "minha menina".',
   pessoasImportantes: [
-    { nome: 'Antônio', relacao: 'Marido, falecido em 2015. Se conheceram num baile de São João', tom: 0, foto: undefined },
-    { nome: 'Márcia', relacao: 'Filha, mora com ela', tom: 1, foto: fotos.marcia },
-    { nome: 'João', relacao: 'Filho, mora em Recife', tom: 2, foto: fotos.joao },
-    { nome: 'Bia', relacao: 'Neta, canta com ela aos domingos', tom: 3, foto: fotos.bia },
+    { nome: 'O marido', relacao: 'Falecido em 2015. Se conheceram num baile de São Rafael', tom: 0, foto: undefined },
+    { nome: 'Cláudia', relacao: 'Filha, mora com ela', tom: 1, foto: fotos.claudia },
+    { nome: 'Rafael', relacao: 'Filho, mora em Recife', tom: 2, foto: fotos.rafael },
+    { nome: 'A neta', relacao: 'Filha da Cláudia, canta com ela aos domingos', tom: 3, foto: fotos.neta },
   ],
   rotina: [
     { titulo: 'Acorda por volta das 7h', detalhe: 'Café com leite e pão na chapa' },
@@ -41,7 +41,7 @@ export const pessoa = {
   acalma: [
     { titulo: 'Roberto Carlos', detalhe: 'Principalmente "Detalhes". Ela canta junto' },
     { titulo: 'Retalhos de tecido', detalhe: 'Gosta de dobrar e separar por cor' },
-    { titulo: 'Ligação de vídeo com o João', detalhe: 'Funciona melhor de manhã' },
+    { titulo: 'Ligação de vídeo com o Rafael', detalhe: 'Funciona melhor de manhã' },
   ],
   agita: [
     { titulo: 'Barulho e muita gente', detalhe: 'Festas grandes, TV alta' },
@@ -49,41 +49,41 @@ export const pessoa = {
     { titulo: 'Fim da tarde', detalhe: 'Às vezes pergunta pela casa da mãe dela' },
   ],
   musicasEComidas: [
-    { titulo: 'Músicas', detalhe: 'Roberto Carlos, forró de São João, hinos da igreja', icone: 'musica' as NomeIcone },
+    { titulo: 'Músicas', detalhe: 'Roberto Carlos, forró de São Rafael, hinos da igreja', icone: 'musica' as NomeIcone },
     { titulo: 'Comidas', detalhe: 'Sopa de legumes, pão de queijo, doce de abóbora', icone: 'comida' as NomeIcone },
   ],
   fotos: [
     { legenda: 'O ateliê, 1978', tom: 0, icone: 'foto' as NomeIcone },
-    { legenda: 'Casamento com o Antônio', tom: 1, icone: 'coracao' as NomeIcone },
-    { legenda: 'Márcia e João pequenos', tom: 2, icone: 'familia' as NomeIcone },
-    { legenda: 'São João na praça', tom: 3, icone: 'musica' as NomeIcone },
+    { legenda: 'O casamento, 1966', tom: 1, icone: 'coracao' as NomeIcone },
+    { legenda: 'Os filhos pequenos', tom: 2, icone: 'familia' as NomeIcone },
+    { legenda: 'São Rafael na praça', tom: 3, icone: 'musica' as NomeIcone },
     { legenda: 'A casa da Rua das Flores', tom: 4, icone: 'casa' as NomeIcone },
-    { legenda: 'Com a Bia no aniversário', tom: 0, icone: 'coracao' as NomeIcone },
+    { legenda: 'Com a neta no aniversário', tom: 0, icone: 'coracao' as NomeIcone },
   ],
   fontesDoPassaporte: '6 áudios, 12 fotos e 3 textos enviados pela família',
 };
 
 export const familia = [
-  { nome: 'Márcia', papel: 'Quem cuida', cidade: 'Mora com a Dona Cida', tom: 1, foto: fotos.marcia },
-  { nome: 'João', papel: 'Familiar', cidade: 'Recife', tom: 2, foto: fotos.joao },
-  { nome: 'Bia', papel: 'Familiar', cidade: 'São Paulo', tom: 3, foto: fotos.bia },
-  { nome: 'Rafael', papel: 'Cuidador profissional', cidade: 'Terças e quintas', tom: 4, foto: fotos.rafael },
+  { nome: 'Cláudia', papel: 'Quem cuida', cidade: 'Mora com a Dona Isabel', tom: 1, foto: fotos.claudia },
+  { nome: 'Rafael', papel: 'Familiar', cidade: 'Recife', tom: 2, foto: fotos.rafael },
+  { nome: 'A neta', papel: 'Familiar', cidade: 'São Paulo', tom: 3, foto: fotos.neta },
+  { nome: 'Cuidador profissional', papel: 'Terças e quintas', cidade: 'Contratado pela família', tom: 4, foto: fotos.cuidador },
 ];
 
 export type Tarefa = { id: string; titulo: string; quando: string; quem: string; feita: boolean; hoje?: boolean };
 
 export const tarefas: Tarefa[] = [
-  { id: 't1', titulo: 'Ligar para a Dona Cida', quando: 'Hoje, 10h', quem: 'João', feita: true, hoje: true },
-  { id: 't2', titulo: 'Comprar fraldas e lenços', quando: 'Hoje', quem: 'Bia', feita: false, hoje: true },
-  { id: 't3', titulo: 'Consulta na UBS', quando: 'Quinta, 9h', quem: 'Márcia, com o João por vídeo', feita: false },
-  { id: 't4', titulo: 'Cobrir a folga da Márcia', quando: 'Sábado à tarde', quem: 'Bia', feita: false },
+  { id: 't1', titulo: 'Ligar para a Dona Isabel', quando: 'Hoje, 10h', quem: 'Rafael', feita: true, hoje: true },
+  { id: 't2', titulo: 'Comprar fraldas e lenços', quando: 'Hoje', quem: 'A neta', feita: false, hoje: true },
+  { id: 't3', titulo: 'Consulta na UBS', quando: 'Quinta, 9h', quem: 'Cláudia, com o Rafael por vídeo', feita: false },
+  { id: 't4', titulo: 'Cobrir a folga da Cláudia', quando: 'Sábado à tarde', quem: 'A neta', feita: false },
 ];
 
 export const diarioDeHoje = {
   original:
-    'Hoje foi um dia bom. A mãe dormiu bem, acordou só uma vez de madrugada pra ir ao banheiro, deu umas sete horas de sono. No almoço comeu pouco, mas no fim da tarde aceitou a sopa. Os remédios ela tomou certinho. Lá pelas quatro ficou um pouco ansiosa, perguntando pela casa da mãe dela. Coloquei Roberto Carlos e ela foi se acalmando, até cantou junto. O João ligou por vídeo e ela sorriu muito.',
+    'Hoje foi um dia bom. A mãe dormiu bem, acordou só uma vez de madrugada pra ir ao banheiro, deu umas sete horas de sono. No almoço comeu pouco, mas no fim da tarde aceitou a sopa. Os remédios ela tomou certinho. Lá pelas quatro ficou um pouco ansiosa, perguntando pela casa da mãe dela. Coloquei Roberto Carlos e ela foi se acalmando, até cantou junto. O Rafael ligou por vídeo e ela sorriu muito.',
   resumo:
-    'A Dona Cida teve um dia bom. Dormiu bem e tomou os remédios. No fim da tarde ficou ansiosa, e as músicas do Roberto Carlos ajudaram de novo. A ligação do João fez ela sorrir muito.',
+    'A Dona Isabel teve um dia bom. Dormiu bem e tomou os remédios. No fim da tarde ficou ansiosa, e as músicas do Roberto Carlos ajudaram de novo. A ligação do Rafael fez ela sorrir muito.',
   campos: [
     { rotulo: 'Sono', valor: 'Bom, cerca de 7 horas. Acordou 1 vez', icone: 'sono' as NomeIcone },
     { rotulo: 'Alimentação', valor: 'Comeu pouco no almoço, aceitou a sopa', icone: 'comida' as NomeIcone },
@@ -96,7 +96,7 @@ export const diarioDeHoje = {
 export const semana = {
   periodo: '3 a 9 de novembro',
   resumo:
-    'Uma semana mais calma que a anterior. A Dona Cida dormiu bem em cinco das sete noites e cantou com a Bia no domingo. A Márcia registrou cansaço na terça e na quarta.',
+    'Uma semana mais calma que a anterior. A Dona Isabel dormiu bem em cinco das sete noites e cantou com a neta no domingo. A Cláudia registrou cansaço na terça e na quarta.',
   original:
     'Terça: noite difícil, acordou quatro vezes, não quis o remédio da manhã. Quarta: de novo acordou várias vezes, eu estou exausta. Domingo: a Bia veio e as duas cantaram a tarde toda.',
   mudancas: [
@@ -124,17 +124,17 @@ export const semana = {
 export const feed = [
   {
     id: 'f1',
-    autor: 'Márcia',
+    autor: 'Cláudia',
     quando: 'Hoje, 21h',
     resumo: diarioDeHoje.resumo,
     original: diarioDeHoje.original,
   },
   {
     id: 'f2',
-    autor: 'Márcia',
+    autor: 'Cláudia',
     quando: 'Quarta, 22h',
     resumo:
-      'Noite difícil. A Dona Cida acordou várias vezes procurando a bolsa e não quis o remédio da manhã. A Márcia está muito cansada. Alguém pode cobrir a folga de sábado?',
+      'Noite difícil. A Dona Isabel acordou várias vezes procurando a bolsa e não quis o remédio da manhã. A Cláudia está muito cansada. Alguém pode cobrir a folga de sábado?',
     original:
       'De novo acordou várias vezes procurando a bolsa. De manhã não quis tomar o remédio de jeito nenhum. Eu estou exausta, se alguém pudesse ficar com ela no sábado eu agradecia.',
   },

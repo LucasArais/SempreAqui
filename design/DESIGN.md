@@ -59,4 +59,4 @@ node scripts/contraste.ts
 
 ## Fotos
 
-Os retratos da família (Dona Cida, Márcia, João, Bia e Rafael) foram **gerados por IA**. São pessoas fictícias e não representam ninguém real. Nunca usamos fotos de pessoas reais em exemplos.
+Os retratos da família (Dona Isabel, Cláudia, Rafael, a neta e o cuidador profissional) foram **gerados por IA**. São pessoas fictícias e não representam ninguém real. Nunca usamos fotos de pessoas reais em exemplos.

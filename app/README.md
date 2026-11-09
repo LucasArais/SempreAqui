@@ -1,6 +1,6 @@
 # App
 
-App do SempreAqui em React Native com Expo (SDK 58) e Expo Router. O visual segue as Human Interface Guidelines da Apple. Veja [design/README.md](../design/README.md).
+App do SempreAqui em React Native com Expo (SDK 58) e Expo Router. O visual segue as Human Interface Guidelines da Apple. Veja [design/DESIGN.md](../design/DESIGN.md).
 
 ```bash
 npm install
