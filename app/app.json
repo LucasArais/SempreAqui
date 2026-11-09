@@ -9,8 +9,14 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "O SempreAqui usa o microfone para você contar como foi o dia por voz."
-      }
+        "NSMicrophoneUsageDescription": "O SempreAqui usa o microfone para você contar como foi o dia por voz.",
+        "NSLocalNetworkUsageDescription": "O SempreAqui conversa com o servidor da família na sua rede para organizar os relatos.",
+        "NSAppTransportSecurity": {
+          "NSAllowsLocalNetworking": true
+        }
+      },
+      "bundleIdentifier": "com.lucasarais.sempreaqui",
+      "appleTeamId": "HUWV9ZY577"
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +25,8 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.lucasarais.sempreaqui"
     },
     "web": {
       "favicon": "./assets/favicon.png"
