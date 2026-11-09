@@ -11,6 +11,7 @@ Com o Supabase ligado, passa a vir do token de login, e o RLS do banco garante o
 
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 import logging
@@ -18,8 +19,10 @@ import re
 import time
 import zipfile
 from collections.abc import Callable
+from datetime import date, datetime
 from functools import lru_cache
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from fastapi import BackgroundTasks, Depends, FastAPI, Form, Header, HTTPException, UploadFile
 from fastapi.responses import JSONResponse, Response
@@ -32,10 +35,12 @@ from agents.diario import (
     refazer_resumo,
     resumo_seguro,
 )
+from agents.semana import resumir_semana
 from core import campos
 from core.auth import TokenInvalido, usuario_do_token
 from core.config import config
 from core.llm import ErroProvedorIA, ProvedorIA, provedor_padrao
+from core.pdf import pdf_consulta
 from core.repositorio import (
     EVENTOS_PERMITIDOS,
     FamiliaDesconhecida,
@@ -43,6 +48,7 @@ from core.repositorio import (
     repositorio_padrao,
 )
 from core.schemas.diario import RegistroDiario
+from core.semana import montar_semana
 
 logging.basicConfig(level=config().log_level.upper())
 log = logging.getLogger("sempreaqui.api")
@@ -355,6 +361,60 @@ def apagar_tudo(
         raise HTTPException(422, "Confirmação ausente.")
     quantos = repo.apagar_familia(familia_id)
     log.info("familia.apagada relatos=%d", quantos)
+
+
+_cache_semana: dict[tuple, dict] = {}
+
+
+def _fatos_da_semana(repo: Repositorio, familia_id: str, fim: str | None) -> dict:
+    fuso = config().fuso
+    data_fim = date.fromisoformat(fim) if fim else datetime.now(ZoneInfo(fuso)).date()
+    relatos = repo.listar(familia_id, limite=500)
+    return montar_semana(relatos, data_fim, fuso)
+
+
+@app.get("/semana")
+def semana(
+    fim: str | None = None,
+    familia_id: str = Depends(obter_familia),
+    repo: Repositorio = Depends(obter_repositorio),
+    fabrica: Callable[[], ProvedorIA] = Depends(obter_fabrica_provedor),
+) -> dict:
+    """Como foi a semana: dias, mudanças em relação ao habitual, resumo e lista da consulta."""
+    fatos = _fatos_da_semana(repo, familia_id, fim)
+    chave = (
+        familia_id,
+        fatos["fim"],
+        hashlib.sha256(json.dumps(fatos, sort_keys=True, default=str).encode()).hexdigest(),
+    )
+    if chave not in _cache_semana:
+        try:
+            provedor = fabrica()
+        except Exception:  # noqa: BLE001 - sem IA, o resumo seguro cobre
+            provedor = None
+        resumo, seguro = resumir_semana(provedor, fatos)
+        if not seguro:
+            _cache_semana[chave] = {"resumo": resumo, "resumo_seguro": False}
+        else:
+            return {**fatos, "resumo": resumo, "resumo_seguro": True}
+    return {**fatos, **_cache_semana[chave]}
+
+
+@app.get("/semana/consulta.pdf")
+def semana_pdf(
+    fim: str | None = None,
+    nome: str = "Pessoa cuidada",
+    familia_id: str = Depends(obter_familia),
+    repo: Repositorio = Depends(obter_repositorio),
+) -> Response:
+    """Lista "Para levar na consulta" em PDF de uma página."""
+    nome_limpo = re.sub(r"[^A-Za-zÀ-ÿ ]", "", nome)[:40].strip() or "Pessoa cuidada"
+    conteudo = pdf_consulta(_fatos_da_semana(repo, familia_id, fim), nome_limpo)
+    return Response(
+        conteudo,
+        media_type="application/pdf",
+        headers={"Content-Disposition": 'attachment; filename="para-levar-na-consulta.pdf"'},
+    )
 
 
 @app.get("/diario/campos")

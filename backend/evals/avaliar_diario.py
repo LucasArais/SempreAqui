@@ -58,7 +58,8 @@ def avaliar(modo: str) -> dict:
         tipos_obtidos = {e["tipo"] for e in registro["episodios"]}
         tipos_esperados = set(caso["episodios_tipos"])
         ep_vp += len(tipos_obtidos & tipos_esperados)
-        ep_fp += len(tipos_obtidos - tipos_esperados)
+        opcionais = set(caso.get("episodios_opcionais", []))
+        ep_fp += len(tipos_obtidos - tipos_esperados - opcionais)
         ep_fn += len(tipos_esperados - tipos_obtidos)
 
         ajudou = guardrails.normalizar(" ".join(registro["o_que_ajudou"]))
@@ -93,7 +94,7 @@ def avaliar(modo: str) -> dict:
     wers = [linha["wer"] for linha in linhas if linha["wer"] is not None]
     return {
         "data": datetime.now().isoformat(timespec="seconds"),
-        "modelo": config().gemini_model,
+        "modelo": getattr(provedor, "modelo", config().gemini_model),
         "modo": modo,
         "n_casos": len(casos),
         "metricas": {

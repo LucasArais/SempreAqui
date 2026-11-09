@@ -73,7 +73,13 @@ Resultados completos do Diário serão publicados aqui na primeira rodada com ch
 
 | Data | Modelo | Prompts | WER | Acurácia por campo | Episódios (P / R) | Risco | Violações | Latência |
 |---|---|---|---|---|---|---|---|---|
-| pendente | gemini-3-flash-preview | v1 | | | | | | |
+| 9/11/2026 | gemini-3-flash-preview (OpenRouter) | extracao.v2 | só texto | 100% | 1,00 / 1,00 | 3/3 | 0 | 6,0 s |
+
+Primeira rodada no modo texto (extração e resumo a partir do roteiro, sem transcrição). O modo com áudio aguarda saldo no OpenRouter. Na leitura estrita do gabarito original, a precisão de episódios foi 0,50: o modelo marcou "desorientação" no relato em que a pessoa pergunta pela casa da mãe e "recusa de cuidado" quando recusa o remédio. As duas leituras são defensáveis, então entraram no gabarito como episódios opcionais (aceitos, não exigidos). Registramos as duas versões para não esconder a mudança.
+
+### Resumo da semana e mudanças de padrão
+
+As mudanças de padrão não usam IA: são regras explícitas sobre a linha de base da própria pessoa (`backend/core/semana.py`), testadas em `tests/test_semana.py`. A IA só escreve o texto do resumo para a família, que passa pelos mesmos guardrails do Diário e cai num resumo seguro se falhar. Testes garantem que nenhum texto de mudança ou da lista da consulta contém interpretação clínica.
 
 ## Limitações e próximos passos
 

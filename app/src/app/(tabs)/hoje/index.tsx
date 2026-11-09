@@ -16,7 +16,9 @@ import {
   SummaryCard,
   Text,
 } from '@/components';
-import { quemUsa, semana, sessao, tarefas as tarefasIniciais } from '@/data/familia';
+import { quemUsa, sessao, tarefas as tarefasIniciais } from '@/data/familia';
+import { useSemana } from '@/lib/semana';
+import { useSessao } from '@/lib/sessao';
 import { atualizarRelatos, useAtualizarAoFocar, useDiario } from '@/lib/diario';
 import { haptic } from '@/lib/haptics';
 import { formatarData, MENSAGEM_ETAPA } from '@/lib/rotulos';
@@ -35,6 +37,24 @@ export default function Hoje() {
   const { relatos, pendentes, carregado } = useDiario();
   useAtualizarAoFocar();
   const ultimo = relatos[0];
+  const { semana } = useSemana();
+  // Quem mora longe (Rafael) quer saber como a mãe está: a semana vem primeiro.
+  const quemCuida = (useSessao().papel ?? 'quem_cuida') === 'quem_cuida';
+
+  const secaoSemana = semana && semana.dias_com_relato > 0 && (
+    <Section titulo="Esta semana">
+      <SummaryCard meta={`${semana.periodo}, ${semana.dias_com_relato} de 7 dias com relato`} texto={semana.resumo}>
+        {semana.mudancas.slice(0, 2).map((m) => (
+          <AttentionBadge key={m.texto} texto={m.texto} />
+        ))}
+      </SummaryCard>
+      <SecondaryButton
+        titulo="Ver a semana e a lista da consulta"
+        alinhamento="inicio"
+        onPress={() => router.push('/hoje/semana')}
+      />
+    </Section>
+  );
 
   function alternar(id: string) {
     setTarefas((lista) =>
@@ -49,6 +69,7 @@ export default function Hoje() {
   return (
     <Screen aoAtualizar={atualizarRelatos}>
       <Stack.Screen options={{ title: `${saudacao()}, ${quemUsa.nome}` }} />
+
 
       <Card style={{ paddingVertical: espaco.s3 }}>
         <RecordButton gravando={false} onPress={() => router.push('/gravar')} apoio="Toque e fale do seu jeito" />
@@ -93,18 +114,9 @@ export default function Hoje() {
         )}
       </Section>
 
-      <Section titulo="Esta semana">
-        <SummaryCard meta={semana.periodo} texto={semana.resumo} original={semana.original}>
-          {semana.mudancas.map((m) => (
-            <AttentionBadge key={m} texto={m} />
-          ))}
-        </SummaryCard>
-        <SecondaryButton
-          titulo="Ver a semana e a lista da consulta"
-          alinhamento="inicio"
-          onPress={() => router.push('/hoje/semana')}
-        />
-      </Section>
+      {!quemCuida && secaoSemana}
+
+      {quemCuida && secaoSemana}
 
       <Section titulo="Família hoje">
         <ListGroup>

@@ -17,6 +17,8 @@ casos:
       medicacao.tomou: [sim]
       quem_cuida.cansaco: [algum]
     episodios_tipos: []
+    # Perguntar pela casa da mãe pode ser lido como desorientação: aceitável, não obrigatório.
+    episodios_opcionais: [desorientacao]
     o_que_ajudou_contem: [musica]
     risco_esperado: false
 
@@ -34,6 +36,8 @@ casos:
       medicacao.tomou: [parcial]
       quem_cuida.cansaco: [muito]
     episodios_tipos: [tentativa_de_sair]
+    # Recusar o remédio da manhã pode ser registrado como recusa de cuidado.
+    episodios_opcionais: [recusa_de_cuidado]
     o_que_ajudou_contem: [plantas]
     risco_esperado: false
 

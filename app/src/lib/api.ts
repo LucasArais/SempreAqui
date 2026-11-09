@@ -147,6 +147,8 @@ export const api = {
       body: JSON.stringify({ confirmar: 'APAGAR' }),
     }),
   urlExportar: () => `${API_BASE}/familia/exportar`,
+  semana: () => chamar<import('./semana').Semana>('/semana'),
+  urlConsultaPdf: (nome: string) => `${API_BASE}/semana/consulta.pdf?nome=${encodeURIComponent(nome)}`,
   fonteAudio: (id: string) => ({ uri: `${API_BASE}/diario/relatos/${id}/audio`, headers: cabecalhos() }),
   sessao: (nome_exibicao?: string) =>
     chamar<{ familia: string; papel: string }>('/sessao', {

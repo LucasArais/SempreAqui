@@ -143,13 +143,79 @@ RELATOS = [
 ]
 
 
+def _historico() -> list[dict]:
+    """Semanas anteriores (a linha de base) e dois dias difíceis desta semana."""
+    relatos = []
+    for dias in range(3, 29):
+        if dias in (6, 11, 17, 23):  # nem todo dia tem relato, como na vida real
+            continue
+        dificil = dias in (3, 4)
+        horas = (4.5 if dias == 4 else 5) if dificil else (7 if dias % 3 else 7.5)
+        acordou = (4 if dias == 4 else 3) if dificil else (1 if dias % 4 else 0)
+        remedio = "parcial" if dias == 4 else "sim"
+        relatos.append(
+            {
+                "id": f"demo-hist-{dias:04d}",
+                "gravado_em": _quando(dias, 21, 30),
+                "duracao_s": 25,
+                "audio": None,
+                "transcricao": (
+                    f"A mãe dormiu mal, umas {horas:g} horas, acordou {acordou} vezes de madrugada."
+                    + (
+                        " De manhã não quis o remédio."
+                        if remedio == "parcial"
+                        else " Tomou os remédios."
+                    )
+                    if dificil
+                    else f"Dia tranquilo. A mãe dormiu umas {horas:g} horas, comeu bem e tomou os remédios."
+                ),
+                "registro": {
+                    "sono": {
+                        "qualidade": "ruim" if dificil else "boa",
+                        "horas_aproximadas": horas,
+                        "despertares_noturnos": acordou,
+                    },
+                    "alimentacao": {
+                        "qualidade": "regular" if dificil else "boa",
+                        "hidratacao": "boa",
+                    },
+                    "humor": {"predominante": "ansioso" if dificil else "calmo"},
+                    "agitacao": {
+                        "nivel": "moderada"
+                        if dificil
+                        else ("leve" if dias % 5 == 0 else "nenhuma"),
+                        "periodos": ["tarde"] if dificil or dias % 5 == 0 else [],
+                        "gatilhos": [],
+                    },
+                    "episodios": [],
+                    "medicacao": {"tomou": remedio},
+                    "o_que_ajudou": ["músicas do Roberto Carlos"] if dias % 2 else [],
+                    "momentos_bons": [],
+                    "quem_cuida": {"cansaco": "muito" if dificil else "algum"},
+                    "observacoes": [],
+                    "sinais_de_alerta": [],
+                },
+                "alertas": [],
+                "resumo": (
+                    "Noite difícil: a Dona Isabel dormiu pouco e acordou várias vezes."
+                    if dificil
+                    else "Dia tranquilo: a Dona Isabel dormiu bem, comeu e tomou os remédios."
+                ),
+                "enviado": True,
+            }
+        )
+    return relatos
+
+
 def main() -> None:
     repo = repositorio_padrao()
     if hasattr(repo, "garantir_grupo"):
         repo.garantir_grupo(FAMILIA, "Família da Dona Isabel (demonstração)")
-    for antigo in repo.listar(FAMILIA, limite=500):
-        repo.apagar(FAMILIA, antigo["id"])
-    for r in RELATOS:
+    # Só os relatos de demonstração são recriados; gravações reais da família ficam.
+    for antigo in repo.listar(FAMILIA, limite=1000):
+        if antigo["id"].startswith("demo-"):
+            repo.apagar(FAMILIA, antigo["id"])
+    for r in RELATOS + _historico():
         audio = (EXEMPLOS / r["audio"]).read_bytes() if r["audio"] else None
         repo.criar_relato(FAMILIA, r["id"], audio, "audio/mpeg", r["duracao_s"], r["gravado_em"])
         registro = RegistroDiario.model_validate(r["registro"]).model_dump()
@@ -166,7 +232,10 @@ def main() -> None:
         if r["enviado"]:
             repo.marcar_enviado(FAMILIA, r["id"])
     onde = "Supabase" if hasattr(repo, "garantir_grupo") else "banco local"
-    print(f"{len(RELATOS)} relatos da Dona Isabel criados para {FAMILIA} ({onde}).")
+    total = len(RELATOS) + len(_historico())
+    print(
+        f"{total} relatos da Dona Isabel criados para {FAMILIA} ({onde}), com quatro semanas de histórico."
+    )
 
 
 if __name__ == "__main__":

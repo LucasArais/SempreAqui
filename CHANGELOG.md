@@ -2,6 +2,22 @@
 
 O que mudou em cada ciclo, do mais recente para o mais antigo.
 
+## Ciclo 2: Resumo da semana, login e LGPD (novembro de 2026)
+
+**Para a família**
+- Tela "Esta semana" com dados reais: resumo em linguagem humana, o que mudou em relação ao habitual, sono dia a dia e lista para a consulta.
+- Mudanças de padrão detectadas por regras explícitas sobre a linha de base da própria pessoa: noites ruins seguidas, mais despertares que o habitual, remédios incompletos, agitação, situações de risco e cansaço de quem cuida.
+- "Para levar na consulta" em PDF de uma página, para imprimir ou enviar.
+- Quem mora longe vê a semana primeiro na tela Hoje.
+- Privacidade e dados: baixar uma cópia de tudo (dados e áudios) e apagar tudo.
+
+**Bastidores**
+- Login anônimo do Supabase no app; a família vem do login, validado no backend.
+- Consentimento registrado por finalidade e versão do termo.
+- Seed com quatro semanas de histórico para a linha de base.
+- Avaliação do Diário no modo texto com o modelo novo.
+- Corrigido: a fila offline guardava caminhos absolutos que mudam entre execuções.
+
 ## Ciclo 1: Diário Inteligente redondo (novembro de 2026)
 
 **Para quem cuida**

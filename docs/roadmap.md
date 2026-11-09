@@ -23,18 +23,21 @@ Personas que guiam cada decisão: **Cláudia**, 52 anos, cuida da mãe e abre o 
 - [x] Benchmark de transcrição e troca do modelo padrão
 - [x] Métricas anônimas e taxa de correção
 - [x] Seed da família de demonstração
-- [ ] Rodar as avaliações completas do Diário com o modelo novo (aguarda saldo no OpenRouter)
-- [ ] Banco no Supabase com login anônimo (aguarda senha do banco e login anônimo ligado)
+- [x] Avaliação do Diário no modo texto: campos 100%, risco 3/3, zero violações
+- [ ] Avaliação do Diário com áudio (aguarda saldo no OpenRouter)
+- [x] Banco no Supabase com RLS e login anônimo no app
+- [x] Exportar e apagar todos os dados da família (LGPD)
 
-## Ciclo 2: Resumo da semana e mudanças de padrão
+## Ciclo 2: Resumo da semana e mudanças de padrão (construído)
 
 **Pronto quando:** o Rafael abre o app e entende como a mãe passou a semana em 30 segundos.
 
-- [ ] Linha de base por pessoa a partir dos diários
-- [ ] Detecção de mudanças relevantes (por exemplo, três noites seguidas dormindo mal), em linguagem calma e sem interpretação clínica
-- [ ] Resumo semanal em linguagem humana para a família
-- [ ] Lista "Para levar na consulta" exportável em PDF de uma página
-- [ ] Tela Hoje pensada também para quem mora longe
+- [x] Linha de base por pessoa a partir dos diários (quatro semanas anteriores)
+- [x] Detecção de mudanças relevantes por regras explícitas, em linguagem calma e sem interpretação clínica
+- [x] Resumo semanal em linguagem humana para a família, com guardrails e resumo seguro
+- [x] Lista "Para levar na consulta" exportável em PDF de uma página
+- [x] Tela Hoje mostra a semana primeiro para quem mora longe
+- [ ] Testar com o Rafael de verdade: entende a semana em 30 segundos?
 
 ## Ciclo 3: Passaporte de Memória
 

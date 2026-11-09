@@ -1,0 +1,63 @@
+{
+  "data": "2026-11-09T17:47:05",
+  "modelo": "google/gemini-3-flash-preview",
+  "modo": "texto",
+  "n_casos": 3,
+  "metricas": {
+    "wer_medio": null,
+    "acuracia_campos": 1.0,
+    "episodios_precisao": 1.0,
+    "episodios_revocacao": 1.0,
+    "deteccao_risco_acuracia": 1.0,
+    "violacoes_guardrail_no_resumo_final": 0,
+    "latencia_media_s": 6.0
+  },
+  "casos": [
+    {
+      "id": "relato_01_dia_tranquilo",
+      "wer": null,
+      "campos_corretos": "9/9",
+      "erros_campos": [],
+      "episodios": [
+        "desorientacao"
+      ],
+      "o_que_ajudou_ok": true,
+      "risco_ok": true,
+      "violacoes_resumo": [],
+      "resumo_seguro_usado": false,
+      "segundos": 6.4,
+      "resumo": "A mãe teve um dia bom e sorriu muito durante a ligação por vídeo, além de ter cantado as músicas do Roberto Carlos. Ela dormiu cerca de sete horas, tomou os remédios nos horários certos e se hidratou bem ao longo do dia. No almoço ela comeu pouco, mas aceitou bem o café da manhã e a sopa no fim da tarde. Houve um momento de ansiedade e desorientação à tarde, quando ela perguntou pela casa da mãe dela, mas logo se acalmou com música. Como quem cuida relatou cansaço, seria muito bom se alguém da família pudesse oferecer uma ajuda concreta, como cobrir uma folga ou fazer uma visita."
+    },
+    {
+      "id": "relato_02_noite_dificil",
+      "wer": null,
+      "campos_corretos": "9/9",
+      "erros_campos": [],
+      "episodios": [
+        "recusa_de_cuidado",
+        "tentativa_de_sair"
+      ],
+      "o_que_ajudou_ok": true,
+      "risco_ok": true,
+      "violacoes_resumo": [],
+      "resumo_seguro_usado": false,
+      "segundos": 6.2,
+      "resumo": "O pai teve um momento bom hoje ao regar as plantas com calma. Ele dormiu pouco, cerca de quatro horas, e acordou várias vezes durante a noite. Ele não aceitou a medicação da manhã, comeu e bebeu pouca água, e apresentou agitação no fim da tarde. Quem está cuidando relatou muito cansaço e exaustão por não ter conseguido dormir. Seria muito importante que alguém da família oferecesse uma ajuda concreta, como uma visita ou cobrir uma folga, para apoiar esse cuidado."
+    },
+    {
+      "id": "relato_03_queda",
+      "wer": null,
+      "campos_corretos": "6/6",
+      "erros_campos": [],
+      "episodios": [
+        "queda"
+      ],
+      "o_que_ajudou_ok": true,
+      "risco_ok": true,
+      "violacoes_resumo": [],
+      "resumo_seguro_usado": false,
+      "segundos": 5.5,
+      "resumo": "A vó escorregou no banheiro e bateu a cabeça na pia hoje à tarde, por isso, se houver risco imediato ou piora, liguem para o 192 (SAMU) agora. Ela ficou com um galo na testa e está mais sonolenta que o habitual, então é importante que a equipe de saúde seja avisada sobre o ocorrido. Antes disso, a vó teve momentos bons vendo fotos antigas da família e ficou calma a maior parte do dia. Ela dormiu cerca de oito horas na última noite, se alimentou bem no almoço e no jantar e tomou todos os remédios. Sigam acompanhando qualquer mudança de comportamento e mantenham contato com os profissionais que cuidam dela."
+    }
+  ]
+}
