@@ -42,10 +42,13 @@ O SempreAqui é um app de celular, pensado para ser usado por voz, que faz três
 | **Rede da Família** | Grupo com papéis, divisão de tarefas (consultas, visitas, cobrir a folga de quem cuida), lembretes e um feed com os resumos. | Os resumos da IA viram o feed que mantém todos por perto |
 
 <p align="center">
-  <img src="design/telas/inicio.png" alt="Tela inicial" width="200">
-  <img src="design/telas/diario.png" alt="Gravar o diário" width="200">
-  <img src="design/telas/semana.png" alt="Resumo da semana" width="200">
+  <img src="design/screens/01-hoje-claro.png" alt="Hoje: botão de gravar o dia e resumo da semana" width="190">
+  <img src="design/screens/04-gravar-resultado-claro.png" alt="Diário organizado pela IA, pronto para enviar à família" width="190">
+  <img src="design/screens/05-memorias-claro.png" alt="Passaporte de Memória da Dona Cida" width="190">
+  <img src="design/screens/10-ajuda-resposta-escuro.png" alt="Ajuda na hora difícil, em modo escuro" width="190">
 </p>
+
+<p align="center"><sub>Telas rodando no iPhone (iOS 26). Família fictícia, retratos gerados por IA. Todas as telas, em modo claro e escuro, estão em <a href="design/screens">design/screens</a>.</sub></p>
 
 ## Por que IA
 

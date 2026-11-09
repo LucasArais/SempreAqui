@@ -1,28 +1,65 @@
-import { Stack } from 'expo-router';
+import { Inter_400Regular, Inter_600SemiBold, Inter_700Bold, useFonts } from '@expo-google-fonts/inter';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as SystemUI from 'expo-system-ui';
+import { useEffect } from 'react';
+import { Platform } from 'react-native';
 
-import { cores, fonte } from '@/tema';
+import { useTema } from '@/theme';
 
-export default function Layout() {
+export default function Raiz() {
+  const { cores, escuro } = useTema();
+  // Inter só no Android. No iOS a fonte do sistema (SF Pro) já é o padrão.
+  const [fontesProntas] = useFonts(
+    Platform.OS === 'android' ? { Inter_400Regular, Inter_600SemiBold, Inter_700Bold } : {},
+  );
+
+  useEffect(() => {
+    SystemUI.setBackgroundColorAsync(cores.background).catch(() => {});
+  }, [cores.background]);
+
+  if (Platform.OS === 'android' && !fontesProntas) return null;
+
+  const base = escuro ? DarkTheme : DefaultTheme;
+  const tema = {
+    ...base,
+    colors: {
+      ...base.colors,
+      primary: cores.accentStrong,
+      background: cores.background,
+      card: cores.background,
+      text: cores.label,
+      border: cores.separator,
+    },
+  };
+
   return (
-    <>
-      <StatusBar style="dark" />
-      <Stack
-        screenOptions={{
-          headerStyle: { backgroundColor: cores.fundo },
-          headerTintColor: cores.azulEscuro,
-          headerTitleStyle: { fontSize: fonte.destaque, fontWeight: '700' },
-          headerShadowVisible: false,
-          headerBackTitle: 'Voltar',
-          contentStyle: { backgroundColor: cores.fundo },
-        }}
-      >
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="passaporte" options={{ title: 'Passaporte de Memória' }} />
-        <Stack.Screen name="diario" options={{ title: 'Contar o dia' }} />
-        <Stack.Screen name="reminiscencia" options={{ title: 'Conversa de lembranças' }} />
-        <Stack.Screen name="semana" options={{ title: 'Resumo da semana' }} />
+    <ThemeProvider value={tema}>
+      <StatusBar style={escuro ? 'light' : 'dark'} />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: cores.background } }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen
+          name="gravar"
+          options={{
+            presentation: 'formSheet',
+            sheetGrabberVisible: true,
+            sheetAllowedDetents: [0.75, 1],
+            sheetCornerRadius: 24,
+            contentStyle: { backgroundColor: cores.background },
+          }}
+        />
+        <Stack.Screen
+          name="nova-memoria"
+          options={{
+            presentation: 'formSheet',
+            sheetGrabberVisible: true,
+            sheetAllowedDetents: 'fitToContents',
+            sheetCornerRadius: 24,
+          }}
+        />
+        <Stack.Screen name="sessao" options={{ presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="onboarding" options={{ presentation: 'fullScreenModal' }} />
       </Stack>
-    </>
+    </ThemeProvider>
   );
 }
