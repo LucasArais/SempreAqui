@@ -1,0 +1,5 @@
+# Quebras de linha sempre LF (scripts shell quebram com CRLF)
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.mp3 binary
