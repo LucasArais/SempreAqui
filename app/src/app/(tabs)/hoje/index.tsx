@@ -4,6 +4,7 @@ import { useState } from 'react';
 import {
   AttentionBadge,
   Card,
+  EmptyState,
   Icon,
   ListGroup,
   ListRow,
@@ -16,7 +17,9 @@ import {
   Text,
 } from '@/components';
 import { quemUsa, semana, sessao, tarefas as tarefasIniciais } from '@/data/familia';
+import { atualizarRelatos, useAtualizarAoFocar, useDiario } from '@/lib/diario';
 import { haptic } from '@/lib/haptics';
+import { formatarData, MENSAGEM_ETAPA } from '@/lib/rotulos';
 import { espaco, useTema } from '@/theme';
 
 function saudacao() {
@@ -29,6 +32,9 @@ function saudacao() {
 export default function Hoje() {
   const { cores } = useTema();
   const [tarefas, setTarefas] = useState(tarefasIniciais.filter((t) => t.hoje));
+  const { relatos, pendentes, carregado } = useDiario();
+  useAtualizarAoFocar();
+  const ultimo = relatos[0];
 
   function alternar(id: string) {
     setTarefas((lista) =>
@@ -41,16 +47,51 @@ export default function Hoje() {
   }
 
   return (
-    <Screen>
+    <Screen aoAtualizar={atualizarRelatos}>
       <Stack.Screen options={{ title: `${saudacao()}, ${quemUsa.nome}` }} />
 
       <Card style={{ paddingVertical: espaco.s3 }}>
-        <RecordButton
-          gravando={false}
-          onPress={() => router.push('/gravar?iniciar=1')}
-          apoio="Toque e fale do seu jeito"
-        />
+        <RecordButton gravando={false} onPress={() => router.push('/gravar')} apoio="Toque e fale do seu jeito" />
+        {pendentes.length > 0 && (
+          <Text variante="footnote" cor="secondaryLabel" centro accessibilityLiveRegion="polite">
+            {pendentes.length === 1 ? '1 relato esperando internet' : `${pendentes.length} relatos esperando internet`}
+          </Text>
+        )}
       </Card>
+
+      <Section titulo="Último relato">
+        {ultimo?.etapa === 'pronto' && ultimo.resumo ? (
+          <SummaryCard meta={formatarData(ultimo.gravado_em)} texto={ultimo.resumo} original={ultimo.transcricao ?? undefined}>
+            {ultimo.alertas.length > 0 && <AttentionBadge texto="Este relato fala de uma situação de risco" />}
+          </SummaryCard>
+        ) : ultimo ? (
+          <Card>
+            <Text variante="headline">{formatarData(ultimo.gravado_em)}</Text>
+            <Text variante="callout" cor="secondaryLabel">
+              {MENSAGEM_ETAPA[ultimo.etapa]}
+            </Text>
+          </Card>
+        ) : carregado ? (
+          <Card>
+            <EmptyState
+              icone="historico"
+              titulo="Seu primeiro relato aparece aqui"
+              texto="Toque no microfone e conte como foi o dia. Em segundos a família recebe um resumo."
+            />
+          </Card>
+        ) : null}
+        {(relatos.length > 0 || pendentes.length > 0) && (
+          <SecondaryButton
+            titulo={ultimo ? 'Ver o relato e todos os outros' : 'Ver o Diário'}
+            alinhamento="inicio"
+            onPress={() =>
+              ultimo
+                ? router.push({ pathname: '/hoje/diario/[id]', params: { id: ultimo.id } })
+                : router.push('/hoje/diario')
+            }
+          />
+        )}
+      </Section>
 
       <Section titulo="Esta semana">
         <SummaryCard meta={semana.periodo} texto={semana.resumo} original={semana.original}>

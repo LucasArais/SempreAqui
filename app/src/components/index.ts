@@ -4,7 +4,11 @@ export { AttentionBadge, Avatar, EmptyState, MemoryCard, Photo, SummaryCard } fr
 export { Icon, type NomeIcone } from './Icon';
 export { Coluna, Linha, Screen, Section } from './Layout';
 export { ListGroup, ListRow } from './ListRow';
-export { formatarTempo, RecordButton } from './RecordButton';
+export { AudioPlayer } from './AudioPlayer';
+export { formatarTempo, nivelDoMetering, RecordButton } from './RecordButton';
 export { Skeleton } from './Skeleton';
 export { Text } from './Text';
 export { TextField } from './TextField';
+export { esconderToast, mostrarToast, ToastHost } from './Toast';
+export { HeaderRecord } from './HeaderRecord';
+export { RelatoView } from './RelatoView';

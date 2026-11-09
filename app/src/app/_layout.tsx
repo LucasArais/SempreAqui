@@ -5,7 +5,12 @@ import * as SystemUI from 'expo-system-ui';
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
 
+import { ToastHost } from '@/components';
+import { iniciarDiario } from '@/lib/diario';
 import { useTema } from '@/theme';
+
+// Os modais (gravar, corrigir, onboarding) sempre abrem por cima das abas.
+export const unstable_settings = { anchor: '(tabs)' };
 
 export default function Raiz() {
   const { cores, escuro } = useTema();
@@ -17,6 +22,10 @@ export default function Raiz() {
   useEffect(() => {
     SystemUI.setBackgroundColorAsync(cores.background).catch(() => {});
   }, [cores.background]);
+
+  useEffect(() => {
+    void iniciarDiario();
+  }, []);
 
   if (Platform.OS === 'android' && !fontesProntas) return null;
 
@@ -57,9 +66,20 @@ export default function Raiz() {
             sheetCornerRadius: 24,
           }}
         />
+        <Stack.Screen
+          name="corrigir"
+          options={{
+            presentation: 'formSheet',
+            sheetGrabberVisible: true,
+            sheetAllowedDetents: 'fitToContents',
+            sheetCornerRadius: 24,
+          }}
+        />
         <Stack.Screen name="sessao" options={{ presentation: 'fullScreenModal' }} />
-        <Stack.Screen name="onboarding" options={{ presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="onboarding" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
+        <Stack.Screen name="termo" options={{ presentation: 'modal' }} />
       </Stack>
+      <ToastHost />
     </ThemeProvider>
   );
 }

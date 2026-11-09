@@ -5,6 +5,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { Coluna, Icon, Photo, PrimaryButton, SecondaryButton, Text } from '@/components';
 import { pessoa, reacoes, sessao } from '@/data/familia';
+import { api } from '@/lib/api';
 import { haptic } from '@/lib/haptics';
 import { useMargensSeguras } from '@/lib/insets';
 import { espaco, raio, tamanho, useTema } from '@/theme';
@@ -110,6 +111,7 @@ export default function Sessao() {
             desativado={!reacao}
             onPress={() => {
               haptic.sucesso();
+              if (reacao) void api.evento('sessao_concluida', undefined, reacao);
               router.back();
             }}
           />

@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { ScrollView, View, type ViewStyle } from 'react-native';
+import { useState, type ReactNode } from 'react';
+import { RefreshControl, ScrollView, View, type ViewStyle } from 'react-native';
 
 import { espaco, useTema } from '@/theme';
 
@@ -9,10 +9,33 @@ import { Text } from './Text';
  * Tela padrão: um ScrollView que é o primeiro filho da rota, para o large title encolher
  * ao rolar e o conteúdo passar por baixo do cabeçalho e da tab bar translúcidos.
  */
-export function Screen({ children, fundo }: { children: ReactNode; fundo?: 'secundario' }) {
+export function Screen({
+  children,
+  fundo,
+  aoAtualizar,
+}: {
+  children: ReactNode;
+  fundo?: 'secundario';
+  /** Se definido, puxar a tela para baixo atualiza os dados */
+  aoAtualizar?: () => Promise<unknown>;
+}) {
   const { cores, margem } = useTema();
+  const [atualizando, setAtualizando] = useState(false);
   return (
     <ScrollView
+      refreshControl={
+        aoAtualizar ? (
+          <RefreshControl
+            refreshing={atualizando}
+            tintColor={cores.secondaryLabel}
+            onRefresh={async () => {
+              setAtualizando(true);
+              await aoAtualizar().catch(() => undefined);
+              setAtualizando(false);
+            }}
+          />
+        ) : undefined
+      }
       contentInsetAdjustmentBehavior="automatic"
       style={{
         flex: 1,

@@ -2,6 +2,8 @@ import type { Stack } from 'expo-router';
 import type { ComponentProps } from 'react';
 import { Platform } from 'react-native';
 
+import { HeaderRecord } from '@/components/HeaderRecord';
+
 import type { Cores } from './colors';
 import { tipografia } from './typography';
 
@@ -24,6 +26,7 @@ export function opcoesDeCabecalho(cores: Cores): OpcoesStack {
     headerTitleStyle: { ...fonte(tipografia.headline), color: cores.label },
     headerLargeTitleStyle: { ...fonte(tipografia.largeTitle), color: cores.label },
     headerBackButtonDisplayMode: 'minimal',
+    headerRight: () => <HeaderRecord />,
     contentStyle: { backgroundColor: cores.background },
   };
 }

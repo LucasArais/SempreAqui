@@ -46,12 +46,15 @@ export function SummaryCard({
   meta,
   texto,
   original,
+  audio,
   children,
 }: {
   titulo?: string;
   meta?: string;
   texto: string;
   original?: string;
+  /** Player do áudio original, mostrado junto com a transcrição */
+  audio?: ReactNode;
   children?: ReactNode;
 }) {
   const { cores } = useTema();
@@ -74,11 +77,14 @@ export function SummaryCard({
         <Animated.View
           entering={FadeIn.duration(220)}
           exiting={FadeOut.duration(160)}
-          style={{ borderLeftWidth: 3, borderLeftColor: cores.separator, paddingLeft: espaco.s1 + espaco.meio }}
+          style={{ gap: espaco.s1 + espaco.meio }}
         >
-          <Text variante="callout" cor="secondaryLabel">
-            {`"${original}"`}
-          </Text>
+          {audio}
+          <View style={{ borderLeftWidth: 3, borderLeftColor: cores.separator, paddingLeft: espaco.s1 + espaco.meio }}>
+            <Text variante="callout" cor="secondaryLabel">
+              {`"${original}"`}
+            </Text>
+          </View>
         </Animated.View>
       )}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: espaco.s1 }}>

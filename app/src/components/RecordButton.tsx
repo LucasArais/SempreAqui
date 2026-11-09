@@ -19,21 +19,44 @@ import { Icon } from './Icon';
 import { Text } from './Text';
 
 export function formatarTempo(segundos: number) {
-  const m = Math.floor(segundos / 60);
-  const s = segundos % 60;
+  const total = Math.floor(segundos);
+  const m = Math.floor(total / 60);
+  const s = total % 60;
   return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+/** Converte o nível do microfone (dBFS, de -60 a 0) para 0..1. */
+export function nivelDoMetering(db: number | undefined) {
+  if (db === undefined || Number.isNaN(db)) return undefined;
+  return Math.min(1, Math.max(0, (db + 55) / 50));
 }
 
 const ALTURAS = [0.45, 0.8, 1, 0.7, 0.5];
 
-function Barra({ indice, ativa, cor }: { indice: number; ativa: boolean; cor: string }) {
+function Barra({
+  indice,
+  ativa,
+  nivel,
+  cor,
+}: {
+  indice: number;
+  ativa: boolean;
+  nivel?: number;
+  cor: string;
+}) {
   const reduzir = useReducedMotion();
   const escala = useSharedValue(ALTURAS[indice]);
 
+  // Sem medição do microfone (ou com Reduzir Movimento), a onda é uma animação suave e fixa.
   useEffect(() => {
-    if (ativa && !reduzir) {
-      const alvo = ALTURAS[(indice + 2) % ALTURAS.length];
-      escala.value = withDelay(
+    if (nivel !== undefined || !ativa || reduzir) {
+      cancelAnimation(escala);
+      if (!ativa || reduzir) escala.set(withTiming(ALTURAS[indice], { duration: 200 }));
+      return;
+    }
+    const alvo = ALTURAS[(indice + 2) % ALTURAS.length];
+    escala.set(
+      withDelay(
         indice * 70,
         withRepeat(
           withSequence(
@@ -43,35 +66,38 @@ function Barra({ indice, ativa, cor }: { indice: number; ativa: boolean; cor: st
           -1,
           true,
         ),
-      );
-    } else {
-      cancelAnimation(escala);
-      escala.value = withTiming(ALTURAS[indice], { duration: 200 });
-    }
-  }, [ativa, reduzir, indice, escala]);
+      ),
+    );
+  }, [ativa, reduzir, indice, escala, nivel === undefined]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const estilo = useAnimatedStyle(() => ({ transform: [{ scaleY: escala.value }] }));
-  return (
-    <Animated.View
-      style={[{ width: 5, height: 34, borderRadius: 3, backgroundColor: cor }, estilo]}
-    />
-  );
+  // Com medição, cada barra acompanha a voz.
+  useEffect(() => {
+    if (nivel === undefined || !ativa || reduzir) return;
+    escala.set(withTiming(0.2 + nivel * (0.35 + ALTURAS[indice] * 0.45), { duration: 120 }));
+  }, [nivel, ativa, reduzir, indice, escala]);
+
+  const estilo = useAnimatedStyle(() => ({ transform: [{ scaleY: escala.get() }] }));
+  return <Animated.View style={[{ width: 5, height: 34, borderRadius: 3, backgroundColor: cor }, estilo]} />;
 }
 
 /**
- * Botão de gravar: círculo grande com microfone. Enquanto grava, vira uma onda de áudio
- * e mostra o tempo. Confirma início e fim com haptic.
+ * Botão de gravar: círculo grande com microfone. Enquanto grava, vira uma onda de áudio que
+ * acompanha a voz e mostra o tempo. Tocar de novo pausa; tocar pausado continua.
  */
 export function RecordButton({
   gravando,
+  pausado = false,
   segundos,
+  nivel,
   onPress,
   rotulo = 'Como foi o dia?',
   apoio,
   tamanho = tamanhos.gravar,
 }: {
   gravando: boolean;
+  pausado?: boolean;
   segundos?: number;
+  nivel?: number;
   onPress: () => void;
   rotulo?: string;
   apoio?: string;
@@ -80,7 +106,14 @@ export function RecordButton({
   const { cores } = useTema();
   const reduzir = useReducedMotion();
   const escala = useSharedValue(1);
-  const estiloBotao = useAnimatedStyle(() => ({ transform: [{ scale: escala.value }] }));
+  const estiloBotao = useAnimatedStyle(() => ({ transform: [{ scale: escala.get() }] }));
+  const ativo = gravando && !pausado;
+
+  const rotuloAcessivel = !gravando
+    ? rotulo
+    : pausado
+      ? `Gravação pausada em ${formatarTempo(segundos ?? 0)}. Toque para continuar`
+      : `Gravando, ${formatarTempo(segundos ?? 0)}. Toque para pausar`;
 
   return (
     <View style={{ alignItems: 'center', gap: espaco.s2 }}>
@@ -96,8 +129,8 @@ export function RecordButton({
           onPress();
         }}
         accessibilityRole="button"
-        accessibilityLabel={gravando ? `Parar gravação. ${formatarTempo(segundos ?? 0)} gravados` : rotulo}
-        accessibilityHint={gravando ? 'Toque para terminar e organizar o relato' : 'Toque para começar a gravar um áudio'}
+        accessibilityLabel={rotuloAcessivel}
+        accessibilityHint={gravando ? undefined : 'Toque para começar a gravar um áudio'}
         hitSlop={12}
       >
         <Animated.View
@@ -106,21 +139,25 @@ export function RecordButton({
               width: tamanho,
               height: tamanho,
               borderRadius: tamanho / 2,
-              backgroundColor: cores.accent,
+              backgroundColor: pausado ? cores.tertiaryBackground : cores.accent,
               alignItems: 'center',
               justifyContent: 'center',
             },
             estiloBotao,
           ]}
         >
-          {gravando ? (
+          {gravando && !pausado ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
               {ALTURAS.map((_, i) => (
-                <Barra key={i} indice={i} ativa={gravando} cor={cores.onAccent} />
+                <Barra key={i} indice={i} ativa={ativo} nivel={nivel} cor={cores.onAccent} />
               ))}
             </View>
           ) : (
-            <Icon nome="gravar" cor={cores.onAccent} tamanho={Math.round(tamanho * 0.4)} />
+            <Icon
+              nome="gravar"
+              cor={pausado ? cores.accentStrong : cores.onAccent}
+              tamanho={Math.round(tamanho * 0.4)}
+            />
           )}
         </Animated.View>
       </Pressable>
@@ -130,7 +167,7 @@ export function RecordButton({
         </Text>
         {(apoio || gravando) && (
           <Text variante="callout" cor="secondaryLabel" centro>
-            {gravando ? 'Toque de novo quando terminar' : apoio}
+            {gravando ? (pausado ? 'Pausado. Toque para continuar' : 'Toque para pausar') : apoio}
           </Text>
         )}
       </View>

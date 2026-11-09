@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -5,6 +6,7 @@ import { Pressable, ScrollView, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { Coluna, Icon, ListGroup, ListRow, PrimaryButton, SecondaryButton, Text } from '@/components';
+import { CHAVE_ONBOARDING } from '@/lib/chaves';
 import { haptic } from '@/lib/haptics';
 import { useMargensSeguras } from '@/lib/insets';
 import { espaco, raio, tamanho, useTema } from '@/theme';
@@ -17,6 +19,13 @@ export default function Onboarding() {
   const { topo, base } = useMargensSeguras();
   const [passo, setPasso] = useState(0);
   const [aceito, setAceito] = useState(false);
+
+  // A família pode ser configurada depois. O primeiro relato vem antes de qualquer cadastro.
+  async function terminar() {
+    await AsyncStorage.setItem(CHAVE_ONBOARDING, new Date().toISOString()).catch(() => undefined);
+    router.replace('/hoje');
+    setTimeout(() => router.push('/gravar'), 400);
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: cores.background, paddingTop: topo, paddingBottom: base }}>
@@ -102,17 +111,22 @@ export default function Onboarding() {
                   Concordo em guardar os relatos de saúde para a minha família acompanhar.
                 </Text>
               </Pressable>
-              <SecondaryButton titulo="Ler o termo completo" icone="documento" alinhamento="inicio" onPress={() => {}} />
+              <SecondaryButton
+                titulo="Ler o termo completo"
+                icone="documento"
+                alinhamento="inicio"
+                onPress={() => router.push('/termo')}
+              />
             </Coluna>
           )}
         </Animated.View>
 
         <Coluna gap="s1">
           <PrimaryButton
-            titulo={passo < PASSOS - 1 ? 'Continuar' : 'Começar'}
+            titulo={passo < PASSOS - 1 ? 'Continuar' : 'Gravar o primeiro relato'}
             desativado={passo === PASSOS - 1 && !aceito}
             dica={passo === PASSOS - 1 && !aceito ? 'Marque o consentimento para começar' : undefined}
-            onPress={() => (passo < PASSOS - 1 ? setPasso(passo + 1) : router.back())}
+            onPress={() => (passo < PASSOS - 1 ? setPasso(passo + 1) : terminar())}
           />
           {passo > 0 && <SecondaryButton titulo="Voltar" onPress={() => setPasso(passo - 1)} />}
         </Coluna>
