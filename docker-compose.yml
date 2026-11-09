@@ -1,32 +1,14 @@
-# Sobe o ambiente local com um comando:  docker compose up
+# Sobe a API com um comando:  docker compose up
+# O banco é o Supabase (migrações em backend/db/migrations, aplicadas com
+# "uv run python -m db.migrar"). Sem Supabase configurado, a API usa um SQLite local.
 services:
-  db:
-    image: pgvector/pgvector:pg16
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-sempreaqui}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-troque-esta-senha}
-      POSTGRES_DB: ${POSTGRES_DB:-sempreaqui}
-    ports:
-      - "5432:5432"
-    volumes:
-      - db_data:/var/lib/postgresql/data
-      - ./backend/db/init:/docker-entrypoint-initdb.d:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sempreaqui}"]
-      interval: 5s
-      retries: 10
-
   api:
     build: ./backend
     env_file: .env
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-sempreaqui}:${POSTGRES_PASSWORD:-troque-esta-senha}@db:5432/${POSTGRES_DB:-sempreaqui}
     ports:
       - "8000:8000"
-    depends_on:
-      db:
-        condition: service_healthy
+    volumes:
+      - api_dados:/app/dados
 
 volumes:
-  db_data:
+  api_dados:

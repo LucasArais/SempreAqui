@@ -87,7 +87,7 @@ Código: [`backend/agents/diario.py`](../backend/agents/diario.py).
 
 **Desfazer em vez de confirmar.** Correções e descarte de gravação têm "Desfazer" logo depois. O único "tem certeza?" é para apagar dados.
 
-**Repositório trocável.** Por enquanto os relatos ficam num SQLite local do backend. A interface (`core/repositorio.py`) é pequena para a troca pelo Postgres do Supabase, com RLS, não mexer em mais nada.
+**Supabase com RLS testado.** Postgres pelo pooler e áudios num bucket privado. As migrações ficam em `backend/db/migrations` e rodam com `uv run python -m db.migrar`. O RLS foi verificado contra o projeto real: com a chave pública, todas as tabelas devolvem zero linhas, a escrita é recusada e os áudios não baixam. O backend filtra por família em toda consulta. Sem Supabase configurado, o mesmo backend usa um SQLite local (`REPOSITORIO=local`), útil para testes e para rodar sem internet.
 
 **Modelo escolhido por benchmark.** O benchmark de transcrição mostrou que o modelo padrão anterior perdia a queda do relato de risco. Escolhemos o modelo pela métrica que importa para a segurança, não pela fama.
 

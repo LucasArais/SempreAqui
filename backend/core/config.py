@@ -27,6 +27,10 @@ class Config:
     openrouter_model: str
     openrouter_coleta_dados: str
     dados_dir: Path
+    repositorio: str
+    supabase_url: str | None
+    supabase_secret_key: str | None
+    supabase_database_url: str | None
 
 
 @lru_cache
@@ -43,4 +47,9 @@ def config() -> Config:
         # "deny": só provedores que não guardam nem treinam com os dados. Obrigatório com dados reais.
         openrouter_coleta_dados=os.getenv("OPENROUTER_COLETA_DADOS", "deny"),
         dados_dir=RAIZ_BACKEND / os.getenv("DADOS_DIR", "dados"),
+        # "supabase" (padrão quando configurado) ou "local" (SQLite em DADOS_DIR)
+        repositorio=os.getenv("REPOSITORIO", "supabase"),
+        supabase_url=os.getenv("SUPABASE_URL") or None,
+        supabase_secret_key=os.getenv("SUPABASE_SECRET_KEY") or None,
+        supabase_database_url=os.getenv("SUPABASE_DATABASE_URL") or None,
     )

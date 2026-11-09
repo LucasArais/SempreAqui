@@ -78,6 +78,10 @@ EVENTOS_PERMITIDOS = {
 _SAL = "sempreaqui-metricas-v1"
 
 
+class FamiliaDesconhecida(LookupError):
+    """O código de família não existe no banco."""
+
+
 def agora() -> str:
     return datetime.now(UTC).isoformat(timespec="seconds")
 
@@ -92,7 +96,13 @@ def _hash_familia(familia_id: str) -> str:
     return hashlib.sha256(f"{_SAL}:{familia_id}".encode()).hexdigest()[:16]
 
 
+def extensao_audio(mime: str) -> str:
+    return {"audio/mpeg": "mp3", "audio/wav": "wav"}.get(mime, "m4a")
+
+
 class Repositorio:
+    """Implementação local em SQLite. A do Supabase está em repositorio_supabase.py."""
+
     def __init__(self, pasta: Path) -> None:
         self.pasta = Path(pasta)
         self.pasta_audios = self.pasta / "audios"
@@ -119,7 +129,7 @@ class Repositorio:
         self,
         familia_id: str,
         relato_id: str,
-        audio: bytes,
+        audio: bytes | None,
         mime: str,
         duracao_s: float | None,
         gravado_em: str | None,
@@ -131,9 +141,10 @@ class Repositorio:
         existente = self.obter(familia_id, relato_id)
         if existente:
             return existente, False
-        extensao = {"audio/mpeg": "mp3", "audio/wav": "wav"}.get(mime, "m4a")
-        nome = f"{relato_id}.{extensao}"
-        (self.pasta_audios / nome).write_bytes(audio)
+        nome = None
+        if audio:
+            nome = f"{relato_id}.{extensao_audio(mime)}"
+            (self.pasta_audios / nome).write_bytes(audio)
         with self._conexao() as c:
             c.execute(
                 "insert into relatos (id, familia_id, criado_em, gravado_em, duracao_s, "
@@ -226,6 +237,25 @@ class Repositorio:
     def ler_audio(self, relato: dict) -> bytes | None:
         caminho = self.caminho_audio(relato)
         return caminho.read_bytes() if caminho else None
+
+    def tem_audio(self, relato: dict) -> bool:
+        return self.caminho_audio(relato) is not None
+
+    def campos_corrigidos(self, familia_id: str, relato_ids: list[str]) -> dict[str, list[str]]:
+        """Campos com correção ativa em cada relato, numa consulta só."""
+        if not relato_ids:
+            return {}
+        marcas = ",".join("?" * len(relato_ids))
+        with self._conexao() as c:
+            linhas = c.execute(
+                f"select relato_id, campo from correcoes where familia_id = ? and desfeita = 0 "
+                f"and relato_id in ({marcas})",
+                (familia_id, *relato_ids),
+            ).fetchall()
+        resultado: dict[str, list[str]] = {}
+        for linha in linhas:
+            resultado.setdefault(linha["relato_id"], []).append(linha["campo"])
+        return {k: sorted(set(v)) for k, v in resultado.items()}
 
     # Correções -------------------------------------------------------------
 
@@ -359,3 +389,19 @@ def _correcao(linha: sqlite3.Row) -> dict:
     dados["valor_novo"] = _json(dados["valor_novo"])
     dados["desfeita"] = bool(dados["desfeita"])
     return dados
+
+
+def repositorio_padrao():
+    """Supabase quando configurado (REPOSITORIO=supabase ou as variáveis presentes), senão local."""
+    from core.config import config
+
+    cfg = config()
+    if cfg.repositorio == "local":
+        return Repositorio(cfg.dados_dir)
+    if cfg.supabase_database_url and cfg.supabase_secret_key and cfg.supabase_url:
+        from core.repositorio_supabase import RepositorioSupabase
+
+        return RepositorioSupabase(
+            cfg.supabase_database_url, cfg.supabase_url, cfg.supabase_secret_key
+        )
+    return Repositorio(cfg.dados_dir)

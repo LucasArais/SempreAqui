@@ -19,7 +19,7 @@ from functools import lru_cache
 from typing import Any
 
 from fastapi import BackgroundTasks, Depends, FastAPI, Form, Header, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 
 from agents.diario import (
@@ -32,7 +32,12 @@ from agents.diario import (
 from core import campos
 from core.config import config
 from core.llm import ErroProvedorIA, ProvedorIA, provedor_padrao
-from core.repositorio import EVENTOS_PERMITIDOS, Repositorio
+from core.repositorio import (
+    EVENTOS_PERMITIDOS,
+    FamiliaDesconhecida,
+    Repositorio,
+    repositorio_padrao,
+)
 from core.schemas.diario import RegistroDiario
 
 logging.basicConfig(level=config().log_level.upper())
@@ -65,7 +70,7 @@ MSG_IA_INDISPONIVEL = (
 
 @lru_cache
 def _repositorio_padrao() -> Repositorio:
-    return Repositorio(config().dados_dir)
+    return repositorio_padrao()
 
 
 def obter_repositorio() -> Repositorio:
@@ -125,20 +130,24 @@ class Evento(BaseModel):
     rotulo: str | None = None
 
 
-def _para_resposta(repo: Repositorio, familia_id: str, dados: dict) -> Relato:
-    corrigidos = [
-        c["campo"]
-        for c in repo.correcoes_recentes(familia_id, limite=200)
-        if c["relato_id"] == dados["id"]
-    ]
+@app.exception_handler(FamiliaDesconhecida)
+def _familia_desconhecida(_request, _erro) -> JSONResponse:
+    return JSONResponse(status_code=403, content={"detail": "Família não encontrada."})
+
+
+def _para_resposta(
+    repo: Repositorio, familia_id: str, dados: dict, corrigidos: list[str] | None = None
+) -> Relato:
+    if corrigidos is None:
+        corrigidos = repo.campos_corrigidos(familia_id, [dados["id"]]).get(dados["id"], [])
     return Relato(
         **{
             k: dados[k]
             for k in Relato.model_fields
             if k in dados and k not in {"tem_audio", "corrigidos"}
         },
-        tem_audio=repo.caminho_audio(dados) is not None,
-        corrigidos=sorted(set(corrigidos)),
+        tem_audio=repo.tem_audio(dados),
+        corrigidos=corrigidos,
     )
 
 
@@ -248,7 +257,9 @@ async def criar_relato(
 def listar_relatos(
     familia_id: str = Depends(obter_familia), repo: Repositorio = Depends(obter_repositorio)
 ) -> list[Relato]:
-    return [_para_resposta(repo, familia_id, r) for r in repo.listar(familia_id)]
+    relatos = repo.listar(familia_id)
+    corrigidos = repo.campos_corrigidos(familia_id, [r["id"] for r in relatos])
+    return [_para_resposta(repo, familia_id, r, corrigidos.get(r["id"], [])) for r in relatos]
 
 
 @app.get("/diario/relatos/{relato_id}", response_model=Relato)
@@ -360,12 +371,12 @@ def ouvir_audio(
     relato_id: str,
     familia_id: str = Depends(obter_familia),
     repo: Repositorio = Depends(obter_repositorio),
-) -> FileResponse:
+) -> Response:
     dados = _obter_ou_404(repo, familia_id, relato_id)
-    caminho = repo.caminho_audio(dados)
-    if not caminho:
+    audio = repo.ler_audio(dados)
+    if not audio:
         raise HTTPException(404, "O áudio desse relato não está mais guardado.")
-    return FileResponse(caminho, media_type=dados["mime"] or "audio/mp4")
+    return Response(audio, media_type=dados["mime"] or "audio/mp4")
 
 
 @app.post("/eventos", status_code=204)

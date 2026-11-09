@@ -9,8 +9,8 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 
-from core.config import RAIZ_REPO, config
-from core.repositorio import Repositorio
+from core.config import RAIZ_REPO
+from core.repositorio import repositorio_padrao
 from core.schemas.diario import RegistroDiario
 
 FAMILIA = "familia-demo"
@@ -144,15 +144,14 @@ RELATOS = [
 
 
 def main() -> None:
-    repo = Repositorio(config().dados_dir)
+    repo = repositorio_padrao()
+    if hasattr(repo, "garantir_grupo"):
+        repo.garantir_grupo(FAMILIA, "Família da Dona Isabel (demonstração)")
     for antigo in repo.listar(FAMILIA, limite=500):
         repo.apagar(FAMILIA, antigo["id"])
     for r in RELATOS:
-        audio = (EXEMPLOS / r["audio"]).read_bytes() if r["audio"] else b""
+        audio = (EXEMPLOS / r["audio"]).read_bytes() if r["audio"] else None
         repo.criar_relato(FAMILIA, r["id"], audio, "audio/mpeg", r["duracao_s"], r["gravado_em"])
-        if not r["audio"]:
-            relato = repo.obter(FAMILIA, r["id"])
-            (repo.pasta_audios / relato["audio_arquivo"]).unlink(missing_ok=True)
         registro = RegistroDiario.model_validate(r["registro"]).model_dump()
         repo.salvar_resultado(
             r["id"],
@@ -166,7 +165,8 @@ def main() -> None:
         )
         if r["enviado"]:
             repo.marcar_enviado(FAMILIA, r["id"])
-    print(f"{len(RELATOS)} relatos da Dona Isabel criados para {FAMILIA}.")
+    onde = "Supabase" if hasattr(repo, "garantir_grupo") else "banco local"
+    print(f"{len(RELATOS)} relatos da Dona Isabel criados para {FAMILIA} ({onde}).")
 
 
 if __name__ == "__main__":

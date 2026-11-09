@@ -19,6 +19,6 @@ uv run uvicorn api.main:app --reload --host 0.0.0.0   # API em http://localhost:
 | `prompts/` | Prompts versionados em Markdown |
 | `rag/` | Fontes oficiais aprovadas para o RAG ([detalhes](rag/README.md)) |
 | `evals/` | Gabaritos, conjuntos adversariais e scripts de avaliação |
-| `db/` | Schema SQL com Row Level Security por grupo familiar |
+| `db/` | Migrações do Supabase com RLS (`uv run python -m db.migrar`) |
 | `demo/` | `uv run python -m demo.seed`: família de demonstração com relatos prontos |
 | `tests/` | pytest |

@@ -148,11 +148,7 @@ uv run --project backend python poc/diario_poc.py --todos
 
 Veja [poc/README.md](poc/README.md).
 
-**Ambiente completo** (Postgres com pgvector e API):
-
-```bash
-docker compose up
-```
+**Banco:** o projeto usa Supabase (Postgres, pgvector, Storage e RLS). Com as variáveis do Supabase no `.env`, `uv run python -m db.migrar` cria tudo. Sem elas, o backend usa um SQLite local e funciona igual.
 
 **Testes e avaliações:**
 
