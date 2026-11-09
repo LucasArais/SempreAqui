@@ -233,6 +233,49 @@ class RepositorioSupabase:
                 (grupo, usuario_id, finalidade, versao),
             )
 
+    # LGPD: exportar e apagar tudo ------------------------------------------
+
+    def exportar(self, familia_id: str) -> dict:
+        grupo = self.grupo(familia_id)
+        correcoes = [
+            _correcao(linha)
+            for linha in self._sql(
+                "select * from correcoes where grupo_id = %s order by criado_em", (grupo,)
+            )
+        ]
+        membros = self._sql(
+            "select nome_exibicao, papel, criado_em from membros where grupo_id = %s", (grupo,)
+        )
+        consentimentos = self._sql(
+            "select finalidade, versao_termo, aceito_em, revogado_em from consentimentos where grupo_id = %s",
+            (grupo,),
+        )
+        for linha in membros + consentimentos:
+            for chave, valor in linha.items():
+                linha[chave] = _iso(valor)
+        return {
+            "relatos": self.listar(familia_id, limite=100000),
+            "correcoes": correcoes,
+            "membros": membros,
+            "consentimentos": consentimentos,
+        }
+
+    def apagar_familia(self, familia_id: str) -> int:
+        """Apaga os áudios do Storage e depois o grupo, que leva tudo em cascata."""
+        relatos = self.listar(familia_id, limite=100000)
+        caminhos = [r["audio_arquivo"] for r in relatos if r.get("audio_arquivo")]
+        for inicio in range(0, len(caminhos), 100):
+            httpx.request(
+                "DELETE",
+                f"{self._storage}/{BUCKET}",
+                json={"prefixes": caminhos[inicio : inicio + 100]},
+                headers=self._cabecalhos,
+                timeout=60,
+            )
+        self._sql("delete from grupos_familiares where codigo = %s", (familia_id,))
+        self._grupos.pop(familia_id, None)
+        return len(relatos)
+
     # Correções -------------------------------------------------------------
 
     def registrar_correcao(

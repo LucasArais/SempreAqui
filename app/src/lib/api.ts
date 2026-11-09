@@ -140,6 +140,13 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tipo, valor, rotulo }),
     }).catch(() => undefined),
+  apagarTudo: () =>
+    chamar<void>('/familia', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ confirmar: 'APAGAR' }),
+    }),
+  urlExportar: () => `${API_BASE}/familia/exportar`,
   fonteAudio: (id: string) => ({ uri: `${API_BASE}/diario/relatos/${id}/audio`, headers: cabecalhos() }),
   sessao: (nome_exibicao?: string) =>
     chamar<{ familia: string; papel: string }>('/sessao', {

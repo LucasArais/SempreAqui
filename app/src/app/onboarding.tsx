@@ -8,6 +8,8 @@ import { Coluna, Icon, ListGroup, ListRow, Logo, Photo, PrimaryButton, Secondary
 import { fotos } from '@/data/familia';
 import { api } from '@/lib/api';
 import { CHAVE_ONBOARDING } from '@/lib/chaves';
+import { entrar } from '@/lib/entrar';
+import { sessaoAtual } from '@/lib/sessao';
 import { haptic } from '@/lib/haptics';
 import { useMargensSeguras } from '@/lib/insets';
 import { espaco, raio, tamanho, useTema } from '@/theme';
@@ -24,6 +26,8 @@ export default function Onboarding() {
   // A família pode ser configurada depois. O primeiro relato vem antes de qualquer cadastro.
   async function terminar() {
     await AsyncStorage.setItem(CHAVE_ONBOARDING, new Date().toISOString()).catch(() => undefined);
+    // Depois de apagar tudo, a pessoa entra de novo do zero.
+    if (!sessaoAtual().familia) await entrar();
     // Consentimento explícito, por finalidade e com a versão do termo (LGPD).
     void api.consentir('1', ['dados_de_saude_diario', 'audio_e_fotos']).catch(() => undefined);
     router.replace('/hoje');

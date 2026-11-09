@@ -6,9 +6,8 @@ import { useEffect } from 'react';
 import { Platform } from 'react-native';
 
 import { ToastHost } from '@/components';
-import { api } from '@/lib/api';
 import { iniciarDiario } from '@/lib/diario';
-import { definirFamilia, garantirLogin, marcarErroSessao, marcarSemSupabase, supabase } from '@/lib/sessao';
+import { entrar } from '@/lib/entrar';
 import { useTema } from '@/theme';
 
 // Os modais (gravar, corrigir, onboarding) sempre abrem por cima das abas.
@@ -26,20 +25,7 @@ export default function Raiz() {
   }, [cores.background]);
 
   useEffect(() => {
-    (async () => {
-      try {
-        if (supabase) {
-          await garantirLogin();
-          const { familia, papel } = await api.sessao();
-          definirFamilia(familia, papel);
-        } else {
-          marcarSemSupabase();
-        }
-      } catch {
-        marcarErroSessao('Não consegui entrar agora. Seus relatos ficam guardados no celular.');
-      }
-      void iniciarDiario();
-    })();
+    void entrar().then(iniciarDiario);
   }, []);
 
   if (Platform.OS === 'android' && !fontesProntas) return null;

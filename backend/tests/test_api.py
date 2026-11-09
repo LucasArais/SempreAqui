@@ -260,6 +260,38 @@ def test_alerta_de_risco_chega_ao_app(ambiente):
     assert "192" in relato["resumo"]
 
 
+def test_exportar_e_apagar_tudo(ambiente):
+    import io
+    import json
+    import zipfile
+
+    cliente, *_ = ambiente
+    enviar(cliente)
+    cliente.patch(
+        "/diario/relatos/relato-0001/campos",
+        json={"campo": "sono.qualidade", "valor": "ruim"},
+        headers=FAMILIA,
+    )
+    arquivo = zipfile.ZipFile(io.BytesIO(cliente.get("/familia/exportar", headers=FAMILIA).content))
+    dados = json.loads(arquivo.read("dados.json"))
+    assert dados["relatos"][0]["id"] == "relato-0001" and len(dados["correcoes"]) == 1
+    assert arquivo.read("audios/relato-0001.m4a") == b"audio-falso"
+
+    assert (
+        cliente.request(
+            "DELETE", "/familia", json={"confirmar": "sim"}, headers=FAMILIA
+        ).status_code
+        == 422
+    )
+    assert (
+        cliente.request(
+            "DELETE", "/familia", json={"confirmar": "APAGAR"}, headers=FAMILIA
+        ).status_code
+        == 204
+    )
+    assert cliente.get("/diario/relatos", headers=FAMILIA).json() == []
+
+
 def test_metricas_sao_anonimas_e_calculam_taxa_de_correcao(ambiente):
     cliente, *_ = ambiente
     enviar(cliente, segundos_desde_instalacao="95")

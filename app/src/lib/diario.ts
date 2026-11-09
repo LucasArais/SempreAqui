@@ -234,6 +234,18 @@ export async function acompanhar(id: string, aoAtualizar?: (relato: Relato) => v
   return undefined;
 }
 
+/** Depois de apagar todos os dados: esvazia a fila, o histórico e a pasta de áudios do celular. */
+export async function limparTudoLocal() {
+  try {
+    if (PASTA.exists) PASTA.delete();
+    PASTA.create({ idempotent: true, intermediates: true });
+  } catch {
+    // Se não der para apagar a pasta, os arquivos ficam órfãos e somem com o app.
+  }
+  await AsyncStorage.multiRemove([CHAVE_FILA, CHAVE_PRIMEIRO]).catch(() => undefined);
+  definir({ pendentes: [], relatos: [] });
+}
+
 /** Descarta uma gravação que ainda não foi enviada. */
 export function descartarArquivo(uri: string) {
   try {

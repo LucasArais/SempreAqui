@@ -11,9 +11,12 @@ Com o Supabase ligado, passa a vir do token de login, e o RLS do banco garante o
 
 from __future__ import annotations
 
+import io
+import json
 import logging
 import re
 import time
+import zipfile
 from collections.abc import Callable
 from functools import lru_cache
 from typing import Any
@@ -266,9 +269,11 @@ def iniciar_sessao(
     if not membro:
         nome = pedido.nome_exibicao.strip()[:60] or "Quem cuida"
         demo = config().familia_demo_para_novos
-        if demo:
+        try:
+            if not demo:
+                raise FamiliaDesconhecida("sem família de demonstração")
             repo.entrar_na_familia(usuario, demo, nome, "quem_cuida")
-        else:
+        except FamiliaDesconhecida:
             repo.criar_familia(usuario, "Minha família", nome)
         membro = repo.familia_do_usuario(usuario)
     return Sessao(**membro)
@@ -301,6 +306,55 @@ def registrar_consentimento(
     if not finalidades:
         raise HTTPException(422, "Nenhuma finalidade válida.")
     repo.registrar_consentimento(usuario, familia_id, finalidades, consentimento.versao_termo[:20])
+
+
+@app.get("/familia/exportar")
+def exportar_tudo(
+    familia_id: str = Depends(obter_familia), repo: Repositorio = Depends(obter_repositorio)
+) -> Response:
+    """Cópia de tudo da família (LGPD, art. 18): dados em JSON e os áudios originais, num ZIP."""
+    dados = repo.exportar(familia_id)
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zip_:
+        zip_.writestr(
+            "LEIA-ME.txt",
+            "Cópia dos dados da sua família no SempreAqui.\n"
+            "dados.json: relatos, transcrições, registros, resumos, correções, membros e consentimentos.\n"
+            "audios/: os áudios originais de cada relato.\n",
+        )
+        zip_.writestr("dados.json", json.dumps(dados, ensure_ascii=False, indent=2, default=str))
+        for relato in dados["relatos"]:
+            audio = repo.ler_audio(relato)
+            if audio:
+                zip_.writestr(
+                    f"audios/{relato['id']}.{(relato['audio_arquivo'] or '').rsplit('.', 1)[-1]}",
+                    audio,
+                )
+    return Response(
+        buffer.getvalue(),
+        media_type="application/zip",
+        headers={"Content-Disposition": 'attachment; filename="sempreaqui-dados.zip"'},
+    )
+
+
+class ConfirmacaoApagar(BaseModel):
+    confirmar: str
+
+
+@app.delete("/familia", status_code=204)
+def apagar_tudo(
+    confirmacao: ConfirmacaoApagar,
+    familia_id: str = Depends(obter_familia),
+    repo: Repositorio = Depends(obter_repositorio),
+) -> None:
+    """Apaga todos os dados da família, inclusive os áudios (LGPD, art. 18).
+
+    Só as métricas anônimas permanecem: elas não têm conteúdo nem identificam a família.
+    """
+    if confirmacao.confirmar != "APAGAR":
+        raise HTTPException(422, "Confirmação ausente.")
+    quantos = repo.apagar_familia(familia_id)
+    log.info("familia.apagada relatos=%d", quantos)
 
 
 @app.get("/diario/campos")

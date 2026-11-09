@@ -74,7 +74,7 @@ export default function Familia() {
         ))}
         <ListGroup>
           <ListRow titulo="Ver a semana completa" icone="calendario" onPress={() => router.push('/hoje/semana')} />
-          <ListRow titulo="Privacidade e dados da família" icone="cadeado" onPress={() => router.push('/onboarding')} />
+          <ListRow titulo="Privacidade e dados da família" icone="cadeado" onPress={() => router.push('/familia/privacidade')} />
         </ListGroup>
       </Section>
 

@@ -308,6 +308,46 @@ class Repositorio:
                 [(usuario_id, familia_id, f, versao, agora()) for f in finalidades],
             )
 
+    # LGPD: exportar e apagar tudo ------------------------------------------
+
+    def exportar(self, familia_id: str) -> dict:
+        with self._conexao() as c:
+            correcoes = [
+                _correcao(linha)
+                for linha in c.execute(
+                    "select * from correcoes where familia_id = ? order by criado_em", (familia_id,)
+                )
+            ]
+            membros = [
+                dict(linha)
+                for linha in c.execute(
+                    "select nome_exibicao, papel, criado_em from membros where familia_id = ?",
+                    (familia_id,),
+                )
+            ]
+            consentimentos = [
+                dict(linha)
+                for linha in c.execute(
+                    "select finalidade, versao_termo, aceito_em from consentimentos where familia_id = ?",
+                    (familia_id,),
+                )
+            ]
+        return {
+            "relatos": self.listar(familia_id, limite=100000),
+            "correcoes": correcoes,
+            "membros": membros,
+            "consentimentos": consentimentos,
+        }
+
+    def apagar_familia(self, familia_id: str) -> int:
+        relatos = self.listar(familia_id, limite=100000)
+        for relato in relatos:
+            self.apagar(familia_id, relato["id"])
+        with self._conexao() as c:
+            for tabela in ("correcoes", "membros", "consentimentos"):
+                c.execute(f"delete from {tabela} where familia_id = ?", (familia_id,))
+        return len(relatos)
+
     # Correções -------------------------------------------------------------
 
     def registrar_correcao(
