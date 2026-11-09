@@ -14,6 +14,7 @@ import {
   Coluna,
   EmptyState,
   Icon,
+  Logo,
   mostrarToast,
   nivelDoMetering,
   PrimaryButton,
@@ -270,6 +271,7 @@ export default function Gravar() {
       {fase === 'resultado' && relatoAtual && (
         <Animated.View entering={FadeIn.duration(250)} style={{ gap: espaco.s3 }}>
           <Coluna gap="s1">
+            <Logo tamanho={48} decorativa />
             <Text variante="largeTitle" accessibilityRole="header">
               Obrigado por contar
             </Text>

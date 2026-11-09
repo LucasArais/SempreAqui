@@ -8,6 +8,7 @@ import { espaco, raio, tamanho, useTema } from '@/theme';
 
 import { Card } from './Card';
 import { Icon, type NomeIcone } from './Icon';
+import { Logo } from './Logo';
 import { Text } from './Text';
 
 /** Chip âmbar para mudanças de padrão. Diz o que mudou, sem alarme. */
@@ -239,11 +240,14 @@ export function Avatar({
 /** Estado vazio: ícone simples, uma frase gentil e um botão. */
 export function EmptyState({
   icone,
+  logo,
   titulo,
   texto,
   children,
 }: {
-  icone: NomeIcone;
+  icone?: NomeIcone;
+  /** Mostra o símbolo do SempreAqui no lugar do ícone, em momentos de acolhimento */
+  logo?: boolean;
   titulo: string;
   texto?: string;
   children?: ReactNode;
@@ -251,7 +255,7 @@ export function EmptyState({
   const { cores } = useTema();
   return (
     <View style={{ alignItems: 'center', gap: espaco.s1 + espaco.meio, paddingVertical: espaco.s3 }}>
-      <Icon nome={icone} cor={cores.secondaryLabel} tamanho={40} />
+      {logo ? <Logo tamanho={64} decorativa /> : icone && <Icon nome={icone} cor={cores.secondaryLabel} tamanho={40} />}
       <Text variante="headline" centro>
         {titulo}
       </Text>

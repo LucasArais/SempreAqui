@@ -31,7 +31,7 @@ export default function Historico() {
     return (
       <Screen aoAtualizar={atualizarRelatos}>
         <EmptyState
-          icone="historico"
+          logo
           titulo="Seus relatos aparecem aqui"
           texto="Grave como foi o dia. A IA organiza sono, comida, humor e remédios, e você confere antes de enviar."
         >

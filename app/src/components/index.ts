@@ -11,4 +11,5 @@ export { Text } from './Text';
 export { TextField } from './TextField';
 export { esconderToast, mostrarToast, ToastHost } from './Toast';
 export { HeaderRecord } from './HeaderRecord';
+export { Logo } from './Logo';
 export { RelatoView } from './RelatoView';

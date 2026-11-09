@@ -74,7 +74,7 @@ export default function Hoje() {
         ) : carregado ? (
           <Card>
             <EmptyState
-              icone="historico"
+              logo
               titulo="Seu primeiro relato aparece aqui"
               texto="Toque no microfone e conte como foi o dia. Em segundos a família recebe um resumo."
             />

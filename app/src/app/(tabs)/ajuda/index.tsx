@@ -69,7 +69,7 @@ function ConteudoAjuda({ exemplo }: { exemplo: boolean }) {
 
       {estado === 'vazio' && (
         <EmptyState
-          icone="mao"
+          logo
           titulo="Você não está só nisso"
           texto={`Conte o que está acontecendo. Eu procuro o que já funcionou com a ${pessoa.comoGostaDeSerChamada}.`}
         />

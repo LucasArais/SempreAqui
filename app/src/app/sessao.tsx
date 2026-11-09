@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
-import { Coluna, Icon, Photo, PrimaryButton, SecondaryButton, Text } from '@/components';
+import { Coluna, Icon, Logo, Photo, PrimaryButton, SecondaryButton, Text } from '@/components';
 import { pessoa, reacoes, sessao } from '@/data/familia';
 import { api } from '@/lib/api';
 import { haptic } from '@/lib/haptics';
@@ -64,6 +64,7 @@ export default function Sessao() {
       ) : (
         <ScrollView contentContainerStyle={{ paddingHorizontal: margem, paddingBottom: espaco.s3, gap: espaco.s3 }}>
           <Coluna gap="s1">
+            <Logo tamanho={48} decorativa />
             <Text variante="largeTitle" accessibilityRole="header">
               Como foi?
             </Text>

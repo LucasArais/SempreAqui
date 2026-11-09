@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { ScrollView } from 'react-native';
 
-import { Coluna, PrimaryButton, Section, Text } from '@/components';
+import { Coluna, Logo, PrimaryButton, Section, Text } from '@/components';
 import { espaco, useTema } from '@/theme';
 
 const SECOES = [
@@ -41,6 +41,7 @@ export default function Termo() {
       contentContainerStyle={{ padding: margem, paddingTop: espaco.s3 + espaco.s1, paddingBottom: espaco.s5, gap: espaco.secao }}
     >
       <Coluna gap="s1">
+        <Logo tamanho={56} />
         <Text variante="largeTitle" accessibilityRole="header">
           Termo de uso dos dados
         </Text>
