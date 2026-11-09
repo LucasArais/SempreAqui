@@ -1,0 +1,59 @@
+# Fontes que alimentam o RAG do Apoio na Hora Difícil.
+# Regra: só entram materiais públicos de órgãos oficiais ou entidades reconhecidas.
+# Cada trecho indexado carrega titulo, orgao e url, e toda resposta mostra o link.
+
+fontes:
+  - id: ms-alzheimer
+    titulo: "Alzheimer, Saúde de A a Z"
+    orgao: Ministério da Saúde
+    url: https://www.gov.br/saude/pt-br/assuntos/saude-de-a-a-z/a/alzheimer
+    tipo: pagina
+    uso: informação geral sobre a doença, sinais, cuidado e onde buscar atendimento no SUS
+
+  - id: ms-relatorio-nacional-demencia
+    titulo: "Relatório Nacional sobre a Demência: epidemiologia, (re)conhecimento e projeções futuras"
+    orgao: Ministério da Saúde, Secretaria de Atenção Primária à Saúde
+    url: https://bvsms.saude.gov.br/bvs/publicacoes/relatorio_nacional_demencia_brasil.pdf
+    tipo: pdf
+    uso: dados epidemiológicos e contexto brasileiro
+
+  - id: renade-sumario
+    titulo: "Relatório Nacional sobre a Demência no Brasil (ReNaDe), Sumário Executivo"
+    orgao: Ministério da Saúde (DECIT) e Hospital Alemão Oswaldo Cruz, via PROADI-SUS
+    url: https://www12.senado.leg.br/noticias/arquivos/2024/06/07/pesquisa-cuidados-demencia.pdf
+    tipo: pdf
+    uso: necessidades de cuidado, perfil de quem cuida, custos
+
+  - id: lei-14878
+    titulo: "Lei nº 14.878, de 4 de junho de 2024, Política Nacional de Cuidado Integral às Pessoas com Doença de Alzheimer e Outras Demências"
+    orgao: Presidência da República
+    url: https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2024/lei/L14878.htm
+    tipo: pagina
+    uso: direitos e política pública
+
+  - id: conitec-pcdt-alzheimer
+    titulo: "Protocolo Clínico e Diretrizes Terapêuticas da Doença de Alzheimer"
+    orgao: Conitec, Ministério da Saúde
+    url: https://www.gov.br/conitec/pt-br/midias/protocolos/pcdt-da-doenca-de-alzheimer
+    tipo: pagina
+    uso: apenas para indicar que existe acompanhamento e tratamento pelo SUS. A IA nunca orienta remédios.
+
+  - id: abraz
+    titulo: "Associação Brasileira de Alzheimer (ABRAz)"
+    orgao: ABRAz
+    url: https://abraz.org.br
+    tipo: site
+    uso: grupos de apoio a familiares, orientação para quem cuida
+
+  - id: oms-demencia
+    titulo: "Dementia, fact sheet"
+    orgao: Organização Mundial da Saúde
+    url: https://www.who.int/news-room/fact-sheets/detail/dementia
+    tipo: pagina
+    uso: contexto global
+
+# Contatos de emergência usados pelos guardrails (fixos, sem RAG)
+emergencia:
+  samu: "192"
+  policia: "190"
+  direitos_humanos_pessoa_idosa: "Disque 100"

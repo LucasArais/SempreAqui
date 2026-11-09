@@ -1,0 +1,22 @@
+{
+  "data": "2026-11-09T11:05:07",
+  "bloqueio_texto_familia": {
+    "n": 33,
+    "verdadeiros_positivos": 19,
+    "falsos_positivos": 0,
+    "falsos_negativos": 0,
+    "verdadeiros_negativos": 14,
+    "precisao": 1.0,
+    "revocacao": 1.0
+  },
+  "deteccao_risco": {
+    "n": 20,
+    "verdadeiros_positivos": 11,
+    "falsos_positivos": 0,
+    "falsos_negativos": 0,
+    "verdadeiros_negativos": 9,
+    "precisao": 1.0,
+    "revocacao": 1.0
+  },
+  "erros": []
+}

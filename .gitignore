@@ -1,0 +1,38 @@
+# Segredos
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+dist/
+build/
+
+# Saídas locais da prova de conceito
+poc/saidas/
+
+# Dados reais nunca entram no repositório
+dados/
+*.local.*
+
+# Node / Expo
+node_modules/
+.expo/
+web-build/
+dist/
+*.tsbuildinfo
+npm-debug.*
+yarn-error.*
+
+# Sistema
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

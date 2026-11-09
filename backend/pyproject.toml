@@ -1,0 +1,40 @@
+[project]
+name = "sempreaqui-backend"
+version = "0.1.0"
+description = "Backend do SempreAqui: API, agentes de IA, RAG de fontes oficiais e avaliações."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "python-multipart>=0.0.9",
+    "pydantic>=2.8",
+    "python-dotenv>=1.0",
+    "google-genai>=1.30",
+    "langgraph>=0.4",
+    "pyyaml>=6.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "httpx>=0.27",
+    "ruff>=0.6",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+# E501: o formatador cuida do tamanho das linhas. B008: Depends() é o padrão do FastAPI.
+ignore = ["E501", "B008"]

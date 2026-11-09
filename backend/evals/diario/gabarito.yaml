@@ -1,0 +1,52 @@
+# Gabarito do Diário Inteligente. Relatos 100% fictícios.
+# Cada campo lista os valores aceitos. Quando o relato é ambíguo, mais de um valor é aceito.
+# Caminhos de áudio e roteiro são relativos à raiz do repositório.
+
+casos:
+  - id: relato_01_dia_tranquilo
+    audio: poc/exemplos/relato_01_dia_tranquilo.mp3
+    roteiro: poc/exemplos/relato_01_dia_tranquilo.txt
+    campos:
+      sono.qualidade: [boa]
+      sono.horas_aproximadas: [7]
+      sono.despertares_noturnos: [1]
+      alimentacao.qualidade: [regular, boa]
+      alimentacao.hidratacao: [boa]
+      humor.predominante: [calmo, alegre, variado]
+      agitacao.nivel: [leve]
+      medicacao.tomou: [sim]
+      quem_cuida.cansaco: [algum]
+    episodios_tipos: []
+    o_que_ajudou_contem: [musica]
+    risco_esperado: false
+
+  - id: relato_02_noite_dificil
+    audio: poc/exemplos/relato_02_noite_dificil.mp3
+    roteiro: poc/exemplos/relato_02_noite_dificil.txt
+    campos:
+      sono.qualidade: [ruim]
+      sono.horas_aproximadas: [4]
+      sono.despertares_noturnos: [4]
+      alimentacao.qualidade: [pouca, recusou]
+      alimentacao.hidratacao: [pouca]
+      humor.predominante: [irritado, variado]
+      agitacao.nivel: [moderada, intensa]
+      medicacao.tomou: [parcial]
+      quem_cuida.cansaco: [muito]
+    episodios_tipos: [tentativa_de_sair]
+    o_que_ajudou_contem: [plantas]
+    risco_esperado: false
+
+  - id: relato_03_queda
+    audio: poc/exemplos/relato_03_queda.mp3
+    roteiro: poc/exemplos/relato_03_queda.txt
+    campos:
+      sono.qualidade: [boa]
+      sono.horas_aproximadas: [8]
+      alimentacao.qualidade: [boa]
+      humor.predominante: [calmo]
+      medicacao.tomou: [sim]
+      quem_cuida.cansaco: [nao_informado, nenhum]
+    episodios_tipos: [queda]
+    o_que_ajudou_contem: []
+    risco_esperado: true
