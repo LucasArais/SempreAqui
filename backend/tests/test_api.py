@@ -116,6 +116,17 @@ def test_formato_invalido_tem_mensagem_humana(ambiente):
     assert "Tente gravar de novo" in resposta.json()["detail"]
 
 
+def test_tipo_generico_usa_a_extensao(ambiente):
+    cliente, *_ = ambiente
+    resposta = cliente.post(
+        "/diario/relatos",
+        files={"audio": ("relato.m4a", b"audio", "application/octet-stream")},
+        data={"id": "relato-0003"},
+        headers=FAMILIA,
+    )
+    assert resposta.status_code == 202
+
+
 def test_sem_familia_e_recusado(ambiente):
     cliente, *_ = ambiente
     assert enviar(cliente, cabecalhos={}).status_code == 422

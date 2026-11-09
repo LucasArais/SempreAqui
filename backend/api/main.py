@@ -60,6 +60,13 @@ TIPOS_AUDIO = {
     "audio/aac",
 }
 TAMANHO_MAXIMO = 25 * 1024 * 1024
+POR_EXTENSAO = {
+    "m4a": "audio/mp4",
+    "mp4": "audio/mp4",
+    "mp3": "audio/mpeg",
+    "wav": "audio/wav",
+    "aac": "audio/aac",
+}
 MSG_IA_INDISPONIVEL = (
     "Não consegui organizar agora. Seu áudio está guardado e dá para tentar de novo."
 )
@@ -233,14 +240,17 @@ async def criar_relato(
 ) -> Relato:
     if not re.fullmatch(r"[A-Za-z0-9-]{8,64}", id):
         raise HTTPException(400, "Identificador do relato inválido.")
-    if audio.content_type not in TIPOS_AUDIO:
+    mime = audio.content_type
+    if mime not in TIPOS_AUDIO:
+        # Alguns celulares mandam um tipo genérico; a extensão do arquivo resolve.
+        extensao = (audio.filename or "").rsplit(".", 1)[-1].lower()
+        mime = POR_EXTENSAO.get(extensao)
+    if mime not in TIPOS_AUDIO:
         raise HTTPException(415, "Não consegui ler esse formato de áudio. Tente gravar de novo.")
     conteudo = await audio.read()
     if len(conteudo) > TAMANHO_MAXIMO:
         raise HTTPException(413, "O áudio ficou longo demais. Tente gravar em partes menores.")
-    dados, novo = repo.criar_relato(
-        familia_id, id, conteudo, audio.content_type, duracao_s, gravado_em
-    )
+    dados, novo = repo.criar_relato(familia_id, id, conteudo, mime, duracao_s, gravado_em)
     if novo:
         log.info(
             "diario.recebido relato=%s bytes=%d offline=%s", id, len(conteudo), enviado_offline

@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import { File } from 'expo-file-system';
 
 /**
  * Cliente da API do SempreAqui.
@@ -72,7 +73,9 @@ async function chamar<T>(caminho: string, init: RequestInit = {}): Promise<T> {
       ...init,
       headers: { ...CABECALHOS, ...(init.headers ?? {}) },
     });
-  } catch {
+  } catch (erro) {
+    // Só em desenvolvimento, e só o motivo técnico: nunca conteúdo do relato.
+    if (__DEV__) console.warn(`[api] ${init.method ?? 'GET'} ${caminho} falhou: ${String(erro)}`);
     throw new ErroApi('Sem conexão agora. Seu relato fica guardado no celular.', true);
   }
   if (resposta.status === 204) return undefined as T;
@@ -96,8 +99,8 @@ export type EnvioRelato = {
 
 export function enviarRelato(envio: EnvioRelato) {
   const form = new FormData();
-  // React Native aceita { uri, name, type } como arquivo no FormData.
-  form.append('audio', { uri: envio.uri, name: `${envio.id}.m4a`, type: envio.mime } as unknown as Blob);
+  // O fetch do Expo SDK 58 só aceita Blob no FormData; o File do expo-file-system é um Blob.
+  form.append('audio', new File(envio.uri) as unknown as Blob, `${envio.id}.m4a`);
   form.append('id', envio.id);
   form.append('duracao_s', String(envio.duracao_s));
   form.append('gravado_em', envio.gravado_em);
