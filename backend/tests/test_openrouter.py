@@ -1,11 +1,14 @@
 """Provedor OpenRouter com a rede simulada: formato do pedido, privacidade e erros."""
 
 import json
+import shutil
+import subprocess
 
 import httpx
 import pytest
 
 from core import llm
+from core.config import RAIZ_REPO
 from core.llm import ErroProvedorIA, ProvedorOpenRouter, preparar_audio
 from core.schemas.diario import RegistroDiario
 from tests.conftest import REGISTRO_TRANQUILO
@@ -108,3 +111,22 @@ def test_sem_chave_avisa_como_configurar(monkeypatch):
 
 def test_mp3_passa_direto():
     assert preparar_audio(b"abc", "audio/mpeg") == (b"abc", "mp3")
+
+
+@pytest.mark.skipif(not shutil.which("ffmpeg"), reason="precisa do ffmpeg")
+def test_m4a_do_celular_vira_mp3_com_audio_de_verdade(tmp_path):
+    """Regressão: ler m4a por pipe gerava um mp3 vazio, e o modelo inventava o relato."""
+    m4a = tmp_path / "relato.m4a"
+    origem = RAIZ_REPO / "poc/exemplos/relato_03_queda.mp3"
+    subprocess.run(
+        ["ffmpeg", "-loglevel", "error", "-i", str(origem), "-c:a", "aac", str(m4a)], check=True
+    )
+
+    dados, formato = preparar_audio(m4a.read_bytes(), "audio/mp4")
+
+    assert formato == "mp3"
+    assert len(dados) > 50_000
+
+
+def test_conversao_impossivel_envia_o_original():
+    assert preparar_audio(b"nao-e-audio", "audio/mp4") == (b"nao-e-audio", "m4a")

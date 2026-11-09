@@ -10,6 +10,8 @@ import base64
 import json
 import shutil
 import subprocess
+import tempfile
+from pathlib import Path
 from typing import Protocol, TypeVar
 
 from pydantic import BaseModel, ValidationError
@@ -101,36 +103,40 @@ FORMATOS_DIRETOS = {
 def preparar_audio(audio: bytes, mime_type: str) -> tuple[bytes, str]:
     """Garante um formato aceito por todos os modelos (mp3 ou wav).
 
-    O app grava em m4a (AAC). Se o ffmpeg estiver disponível, convertemos para mp3 mono 16 kHz,
-    que também deixa o envio menor. Sem ffmpeg, enviamos o original com o formato declarado.
+    O app grava em m4a (AAC). Convertemos para mp3 mono 16 kHz com ffmpeg, usando arquivos
+    temporários: o m4a guarda o índice no fim do arquivo e não pode ser lido por pipe.
+    Se a conversão falhar ou sair curta demais, enviamos o original (nunca um áudio vazio).
     """
     if mime_type in FORMATOS_DIRETOS:
         return audio, FORMATOS_DIRETOS[mime_type]
     if shutil.which("ffmpeg"):
-        resultado = subprocess.run(
-            [
-                "ffmpeg",
-                "-loglevel",
-                "error",
-                "-i",
-                "pipe:0",
-                "-ac",
-                "1",
-                "-ar",
-                "16000",
-                "-b:a",
-                "48k",
-                "-f",
-                "mp3",
-                "pipe:1",
-            ],
-            input=audio,
-            capture_output=True,
-            check=False,
-        )
-        if resultado.returncode == 0 and resultado.stdout:
-            return resultado.stdout, "mp3"
-    return audio, mime_type.split("/")[-1].replace("x-", "")
+        with tempfile.TemporaryDirectory() as pasta:
+            entrada = Path(pasta) / "entrada"
+            saida = Path(pasta) / "saida.mp3"
+            entrada.write_bytes(audio)
+            resultado = subprocess.run(
+                [
+                    "ffmpeg",
+                    "-loglevel",
+                    "error",
+                    "-y",
+                    "-i",
+                    str(entrada),
+                    "-ac",
+                    "1",
+                    "-ar",
+                    "16000",
+                    "-b:a",
+                    "48k",
+                    str(saida),
+                ],
+                capture_output=True,
+                check=False,
+            )
+            if resultado.returncode == 0 and saida.exists() and saida.stat().st_size > 1024:
+                return saida.read_bytes(), "mp3"
+    sufixo = mime_type.split("/")[-1].replace("x-", "")
+    return audio, {"mp4": "m4a"}.get(sufixo, sufixo)
 
 
 class ProvedorOpenRouter:
