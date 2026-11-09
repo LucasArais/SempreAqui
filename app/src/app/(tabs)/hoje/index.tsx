@@ -132,6 +132,7 @@ export default function Hoje() {
           detalhe={`${sessao.duracao}, com foto e música`}
           tom={sessao.foto.tom}
           icone={sessao.foto.icone}
+          fonte={sessao.foto.fonte}
           proporcao={16 / 9}
           onPress={() => router.push('/sessao')}
         />

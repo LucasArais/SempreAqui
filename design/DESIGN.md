@@ -59,4 +59,4 @@ node scripts/contraste.ts
 
 ## Fotos
 
-Os retratos da família (Dona Isabel, Cláudia, Rafael, a neta e o cuidador profissional) foram **gerados por IA**. São pessoas fictícias e não representam ninguém real. Nunca usamos fotos de pessoas reais em exemplos.
+Todas as fotos do app foram **geradas por IA**: os retratos da família (Dona Isabel, Cláudia, Rafael, a neta, o marido e o cuidador profissional) e as memórias do Passaporte (o ateliê em 1978, São João em 1965, a Cláudia pequena, a casa da Rua das Flores, o aniversário de 81 anos e a família reunida). São pessoas e lugares fictícios. Nunca usamos fotos de pessoas reais em exemplos.

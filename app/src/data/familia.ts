@@ -14,6 +14,13 @@ export const fotos: Record<string, ImageSource> = {
   rafael: require('../../assets/fotos/rafael.jpg'),
   neta: require('../../assets/fotos/neta.jpg'),
   cuidador: require('../../assets/fotos/cuidador.jpg'),
+  marido: require('../../assets/fotos/marido.jpg'),
+  familiaReunida: require('../../assets/fotos/familia-reunida.jpg'),
+  atelie: require('../../assets/fotos/atelie-1978.jpg'),
+  claudiaPequena: require('../../assets/fotos/claudia-pequena.jpg'),
+  saoJoao: require('../../assets/fotos/sao-joao.jpg'),
+  casa: require('../../assets/fotos/casa-rua-das-flores.jpg'),
+  aniversario: require('../../assets/fotos/aniversario-81.jpg'),
 };
 
 export const quemUsa = { nome: 'Cláudia', papel: 'Quem cuida' };
@@ -28,7 +35,7 @@ export const pessoa = {
   comoSeComunica:
     'Entende melhor frases curtas, uma coisa de cada vez. Quando aperta a mão da gente, quer companhia. Chama a Cláudia de "minha menina".',
   pessoasImportantes: [
-    { nome: 'O marido', relacao: 'Falecido em 2015. Se conheceram num baile de São Rafael', tom: 0, foto: undefined },
+    { nome: 'O marido', relacao: 'Falecido em 2015. Se conheceram num baile de São João', tom: 0, foto: fotos.marido },
     { nome: 'Cláudia', relacao: 'Filha, mora com ela', tom: 1, foto: fotos.claudia },
     { nome: 'Rafael', relacao: 'Filho, mora em Recife', tom: 2, foto: fotos.rafael },
     { nome: 'A neta', relacao: 'Filha da Cláudia, canta com ela aos domingos', tom: 3, foto: fotos.neta },
@@ -49,16 +56,16 @@ export const pessoa = {
     { titulo: 'Fim da tarde', detalhe: 'Às vezes pergunta pela casa da mãe dela' },
   ],
   musicasEComidas: [
-    { titulo: 'Músicas', detalhe: 'Roberto Carlos, forró de São Rafael, hinos da igreja', icone: 'musica' as NomeIcone },
+    { titulo: 'Músicas', detalhe: 'Roberto Carlos, forró de São João, hinos da igreja', icone: 'musica' as NomeIcone },
     { titulo: 'Comidas', detalhe: 'Sopa de legumes, pão de queijo, doce de abóbora', icone: 'comida' as NomeIcone },
   ],
   fotos: [
-    { legenda: 'O ateliê, 1978', tom: 0, icone: 'foto' as NomeIcone },
-    { legenda: 'O casamento, 1966', tom: 1, icone: 'coracao' as NomeIcone },
-    { legenda: 'Os filhos pequenos', tom: 2, icone: 'familia' as NomeIcone },
-    { legenda: 'São Rafael na praça', tom: 3, icone: 'musica' as NomeIcone },
-    { legenda: 'A casa da Rua das Flores', tom: 4, icone: 'casa' as NomeIcone },
-    { legenda: 'Com a neta no aniversário', tom: 0, icone: 'coracao' as NomeIcone },
+    { legenda: 'O ateliê, 1978', tom: 0, icone: 'foto' as NomeIcone, fonte: fotos.atelie },
+    { legenda: 'São João na praça, 1965', tom: 3, icone: 'musica' as NomeIcone, fonte: fotos.saoJoao },
+    { legenda: 'Com a Cláudia pequena, 1978', tom: 2, icone: 'familia' as NomeIcone, fonte: fotos.claudiaPequena },
+    { legenda: 'A casa da Rua das Flores', tom: 4, icone: 'casa' as NomeIcone, fonte: fotos.casa },
+    { legenda: '81 anos, com a neta', tom: 0, icone: 'coracao' as NomeIcone, fonte: fotos.aniversario },
+    { legenda: 'Todos juntos, 2026', tom: 1, icone: 'familia' as NomeIcone, fonte: fotos.familiaReunida },
   ],
   fontesDoPassaporte: '6 áudios, 12 fotos e 3 textos enviados pela família',
 };
@@ -144,7 +151,7 @@ export const sessao = {
   tema: 'Os vestidos de noiva',
   duracao: '5 a 10 minutos',
   musica: '"Detalhes", Roberto Carlos',
-  foto: { legenda: 'O ateliê de costura, 1978', tom: 0, icone: 'foto' as NomeIcone },
+  foto: { legenda: 'O ateliê de costura, 1978', tom: 0, icone: 'foto' as NomeIcone, fonte: fotos.atelie },
   passos: [
     'Olha que foto bonita. O que a senhora vê aqui?',
     'Me conta como era fazer um vestido de noiva. Qual parte a senhora mais gostava?',

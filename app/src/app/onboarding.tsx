@@ -1,11 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
-import { Coluna, Icon, ListGroup, ListRow, PrimaryButton, SecondaryButton, Text } from '@/components';
+import { Coluna, Icon, ListGroup, ListRow, Logo, Photo, PrimaryButton, SecondaryButton, Text } from '@/components';
+import { fotos } from '@/data/familia';
 import { CHAVE_ONBOARDING } from '@/lib/chaves';
 import { haptic } from '@/lib/haptics';
 import { useMargensSeguras } from '@/lib/insets';
@@ -51,7 +51,8 @@ export default function Onboarding() {
         <Animated.View key={passo} entering={FadeIn.duration(280)} style={{ flex: 1, justifyContent: 'center', gap: espaco.s3 }}>
           {passo === 0 && (
             <Coluna gap="s2" centro>
-              <Image source={require('../../assets/icon.png')} style={{ width: 120, height: 120, borderRadius: 28 }} accessibilityLabel="Logo do SempreAqui" />
+              <Photo fonte={fotos.familiaReunida} rotulo="Uma família reunida em volta da avó" proporcao={4 / 3} />
+              <Logo tamanho={44} />
               <Text variante="largeTitle" centro accessibilityRole="header">
                 Ninguém cuida sozinho
               </Text>

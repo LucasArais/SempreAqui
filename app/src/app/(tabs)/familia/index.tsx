@@ -4,6 +4,7 @@ import { Share } from 'react-native';
 
 import {
   Avatar,
+  Photo,
   Icon,
   ListGroup,
   ListRow,
@@ -12,7 +13,7 @@ import {
   Section,
   SummaryCard,
 } from '@/components';
-import { familia, feed, pessoa, tarefas as tarefasIniciais } from '@/data/familia';
+import { familia, feed, fotos, pessoa, tarefas as tarefasIniciais } from '@/data/familia';
 import { haptic } from '@/lib/haptics';
 import { useTema } from '@/theme';
 
@@ -32,6 +33,8 @@ export default function Familia() {
 
   return (
     <Screen>
+      <Photo fonte={fotos.familiaReunida} rotulo="Dona Isabel com a Cláudia, o Rafael e a neta" proporcao={4 / 3} />
+
       <Section titulo={`Quem cuida da ${pessoa.comoGostaDeSerChamada}`}>
         <ListGroup comAvatar>
           {familia.map((m) => (

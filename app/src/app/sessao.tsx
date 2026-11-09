@@ -44,7 +44,7 @@ export default function Sessao() {
         <ScrollView
           contentContainerStyle={{ flexGrow: 1, paddingHorizontal: margem, paddingBottom: espaco.s2, gap: espaco.s3 }}
         >
-          <Photo rotulo={sessao.foto.legenda} tom={sessao.foto.tom} icone={sessao.foto.icone} proporcao={1.1} />
+          <Photo rotulo={sessao.foto.legenda} fonte={sessao.foto.fonte} tom={sessao.foto.tom} icone={sessao.foto.icone} proporcao={4 / 3} />
           <Animated.View key={passo} entering={FadeIn.duration(300)} style={{ flexGrow: 1, gap: espaco.s2 }}>
             <Text variante="sessaoPergunta">{sessao.passos[passo]}</Text>
           </Animated.View>

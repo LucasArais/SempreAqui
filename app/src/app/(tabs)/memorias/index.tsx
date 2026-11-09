@@ -25,7 +25,7 @@ function GradeDeFotos() {
         <View key={i} style={{ flexDirection: 'row', gap: espaco.meio / 2 + 2 }}>
           {linha.map((f) => (
             <View key={f.legenda} style={{ flex: 1 }}>
-              <Photo rotulo={f.legenda} tom={f.tom} icone={f.icone} proporcao={1} style={{ borderRadius: 4 }} />
+              <Photo rotulo={f.legenda} fonte={f.fonte} tom={f.tom} icone={f.icone} proporcao={1} style={{ borderRadius: 4 }} />
             </View>
           ))}
         </View>
