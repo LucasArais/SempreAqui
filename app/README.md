@@ -63,3 +63,9 @@ Ao abrir, a tela Entrar pede e-mail e senha. Depois da autenticação, `POST /se
 Tokens ficam no `expo-secure-store` no celular, com renovação do Supabase. Na web, a sessão fica somente em memória. O app não cria mais usuários anônimos nem usa o cabeçalho de demonstração sem login. Contas anônimas antigas não são convertidas automaticamente; seus dados continuam no backend. Cópias e filas locais novas ficam separadas por conta.
 
 Verificação automatizada: `npm run test:login`, `npm run typecheck` e `npm run lint`. Os testes de login usam serviços simulados; a entrada real depende de uma conta e do backend acessível.
+
+## Carregamento dos dados
+
+`src/lib/carregamento.ts` coordena as leituras em paralelo e compartilha atualizações simultâneas. A IA local inicializa separadamente. Hoje, Memórias e Família mostram progresso, preservam o conteúdo já disponível e oferecem nova tentativa em caso de falha. Puxar essas telas atualiza os dados; o app também atualiza ao voltar ao primeiro plano e recuperar a rede. A sessão tem uma tela de restauração com recuperação de erro.
+
+Consultas e abertura da sessão têm limite de 20 segundos; envios e operações de IA mantêm até 120 segundos. Execute `npm run test:carregamento` para testar concorrência, recuperação e cancelamento por tempo limite.

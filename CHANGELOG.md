@@ -2,6 +2,14 @@
 
 O que mudou em cada ciclo, do mais recente para o mais antigo.
 
+## Carregamento com feedback e nova tentativa (10 de novembro de 2026)
+
+- Informações da família carregam em paralelo, sem esperar a checagem da IA local ou a personalização da conversa.
+- Indicador de atualização e skeletons em Hoje, Memórias e Família; falhas oferecem “Tentar de novo” e mantêm o conteúdo disponível.
+- Atualização ao voltar para o app ou recuperar a conexão; puxar Hoje atualiza todas as informações.
+- Consultas têm limite de espera, evitando carregamento sem fim. A restauração da sessão mostra progresso e permite tentar novamente.
+- Testes de concorrência, falha parcial, nova tentativa, logout e timeout.
+
 ## Login básico por e-mail e senha (10 de novembro de 2026)
 
 - Tela Entrar no estilo atual, com validação, mostrar/ocultar senha, preenchimento automático e haptics.
