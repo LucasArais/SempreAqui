@@ -2,6 +2,13 @@
 
 O que mudou em cada ciclo, do mais recente para o mais antigo.
 
+## Tela Hoje reorganizada (novembro de 2026)
+
+- Ação principal no topo: contar o dia. Logo abaixo, "Pedir ajuda" e "192" lado a lado, no lugar de duas faixas inteiras.
+- "Para hoje" junta numa lista só a conversa do dia (com miniatura da foto, ou "feita" com a reação) e as tarefas com "Eu assumo".
+- Último relato e semana viram cartões que abrem o detalhe com um toque, com "Ver todos" e "Ver detalhes" no título da seção, no lugar de botões soltos.
+- Avisos e o pedido de nome continuam no topo, só quando existem. Para quem mora longe, a semana vem primeiro.
+
 ## Ajudante e Ajustes (novembro de 2026)
 
 **Para a família**

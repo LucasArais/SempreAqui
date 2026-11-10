@@ -1,34 +1,34 @@
 import { router, Stack, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import {
   AttentionBadge,
+  Avatar,
   Card,
   EmptyState,
-  EmergencyButton,
   Icon,
   LinhaTarefa,
   ListGroup,
   ListRow,
-  MemoryCard,
+  type NomeIcone,
   RecordButton,
   Screen,
-  SecondaryButton,
   Section,
   SummaryCard,
   Text,
 } from '@/components';
 import { reacoes } from '@/data/familia';
-import { avisoDasUltimas24h, ehHoje, meuNome, useFamilia } from '@/lib/familia';
-import { atualizarSeMudouODia, useConversa } from '@/lib/conversa';
-import { fotoDaChave } from '@/lib/passaporte';
 import { ligarEmergencia } from '@/lib/abrir';
+import { atualizarSeMudouODia, useConversa } from '@/lib/conversa';
+import { atualizarRelatos, useAtualizarAoFocar, useDiario } from '@/lib/diario';
+import { avisoDasUltimas24h, ehHoje, meuNome, useFamilia } from '@/lib/familia';
+import { haptic } from '@/lib/haptics';
+import { fotoDaChave } from '@/lib/passaporte';
+import { formatarData, MENSAGEM_ETAPA } from '@/lib/rotulos';
 import { useSemana } from '@/lib/semana';
 import { useSessao } from '@/lib/sessao';
-import { atualizarRelatos, useAtualizarAoFocar, useDiario } from '@/lib/diario';
-import { formatarData, MENSAGEM_ETAPA } from '@/lib/rotulos';
-import { espaco, useTema } from '@/theme';
+import { espaco, raio, tamanho, useTema } from '@/theme';
 
 function saudacao() {
   const hora = new Date().getHours();
@@ -37,36 +37,85 @@ function saudacao() {
   return 'Boa noite';
 }
 
+/** Link discreto no título de uma seção ("Ver todos"), no padrão dos apps da Apple. */
+function LinkDaSecao({ titulo, onPress }: { titulo: string; onPress: () => void }) {
+  const { cores } = useTema();
+  return (
+    <Pressable onPress={onPress} accessibilityRole="link" hitSlop={10}>
+      <Text variante="callout" style={{ color: cores.accentStrong }}>
+        {titulo}
+      </Text>
+    </Pressable>
+  );
+}
+
+/** Ação rápida em pílula: duas lado a lado, sem ocupar a tela. */
+function AcaoRapida({ titulo, icone, cor, onPress, dica }: { titulo: string; icone: NomeIcone; cor: string; onPress: () => void; dica: string }) {
+  const { cores } = useTema();
+  return (
+    <Pressable
+      onPress={() => {
+        haptic.toque();
+        onPress();
+      }}
+      accessibilityRole="button"
+      accessibilityLabel={titulo}
+      accessibilityHint={dica}
+      style={({ pressed }) => ({
+        flex: 1,
+        minHeight: tamanho.botao,
+        borderRadius: raio.botao,
+        borderCurve: 'continuous',
+        borderWidth: 1.5,
+        borderColor: cor,
+        backgroundColor: pressed ? cores.secondaryBackground : 'transparent',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: espaco.s1,
+        paddingHorizontal: espaco.s1,
+      })}
+    >
+      <Icon nome={icone} cor={cor} tamanho={20} />
+      <Text variante="headline" style={{ color: cor }} numberOfLines={1}>
+        {titulo}
+      </Text>
+    </Pressable>
+  );
+}
+
+/**
+ * Hoje: a ação principal no topo (contar o dia), ajuda e 192 a um toque, depois o que há para
+ * fazer hoje, o último relato e a semana. Cada seção tem um "Ver" no título em vez de botões
+ * soltos. Para quem mora longe, a semana vem primeiro.
+ */
 export default function Hoje() {
   const { cores } = useTema();
   const { tarefas, feed, carregado: familiaCarregada } = useFamilia();
-  // Hoje: o que é para hoje e o que ainda ninguém assumiu (quem mora longe assume daqui).
-  const tarefasHoje = tarefas.filter((t) => !t.concluida && (ehHoje(t.quando) || !t.responsavel_nome)).slice(0, 4);
-  const avisoRecente = avisoDasUltimas24h(feed);
   const { relatos, pendentes, carregado } = useDiario();
-  useAtualizarAoFocar();
-  const ultimo = relatos[0];
   const { semana } = useSemana();
   const { conversa } = useConversa();
+  useAtualizarAoFocar();
+  useFocusEffect(useCallback(() => atualizarSeMudouODia(), []));
+
+  const quemCuida = (useSessao().papel ?? 'quem_cuida') === 'quem_cuida';
+  const avisoRecente = avisoDasUltimas24h(feed);
+  // O que é para hoje e o que ainda ninguém assumiu (quem mora longe assume daqui).
+  const tarefasHoje = tarefas.filter((t) => !t.concluida && (ehHoje(t.quando) || !t.responsavel_nome)).slice(0, 3);
+  const ultimo = relatos[0];
   const roteiro = conversa?.roteiro;
   const feitaHoje = (conversa?.feitas_hoje ?? 0) > 0;
   const reacaoDeHoje = reacoes.find((r) => r.id === conversa?.ultima_reacao);
-  useFocusEffect(useCallback(() => atualizarSeMudouODia(), []));
-  // Quem mora longe (Rafael) quer saber como a mãe está: a semana vem primeiro.
-  const quemCuida = (useSessao().papel ?? 'quem_cuida') === 'quem_cuida';
 
   const secaoSemana = semana && semana.dias_com_relato > 0 && (
-    <Section titulo="Esta semana">
-      <SummaryCard meta={`${semana.periodo}, ${semana.dias_com_relato} de 7 dias com relato`} texto={semana.resumo}>
-        {semana.mudancas.slice(0, 2).map((m) => (
-          <AttentionBadge key={m.texto} texto={m.texto} />
-        ))}
-      </SummaryCard>
-      <SecondaryButton
-        titulo="Ver a semana e a lista da consulta"
-        alinhamento="inicio"
-        onPress={() => router.push('/hoje/semana')}
-      />
+    <Section titulo="Esta semana" acao={<LinkDaSecao titulo="Ver detalhes" onPress={() => router.push('/hoje/semana')} />}>
+      <Pressable onPress={() => router.push('/hoje/semana')} accessibilityRole="button" accessibilityHint="Abre a semana e a lista para a consulta">
+        <SummaryCard meta={`${semana.periodo}, ${semana.dias_com_relato} de 7 dias com relato`} texto={semana.resumo}>
+          {semana.mudancas.slice(0, 2).map((m) => (
+            <AttentionBadge key={m.texto} texto={m.texto} />
+          ))}
+        </SummaryCard>
+      </Pressable>
     </Section>
   );
 
@@ -85,113 +134,87 @@ export default function Hoje() {
         </Card>
       )}
 
-
-      {!quemCuida && secaoSemana}
-
       {familiaCarregada && !meuNome() && (
         <ListGroup>
           <ListRow titulo="Como a família te chama?" subtitulo="Diga seu nome uma vez e pronto" icone="familia" corIcone="accentStrong" onPress={() => router.push('/eu')} />
         </ListGroup>
       )}
 
-      <Card style={{ paddingVertical: espaco.s3 }}>
-        <RecordButton gravando={false} onPress={() => router.push('/gravar')} apoio="Toque e fale do seu jeito" />
-        {pendentes.length > 0 && (
-          <Text variante="footnote" cor="secondaryLabel" centro accessibilityLiveRegion="polite">
-            {pendentes.length === 1 ? '1 relato esperando internet' : `${pendentes.length} relatos esperando internet`}
-          </Text>
-        )}
-      </Card>
+      {!quemCuida && secaoSemana}
 
-      <ListGroup>
-        <ListRow
-          titulo="Precisa de ajuda agora?"
-          subtitulo="Pergunte ao Ajudante: agitação, recusa, noite difícil"
-          icone="ajuda"
-          corIcone="accentStrong"
-          onPress={() => router.push('/ajuda')}
-        />
-      </ListGroup>
-      <EmergencyButton onPress={ligarEmergencia} />
-
-      {roteiro && feitaHoje && (
-        <Section titulo="Uma conversa para hoje">
-          <Card>
-            <View style={{ flexDirection: 'row', gap: espaco.s1, alignItems: 'center' }}>
-              <Icon nome="feito" cor={cores.success} />
-              <Text variante="headline" style={{ flex: 1 }}>
-                Conversa de hoje feita
-              </Text>
-            </View>
-            <Text variante="callout" cor="secondaryLabel">
-              {reacaoDeHoje ? `${reacaoDeHoje.rotulo}. ` : ''}Amanhã tem uma conversa nova, com outro tema.
+      <View style={{ gap: espaco.s1 + espaco.meio }}>
+        <Card style={{ paddingVertical: espaco.s3 }}>
+          <RecordButton gravando={false} onPress={() => router.push('/gravar')} apoio="Toque e fale do seu jeito" />
+          {pendentes.length > 0 && (
+            <Text variante="footnote" cor="secondaryLabel" centro accessibilityLiveRegion="polite">
+              {pendentes.length === 1 ? '1 relato esperando internet' : `${pendentes.length} relatos esperando internet`}
             </Text>
-          </Card>
-        </Section>
-      )}
+          )}
+        </Card>
+        <View style={{ flexDirection: 'row', gap: espaco.s1 + espaco.meio }}>
+          <AcaoRapida titulo="Pedir ajuda" icone="texto" cor={cores.accentStrong} dica="Abre o Ajudante: agitação, recusa, noite difícil" onPress={() => router.push('/ajuda')} />
+          <AcaoRapida titulo="192" icone="telefone" cor={cores.emergency} dica="Liga para o SAMU" onPress={() => void ligarEmergencia()} />
+        </View>
+      </View>
 
-      {roteiro && !feitaHoje && (
-        <Section titulo="Uma conversa para hoje">
-          <MemoryCard
-            legenda={roteiro.tema}
-            detalhe={`${roteiro.tipo_rotulo}. De 5 a 10 minutos${roteiro.musica ? ', com música' : ''}`}
-            tom={roteiro.conjunto % 5}
-            icone={roteiro.foto ? 'foto' : 'coracao'}
-            fonte={fotoDaChave(roteiro.foto)}
-            proporcao={16 / 9}
-            onPress={() => router.push('/sessao')}
-          />
-          <SecondaryButton titulo="Começar a conversa" icone="tocar" alinhamento="inicio" onPress={() => router.push('/sessao')} />
-          <Text variante="footnote" cor="secondaryLabel">
-            Muda todo dia, a partir do Passaporte de Memória
-          </Text>
-        </Section>
-      )}
-      {tarefasHoje.length > 0 && (
-        <Section titulo="Família hoje">
-          <ListGroup>
+      {(roteiro || tarefasHoje.length > 0) && (
+        <Section titulo="Para hoje" acao={<LinkDaSecao titulo="Ver tudo" onPress={() => router.push('/familia')} />}>
+          <ListGroup comAvatar>
+            {roteiro &&
+              (feitaHoje ? (
+                <ListRow
+                  titulo="Conversa de hoje feita"
+                  subtitulo={`${reacaoDeHoje ? `${reacaoDeHoje.rotulo}. ` : ''}Amanhã tem outra, com outro tema`}
+                  esquerda={<Icon nome="feito" cor={cores.success} />}
+                  navega={false}
+                />
+              ) : (
+                <ListRow
+                  titulo={`Conversa: ${roteiro.tema}`}
+                  subtitulo={`De 5 a 10 minutos${roteiro.musica ? ', com música' : ''}. Muda todo dia`}
+                  esquerda={<Avatar nome={roteiro.tema} tom={roteiro.conjunto % 5} fonte={fotoDaChave(roteiro.foto)} />}
+                  dica="Abre a conversa em tela cheia"
+                  onPress={() => router.push('/sessao')}
+                />
+              ))}
             {tarefasHoje.map((t) => (
               <LinhaTarefa key={t.id} tarefa={t} />
             ))}
-            <ListRow titulo="Ver todas as tarefas" icone="familia" onPress={() => router.push('/familia')} />
           </ListGroup>
         </Section>
       )}
 
-      <Section titulo="Último relato">
+      <Section
+        titulo="Último relato"
+        acao={relatos.length > 0 ? <LinkDaSecao titulo="Ver todos" onPress={() => router.push('/hoje/diario')} /> : undefined}
+      >
         {ultimo?.etapa === 'pronto' && ultimo.resumo ? (
-          <SummaryCard meta={formatarData(ultimo.gravado_em)} texto={ultimo.resumo} original={ultimo.transcricao ?? undefined}>
-            {ultimo.alertas.length > 0 && <AttentionBadge texto="Este relato fala de uma situação de risco" />}
-          </SummaryCard>
+          <Pressable
+            onPress={() => router.push({ pathname: '/hoje/diario/[id]', params: { id: ultimo.id } })}
+            accessibilityRole="button"
+            accessibilityHint="Abre o relato completo, com o áudio e a transcrição"
+          >
+            <SummaryCard meta={formatarData(ultimo.gravado_em)} texto={ultimo.resumo}>
+              {ultimo.alertas.length > 0 && <AttentionBadge texto="Este relato fala de uma situação de risco" />}
+            </SummaryCard>
+          </Pressable>
         ) : ultimo ? (
-          <Card>
-            <Text variante="headline">{formatarData(ultimo.gravado_em)}</Text>
-            <Text variante="callout" cor="secondaryLabel">
-              {MENSAGEM_ETAPA[ultimo.etapa]}
-            </Text>
-          </Card>
+          <Pressable onPress={() => router.push({ pathname: '/hoje/diario/[id]', params: { id: ultimo.id } })} accessibilityRole="button">
+            <Card>
+              <Text variante="headline">{formatarData(ultimo.gravado_em)}</Text>
+              <Text variante="callout" cor="secondaryLabel">
+                {MENSAGEM_ETAPA[ultimo.etapa]}
+              </Text>
+            </Card>
+          </Pressable>
         ) : carregado ? (
           <Card>
-            <EmptyState
-              logo
-              titulo="Seu primeiro relato aparece aqui"
-              texto="Toque no microfone e conte como foi o dia. Em segundos a família recebe um resumo."
-            />
+            <EmptyState logo titulo="Seu primeiro relato aparece aqui" texto="Toque no microfone e conte como foi o dia. Em segundos a família recebe um resumo." />
           </Card>
         ) : null}
-        {(relatos.length > 0 || pendentes.length > 0) && (
-          <ListGroup>
-            {ultimo && (
-              <ListRow titulo="Ver este relato" icone="texto" onPress={() => router.push({ pathname: '/hoje/diario/[id]', params: { id: ultimo.id } })} />
-            )}
-            <ListRow titulo="Ver todos os relatos" icone="historico" onPress={() => router.push('/hoje/diario')} />
-          </ListGroup>
-        )}
       </Section>
 
       {quemCuida && secaoSemana}
-
-
     </Screen>
   );
 }
