@@ -16,6 +16,7 @@ import { enviarFoto, fotoDaChave, passaporteAtual, salvarPassaporte, usePassapor
 
 const FONTE_OFICIAL = 'https://bvsms.saude.gov.br/bvs/publicacoes/guia_pratico_cuidador.pdf';
 const CODIGO_ABERTO = 'https://github.com/LucasArais/SempreAqui';
+const LICENCA_LLAMA = 'https://www.llama.com/llama3_2/license/';
 
 function ir(rota: Href) {
   router.push(rota);
@@ -111,6 +112,12 @@ export default function Ajustes() {
         <ListGroup rodape={`SempreAqui ${Constants.expoConfig?.version ?? ''}. Não substitui a equipe de saúde. Em risco, ligue 192.`}>
           <ListRow titulo="Fonte oficial do Ajudante" subtitulo="Guia Prático do Cuidador, Ministério da Saúde" icone="link" onPress={() => abrirLink(FONTE_OFICIAL)} />
           <ListRow titulo="Código aberto" subtitulo="Licença MIT, no GitHub" icone="link" onPress={() => abrirLink(CODIGO_ABERTO)} />
+          <ListRow
+            titulo="Modelos de IA no celular"
+            subtitulo="Built with Llama (Llama 3.2 Community License, Meta). Whisper (MIT, OpenAI). Gemini Nano (Google)"
+            icone="documento"
+            onPress={() => abrirLink(LICENCA_LLAMA)}
+          />
         </ListGroup>
       </Section>
     </Screen>

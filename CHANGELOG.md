@@ -5,6 +5,15 @@ O que mudou em cada ciclo, do mais recente para o mais antigo.
 
 
 
+
+## Gemini Nano e Llama 3.2 3B no Android (novembro de 2026)
+
+- O Android escolhe sozinho o motor da IA no celular, sempre de graça: Gemini Nano onde existe (vem com o Android; o app só baixa o Whisper), Llama 3.2 3B nos celulares com 6 GB de RAM ou mais, nuvem nos demais.
+- Comparação de modelos abertos com o gabarito do Diário (`evals/comparar_modelos_aparelho.py`): Llama 3.2 3B acertou 83% dos campos; Llama 1B, SmolLM3 3B e Qwen2.5 1.5B, de 4% a 42%. O Qwen 1.5B saiu do app.
+- Privacidade mostra o motor escolhido e o tamanho certo do download; modelos antigos são apagados para liberar espaço.
+- Crédito "Built with Llama" e licenças dos modelos em Ajustes e no README.
+- Android mínimo: 8.0 (API 26), exigido pelo Gemini Nano.
+
 ## IA no próprio celular também no Android (novembro de 2026)
 
 - O relato é transcrito e organizado no Android, sem a nuvem: Whisper `small` para a fala e Qwen2.5 1.5B para organizar, com saída presa ao formato do registro.

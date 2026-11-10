@@ -86,7 +86,7 @@ Tudo isso está detalhado em [docs/etica-e-seguranca.md](docs/etica-e-seguranca.
 
 ## IA no próprio celular
 
-No iPhone com Apple Intelligence, o SempreAqui **transcreve e organiza o relato dentro do celular**. A nuvem fica só como reserva, para aparelhos sem suporte.
+No iPhone e no Android, o SempreAqui **transcreve e organiza o relato dentro do celular**, de graça, sem chave de API e sem internet. Cada aparelho usa o melhor motor que tem; a nuvem fica só como reserva.
 
 Os ganhos:
 
@@ -99,12 +99,29 @@ Como funciona em cada plataforma:
 
 | Etapa | iPhone (construído) | Android (construído) | Reserva |
 |---|---|---|---|
-| Transcrição | SpeechAnalyzer do iOS 26, no aparelho | Whisper `small` via whisper.cpp, com o áudio convertido por um módulo nativo em Kotlin | Gemini 3 Flash via OpenRouter |
-| Organizar o relato | Apple Foundation Models, com saída presa ao schema do registro | Qwen2.5 1.5B via llama.cpp, com saída presa a um JSON Schema; modelos baixados uma vez, com consentimento (1,2 GB) | Gemini 3 Flash via OpenRouter |
+| Transcrição | SpeechAnalyzer do iOS 26, no aparelho | Whisper `small` (whisper.cpp), 190 MB, com o áudio convertido por um módulo nativo em Kotlin | Gemini 3 Flash via OpenRouter |
+| Organizar o relato | Apple Foundation Models, com saída presa ao schema do registro | **Gemini Nano** (o modelo do próprio Android, nos aparelhos que têm) ou **Llama 3.2 3B** (llama.cpp, 2 GB, nos celulares com 6 GB de RAM ou mais), com saída presa a um JSON Schema | Gemini 3 Flash via OpenRouter |
 | Guardrails | No app e de novo no backend | No app e de novo no backend | No backend |
 | O que sai do celular | Só a transcrição e o registro | Só a transcrição e o registro | O áudio |
+| Custo de IA | Zero | Zero | Pago por uso |
 
-Os dois lados usam a mesma interface do módulo nativo (`disponibilidade`, `transcrever`, `gerarRegistro`, `gerarTexto`). Por isso o Android entra sem mudar uma linha do app em TypeScript nem do backend.
+**Como o Android escolhe o motor, sozinho:**
+1. Tem **Gemini Nano**? Usa ele: vem com o Android, o Google cuida das atualizações, e o app só baixa o Whisper.
+2. Não tem, mas tem **6 GB de RAM ou mais**? Baixa uma vez o **Llama 3.2 3B**, com consentimento, de preferência no Wi-Fi.
+3. Menos que isso? Usa a nuvem, com os mesmos guardrails. Modelos menores erram demais o registro para valer a pena.
+
+**Por que o Llama 3.2 3B:** comparamos modelos abertos de até 3B parâmetros com os mesmos prompts do app, a mesma saída presa ao esquema e o gabarito do Diário (`uv run python -m evals.comparar_modelos_aparelho`):
+
+| Modelo | Licença | Campos certos | Tempo por relato (CPU) |
+|---|---|---|---|
+| **Llama 3.2 3B Instruct** | Llama 3.2 Community License | **20 de 24 (83%)** | 24 s |
+| Llama 3.2 1B Instruct | Llama 3.2 Community License | 7 de 24 (29%) | 14 s |
+| SmolLM3 3B | Apache 2.0 | 10 de 24 (42%), com JSON inválido em 1 relato | 39 s |
+| Qwen2.5 1.5B Instruct | Apache 2.0 | 1 de 24 (4%), com JSON inválido em 2 relatos | 22 s |
+
+O Qwen2.5 3B ficou de fora porque sua licença é só para pesquisa. A Llama 3.2 Community License permite uso gratuito, inclusive comercial, e só exige licença paga acima de 700 milhões de usuários por mês. Ela pede o crédito "Built with Llama", que está no app (Ajustes, Sobre) e aqui.
+
+Os dois lados usam a mesma interface do módulo nativo (`disponibilidade`, `transcrever`, `gerarRegistro`, `gerarTexto`, `gerarMemoria`, `gerarPerguntas`). Prompts, normalização, regras fixas, guardrails e fila são o mesmo código em TypeScript nas duas plataformas.
 
 - Os guardrails do celular são um espelho dos do backend e passam nos mesmos 53 casos adversariais (`node scripts/guardrails.ts`, no CI).
 - Quando o relato sincroniza, o backend confere o resumo de novo e recalcula o risco: a palavra final é sempre do servidor.
@@ -112,7 +129,9 @@ Os dois lados usam a mesma interface do módulo nativo (`disponibilidade`, `tran
 - Correções num relato do celular também não vão para a nuvem: o resumo é reescrito no próprio aparelho.
 - Quem cuida pode desligar a IA do celular em Ajustes, Privacidade.
 
-Arquitetura, requisitos, contrato de sincronização, plano do Android e como avaliamos: [docs/ia-no-aparelho.md](docs/ia-no-aparelho.md).
+- Em Privacidade e dados, "Testar a IA do celular" roda um relato de exemplo pelo caminho inteiro, sem internet, e mostra o resultado e o tempo.
+
+Arquitetura, requisitos, contrato de sincronização, detalhes do Android e como avaliamos: [docs/ia-no-aparelho.md](docs/ia-no-aparelho.md).
 
 ## Integração com o SUS
 
@@ -167,8 +186,8 @@ flowchart TB
     subgraph Celular["App (React Native + Expo)"]
         V[Voz, fotos, texto]
         subgraph Local["IA no aparelho"]
-            ST[Fala para texto<br/>iOS: SpeechAnalyzer<br/>Android: SpeechRecognizer ou Whisper]
-            LM[Modelo local<br/>iOS: Apple Foundation Models<br/>Android: Gemini Nano ou modelo aberto]
+            ST[Fala para texto<br/>iOS: SpeechAnalyzer<br/>Android: Whisper small]
+            LM[Modelo local<br/>iOS: Apple Foundation Models<br/>Android: Gemini Nano ou Llama 3.2 3B]
             GL{{Guardrails no app}}
         end
         Q[(Fila offline<br/>áudio fica aqui)]
@@ -205,7 +224,7 @@ flowchart TB
     F --> T
 ```
 
-- **Caminho no aparelho (iPhone com Apple Intelligence, construído):** transcrição, extração estruturada e resumo rodam no celular. Para o backend vai só a transcrição e o registro, e ele reaplica os guardrails e recalcula o risco antes de salvar. Detalhes, requisitos e o plano para Android em [docs/ia-no-aparelho.md](docs/ia-no-aparelho.md).
+- **Caminho no aparelho (construído no iPhone e no Android):** transcrição, extração estruturada e resumo rodam no celular. No iPhone, com a IA da Apple; no Android, com Whisper e Gemini Nano ou Llama 3.2 3B. Para o backend vai só a transcrição e o registro, e ele reaplica os guardrails e recalcula o risco antes de salvar. Detalhes em [docs/ia-no-aparelho.md](docs/ia-no-aparelho.md).
 - **Caminho na nuvem (reserva):** cada função é um grafo LangGraph com etapas pequenas e verificáveis. O do Diário transcreve, extrai um JSON validado com Pydantic, avalia risco, resume e revisa com guardrails.
 - **Conversa do dia:** montada sem IA, a partir do Passaporte, com roteiros revisados que mudam todo dia e aprendem com a reação registrada pela família. No iPhone, a IA do aparelho reescreve as perguntas e uma validação barra "lembra", "recorda" e "esqueceu".
 - **Ajudante e Apoio:** determinísticos de propósito. Reconhecem a pergunta, respondem com os dados da família e dizem de onde veio; na hora difícil, cruzam Passaporte e Diário e citam trechos oficiais literais. As avaliações medem 100% de recusa médica e de fonte (veja [docs/avaliacao.md](docs/avaliacao.md)).
@@ -219,7 +238,7 @@ Decisões e detalhes em [docs/arquitetura.md](docs/arquitetura.md).
 |---|---|
 | App | React Native com Expo (TypeScript), Expo Router, abas nativas do iOS, notificações locais para lembretes e build nativo instalável |
 | IA no aparelho, iOS | Módulo nativo em Swift: SpeechAnalyzer (iOS 26) e Apple Foundation Models com geração guiada pelo schema |
-| IA no aparelho, Android | Whisper (whisper.rn) e Qwen2.5 1.5B (llama.rn), com conversor de áudio nativo em Kotlin |
+| IA no aparelho, Android | Whisper small (whisper.rn), Gemini Nano (ML Kit GenAI) ou Llama 3.2 3B (llama.rn); conversor de áudio nativo em Kotlin |
 | Backend | Python, FastAPI |
 | Orquestração de IA | LangGraph, um grafo por função |
 | Modelos na nuvem | Gemini 3 Flash via OpenRouter (escolhido por benchmark próprio de transcrição), só como reserva e só com provedores que não guardam dados |
@@ -271,6 +290,7 @@ uv run pytest
 uv run python -m evals.avaliar_guardrails
 uv run python -m evals.avaliar_diario
 uv run python -m evals.avaliar_apoio      # recusa médica, risco, fontes
+uv run python -m evals.comparar_modelos_aparelho modelo.gguf   # modelos abertos para o Android (precisa do llama.cpp)
 uv run python -m evals.comparar_transcricao google/gemini-3-flash-preview
 ```
 
@@ -318,5 +338,7 @@ Mais em [docs/ods.md](docs/ods.md).
 Contribuições são muito bem-vindas, de código a revisão de texto e indicação de fontes oficiais. Leia o [guia de contribuição](CONTRIBUTING.md) e o [código de conduta](CODE_OF_CONDUCT.md). Se você cuida ou cuidou de alguém com demência e quer conversar sobre o projeto, abra uma issue. Sua experiência vale mais que qualquer linha de código.
 
 ## Licença
+
+O código do SempreAqui é MIT. Os modelos de IA que o app baixa no Android têm licenças próprias: Whisper (MIT, OpenAI) e Llama 3.2 ([Llama 3.2 Community License](https://www.llama.com/llama3_2/license/), Copyright Meta Platforms, Inc.). **Built with Llama.** O Gemini Nano é do Google e vem com o próprio Android, nos aparelhos que têm.
 
 [MIT](LICENSE). Projeto pessoal e independente, de código aberto.

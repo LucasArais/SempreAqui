@@ -10,7 +10,7 @@ import {
   type EtapaLocal,
   iaLocalPronta,
   iaLocalCarregada,
-  MODELO_APARELHO,
+  modeloDoAparelho,
   processarNoAparelho,
   type ResultadoLocal,
   VERSAO_PROMPT_APARELHO,
@@ -354,7 +354,7 @@ async function sincronizarDoAparelho(pendente: Pendente): Promise<boolean> {
       transcricao,
       registro,
       resumo,
-      modelo: MODELO_APARELHO,
+      modelo: modeloDoAparelho(),
       versao_prompt: VERSAO_PROMPT_APARELHO,
     });
     const pedido = estado.pendentes.find((p) => p.id === pendente.id)?.enviarAFamilia;

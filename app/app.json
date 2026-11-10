@@ -73,6 +73,14 @@
         {
           "locationWhenInUsePermission": "O SempreAqui usa sua localização só para mostrar hospitais, UPAs e postos de saúde perto de você. Ela não é guardada."
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 26
+          }
+        }
       ]
     ],
     "scheme": "sempreaqui",

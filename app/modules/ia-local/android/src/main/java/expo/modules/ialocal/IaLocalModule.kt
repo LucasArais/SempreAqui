@@ -6,6 +6,11 @@ import android.media.MediaCodec
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.net.Uri
+import com.google.mlkit.genai.common.DownloadStatus
+import com.google.mlkit.genai.common.FeatureStatus
+import com.google.mlkit.genai.prompt.Generation
+import com.google.mlkit.genai.prompt.TextPart
+import com.google.mlkit.genai.prompt.generateContentRequest
 import io.github.expo.modules.v2.ExpoModule
 import io.github.expo.modules.v2.JS
 import io.github.expo.modules.v2.Module
@@ -24,10 +29,52 @@ import java.nio.ByteOrder
  * O Whisper (whisper.rn) só lê WAV com PCM de 16 bits, mono, a 16 kHz, e o app grava em m4a.
  * Este módulo decodifica o áudio com o MediaCodec do próprio Android, junta os canais, reamostra
  * para 16 kHz e grava um WAV temporário no cache do app. Também informa a memória do aparelho,
- * para o app só oferecer o modelo de linguagem onde ele cabe.
+ * para o app só oferecer o modelo de linguagem onde ele cabe, e dá acesso ao Gemini Nano
+ * nos aparelhos que têm.
  */
 @ExpoModule("IaLocal")
 class IaLocalModule : Module() {
+
+  // Gemini Nano pelo ML Kit (AICore): o modelo do próprio Android, sem custo e sem sair do celular.
+  // Só existe em alguns aparelhos; nos outros, checkStatus devolve UNAVAILABLE e o app usa o Llama.
+  private val gemini by lazy { Generation.getClient() }
+
+  @JS
+  suspend fun nanoStatus(): String = try {
+    when (gemini.checkStatus()) {
+      FeatureStatus.AVAILABLE -> "disponivel"
+      FeatureStatus.DOWNLOADABLE -> "baixavel"
+      FeatureStatus.DOWNLOADING -> "baixando"
+      else -> "indisponivel"
+    }
+  } catch (e: Throwable) {
+    "indisponivel"
+  }
+
+  /** Pede ao Android para baixar o Gemini Nano. Devolve true quando termina. */
+  @JS
+  suspend fun nanoBaixar(): Boolean {
+    var concluido = false
+    try {
+      gemini.download().collect { status ->
+        if (status is DownloadStatus.DownloadCompleted) concluido = true
+      }
+    } catch (e: Throwable) {
+      return false
+    }
+    return concluido
+  }
+
+  @JS
+  suspend fun nanoGerar(prompt: String, temperatura: Double, maxTokens: Double): String {
+    val resposta = gemini.generateContent(
+      generateContentRequest(TextPart(prompt)) {
+        temperature = temperatura.toFloat()
+        maxOutputTokens = maxTokens.toInt()
+      }
+    )
+    return resposta.candidates.firstOrNull()?.text ?: ""
+  }
 
   @JS
   fun memoriaTotalMb(): Double {

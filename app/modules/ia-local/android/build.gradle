@@ -17,3 +17,8 @@ android {
     versionName "1.0.0"
   }
 }
+
+dependencies {
+  // Gemini Nano pelo ML Kit (AICore): roda no próprio celular, sem custo, nos aparelhos que têm.
+  implementation "com.google.mlkit:genai-prompt:1.0.0-beta4"
+}

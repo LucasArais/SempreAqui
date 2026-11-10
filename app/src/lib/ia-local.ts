@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSyncExternalStore } from 'react';
 import { Platform } from 'react-native';
 
-import IaLocal, { type Disponibilidade } from '../../modules/ia-local';
+import IaLocal, { type Disponibilidade, modelosAndroid } from '../../modules/ia-local';
 import { promptExtracao, promptResumo, SISTEMA } from '../../prompts/diario-aparelho';
 import { promptMemoria, promptPerguntas } from '../../prompts/passaporte-aparelho';
 import { api, type Registro, type Relato } from './api';
@@ -27,7 +27,11 @@ import {
  * Os prompts ficam em app/prompts/diario-aparelho.ts, versões compactas dos do backend.
  */
 
-export const MODELO_APARELHO = 'apple-foundation-models';
+/** Quem organizou o relato no celular, para o backend registrar (e medir a qualidade por motor). */
+export function modeloDoAparelho() {
+  if (Platform.OS === 'ios') return 'apple-foundation-models';
+  return modelosAndroid?.idDoMotor() ?? 'android';
+}
 export const VERSAO_PROMPT_APARELHO = 'extracao.aparelho.v1';
 const MAX_TENTATIVAS_RESUMO = 2;
 

@@ -14,56 +14,99 @@ type WhisperContext = {
 const { initWhisper } = require('whisper.rn/index') as { initWhisper(o: { filePath: string }): Promise<WhisperContext> };
 
 /**
- * IA no aparelho no Android: Whisper (whisper.cpp) para a fala e um modelo aberto pequeno
- * (Qwen2.5 1.5B Instruct, via llama.cpp) para organizar, com saída presa a um JSON Schema,
- * o equivalente da geração guiada da Apple no iPhone. Mesma interface do módulo do iOS.
+ * IA no aparelho no Android, com a mesma interface do módulo do iOS. O motor é escolhido pelo
+ * próprio celular, sempre de graça:
  *
- * Os modelos são baixados uma vez, com consentimento, numa versão fixa (commit do Hugging Face)
- * e conferidos pelo tamanho. Depois tudo funciona sem internet e nada sai do celular.
+ * 1. Gemini Nano (ML Kit, AICore): o modelo do próprio Android, nos aparelhos que têm. Nada a
+ *    baixar além da fala.
+ * 2. Llama 3.2 3B Instruct (llama.cpp via llama.rn), nos celulares com 6 GB de RAM ou mais. Saída
+ *    presa a um JSON Schema, o equivalente da geração guiada da Apple. Foi o melhor modelo aberto
+ *    de até 3B na comparação do projeto (backend/evals/comparar_modelos_aparelho.py).
+ * 3. Abaixo disso, a nuvem, com os mesmos guardrails: modelos menores erram demais o registro.
+ *
+ * A fala é sempre o Whisper small (whisper.cpp via whisper.rn), com o áudio convertido pelo
+ * módulo nativo em Kotlin. Os modelos são baixados uma vez, com consentimento, numa versão fixa
+ * (commit do Hugging Face) e conferidos pelo tamanho. Depois tudo funciona sem internet.
+ *
+ * Llama 3.2 is licensed under the Llama 3.2 Community License, Copyright (c) Meta Platforms, Inc.
+ * Built with Llama.
  */
 
-type NativoAndroid = { paraWav16k(uri: string): Promise<string>; memoriaTotalMb(): number };
+type NativoAndroid = {
+  paraWav16k(uri: string): Promise<string>;
+  memoriaTotalMb(): number;
+  nanoStatus(): Promise<'disponivel' | 'baixavel' | 'baixando' | 'indisponivel'>;
+  nanoBaixar(): Promise<boolean>;
+  nanoGerar(prompt: string, temperatura: number, maxTokens: number): Promise<string>;
+};
 const nativo = requireOptionalNativeModule<NativoAndroid>('IaLocal');
 
-export const MODELOS = [
-  {
-    id: 'fala',
-    nome: 'Reconhecimento de fala (Whisper small)',
-    arquivo: 'ggml-small-q5_1.bin',
-    url: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/5359861c739e955e79d9a303bcbc70fb988958b1/ggml-small-q5_1.bin',
-    bytes: 190085487,
-  },
-  {
-    id: 'texto',
-    nome: 'Modelo de linguagem (Qwen2.5 1.5B)',
-    arquivo: 'qwen2.5-1.5b-instruct-q4_k_m.gguf',
-    url: 'https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/91cad51170dc346986eccefdc2dd33a9da36ead9/qwen2.5-1.5b-instruct-q4_k_m.gguf',
-    bytes: 1117320736,
-  },
-] as const;
+type Modelo = { id: string; nome: string; arquivo: string; url: string; bytes: number };
 
-/** Abaixo disso, o modelo de 1,1 GB deixa o celular lento demais: melhor usar a nuvem. */
-const MEMORIA_MINIMA_MB = 3500;
+const FALA: Modelo = {
+  id: 'fala',
+  nome: 'Reconhecimento de fala (Whisper small)',
+  arquivo: 'ggml-small-q5_1.bin',
+  url: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/5359861c739e955e79d9a303bcbc70fb988958b1/ggml-small-q5_1.bin',
+  bytes: 190085487,
+};
+const LLAMA_3B: Modelo = {
+  id: 'texto',
+  nome: 'Modelo de linguagem (Llama 3.2 3B)',
+  arquivo: 'Llama-3.2-3B-Instruct-Q4_K_M.gguf',
+  url: 'https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/5ab33fa94d1d04e903623ae72c95d1696f09f9e8/Llama-3.2-3B-Instruct-Q4_K_M.gguf',
+  bytes: 2019377696,
+};
+
+/** Celulares de 6 GB informam pouco menos de 6000 MB: o Llama 3B (2 GB) roda com folga. */
+const MEMORIA_LLAMA_MB = 5500;
 const PASTA = new Directory(Paths.document, 'modelos');
-const arquivo = (m: (typeof MODELOS)[number]) => new File(PASTA, m.arquivo);
+const arquivo = (m: Modelo) => new File(PASTA, m.arquivo);
+const baixado = (m: Modelo) => {
+  const f = arquivo(m);
+  return f.exists && f.size === m.bytes;
+};
 
-export const TAMANHO_TOTAL_MB = Math.round(MODELOS.reduce((t, m) => t + m.bytes, 0) / (1024 * 1024));
+export type Motor = 'gemini-nano' | 'llama-3.2-3b' | 'nuvem';
+let motor: Motor = 'nuvem';
+let nano: Awaited<ReturnType<NativoAndroid['nanoStatus']>> = 'indisponivel';
 
-export function modelosBaixados() {
-  return MODELOS.every((m) => {
-    const f = arquivo(m);
-    return f.exists && f.size === m.bytes;
-  });
+async function escolherMotor(): Promise<Motor> {
+  if (!nativo) return 'nuvem';
+  nano = await nativo.nanoStatus().catch(() => 'indisponivel' as const);
+  if (nano !== 'indisponivel') return 'gemini-nano';
+  return nativo.memoriaTotalMb() >= MEMORIA_LLAMA_MB ? 'llama-3.2-3b' : 'nuvem';
 }
 
-/** Baixa os modelos que faltam. Retoma de onde parou se a conexão cair. */
+const modelosDoMotor = (): Modelo[] => (motor === 'llama-3.2-3b' ? [FALA, LLAMA_3B] : motor === 'gemini-nano' ? [FALA] : []);
+
+/** Nome do motor, para a tela e para o backend registrar quem organizou o relato. */
+export function nomeDoMotor() {
+  return motor === 'gemini-nano' ? 'Gemini Nano' : motor === 'llama-3.2-3b' ? 'Llama 3.2 3B' : 'nuvem';
+}
+export const idDoMotor = () => motor;
+
+export function tamanhoDownloadMb() {
+  return Math.round(modelosDoMotor().reduce((t, m) => t + m.bytes, 0) / (1024 * 1024));
+}
+
+export function modelosBaixados() {
+  return motor !== 'nuvem' && modelosDoMotor().every(baixado) && (motor !== 'gemini-nano' || nano === 'disponivel');
+}
+
+/** Baixa o que falta (e pede ao Android o Gemini Nano, se for ele). Retoma se a conexão cair. */
 export async function baixarModelos(aoProgredir: (fracao: number) => void) {
   PASTA.create({ idempotent: true, intermediates: true });
-  const total = MODELOS.reduce((t, m) => t + m.bytes, 0);
+  const modelos = modelosDoMotor();
+  // Modelos de versões anteriores do app (por exemplo, o Qwen 1.5B) não servem mais: libera o espaço.
+  for (const item of PASTA.list()) {
+    if (item instanceof File && !modelos.some((m) => m.arquivo === item.name)) item.delete();
+  }
+  const total = modelos.reduce((t, m) => t + m.bytes, 0) || 1;
   let jaBaixado = 0;
-  for (const m of MODELOS) {
+  for (const m of modelos) {
     const destino = arquivo(m);
-    if (destino.exists && destino.size === m.bytes) {
+    if (baixado(m)) {
       jaBaixado += m.bytes;
       aoProgredir(jaBaixado / total);
       continue;
@@ -72,11 +115,15 @@ export async function baixarModelos(aoProgredir: (fracao: number) => void) {
     const base = jaBaixado;
     const download = createDownloadResumable(m.url, destino.uri, {}, (p) => aoProgredir((base + p.totalBytesWritten) / total));
     await download.downloadAsync();
-    if (!destino.exists || destino.size !== m.bytes) {
+    if (!baixado(m)) {
       if (destino.exists) destino.delete();
       throw new Error(`O download de ${m.nome} não terminou certo. Tente de novo no Wi-Fi.`);
     }
     jaBaixado += m.bytes;
+  }
+  if (motor === 'gemini-nano' && nano !== 'disponivel' && nativo) {
+    if (!(await nativo.nanoBaixar())) throw new Error('O Android não conseguiu baixar o Gemini Nano agora. Tente de novo no Wi-Fi.');
+    nano = 'disponivel';
   }
   aoProgredir(1);
 }
@@ -92,12 +139,12 @@ let whisper: WhisperContext | null = null;
 let llama: LlamaContext | null = null;
 
 async function contextoFala() {
-  whisper ??= await initWhisper({ filePath: arquivo(MODELOS[0]).uri });
+  whisper ??= await initWhisper({ filePath: arquivo(FALA).uri });
   return whisper;
 }
 
 async function contextoTexto() {
-  llama ??= await initLlama({ model: arquivo(MODELOS[1]).uri, n_ctx: 4096, use_mlock: false });
+  llama ??= await initLlama({ model: arquivo(LLAMA_3B).uri, n_ctx: 4096, use_mlock: false });
   return llama;
 }
 
@@ -172,21 +219,18 @@ const ESQUEMA_MEMORIA = objeto({
 
 const ESQUEMA_PERGUNTAS = objeto({ perguntas: { type: 'array', items: texto, minItems: 3, maxItems: 3 } });
 
-async function gerar(instrucoes: string, prompt: string, esquema?: object, opcoesExtras: object = {}) {
-  const ctx = await contextoTexto();
-  const resultado = await ctx.completion({
-    messages: [
-      { role: 'system', content: instrucoes },
-      { role: 'user', content: prompt },
-    ],
-    n_predict: esquema ? 900 : 350,
-    temperature: esquema ? 0 : 0.3,
-    ...(esquema ? { response_format: { type: 'json_schema', json_schema: { strict: true, schema: esquema } } } : {}),
-    ...opcoesExtras,
-  });
-  const bruto = (resultado.text ?? '').trim();
-  if (!esquema) return bruto;
-  // O modelo às vezes devolve marcas do template de chat em volta do JSON: fica só o objeto.
+/** Molde legível do JSON para o Gemini Nano, que recebe o formato no próprio texto do pedido. */
+function moldeJson(esquema: unknown): unknown {
+  const e = esquema as { type?: unknown; enum?: string[]; properties?: Record<string, unknown>; items?: unknown };
+  if (e.enum) return e.enum.join(' | ');
+  if (e.properties) return Object.fromEntries(Object.entries(e.properties).map(([k, v]) => [k, moldeJson(v)]));
+  if (e.type === 'array') return [moldeJson(e.items)];
+  if (Array.isArray(e.type)) return e.type.includes('number') || e.type.includes('integer') ? 'número ou null' : 'texto ou null';
+  return e.type === 'string' ? 'texto' : e.type;
+}
+
+function soJson(bruto: string) {
+  // Os modelos às vezes devolvem marcas do template de chat ou texto em volta do JSON.
   const inicio = bruto.indexOf('{');
   const fim = bruto.lastIndexOf('}');
   if (inicio < 0 || fim < inicio) {
@@ -196,12 +240,37 @@ async function gerar(instrucoes: string, prompt: string, esquema?: object, opcoe
   return bruto.slice(inicio, fim + 1);
 }
 
+async function gerar(instrucoes: string, prompt: string, esquema?: object, opcoesExtras: { temperature?: number } = {}) {
+  const temperatura = opcoesExtras.temperature ?? (esquema ? 0 : 0.3);
+  const maximo = esquema ? 900 : 350;
+  if (motor === 'gemini-nano' && nativo) {
+    const formato = esquema
+      ? `\n\nResponda só com um JSON neste formato, sem nenhum texto antes ou depois (use null ou lista vazia quando o relato não falar do assunto):\n${JSON.stringify(moldeJson(esquema))}`
+      : '';
+    const bruto = (await nativo.nanoGerar(`${instrucoes}\n\n${prompt}${formato}`, temperatura, maximo)).trim();
+    return esquema ? soJson(bruto) : bruto;
+  }
+  const ctx = await contextoTexto();
+  const resultado = await ctx.completion({
+    messages: [
+      { role: 'system', content: instrucoes },
+      { role: 'user', content: prompt },
+    ],
+    n_predict: maximo,
+    temperature: temperatura,
+    ...(esquema ? { response_format: { type: 'json_schema', json_schema: { strict: true, schema: esquema } } } : {}),
+  });
+  const bruto = (resultado.text ?? '').trim();
+  return esquema ? soJson(bruto) : bruto;
+}
+
 // A mesma interface do módulo do iOS -------------------------------------------
 
 const iaAndroid = {
   async disponibilidade(): Promise<Disponibilidade> {
     if (!nativo) return { transcricao: false, modelo: false, motivo: 'sem_modulo' };
-    if (nativo.memoriaTotalMb() < MEMORIA_MINIMA_MB) return { transcricao: false, modelo: false, motivo: 'aparelho' };
+    motor = await escolherMotor();
+    if (motor === 'nuvem') return { transcricao: false, modelo: false, motivo: 'aparelho' };
     if (!modelosBaixados()) return { transcricao: false, modelo: false, motivo: 'baixar_modelos' };
     return { transcricao: true, modelo: true, motivo: '' };
   },
@@ -234,4 +303,7 @@ const iaAndroid = {
   },
 };
 
-export default { ia: iaAndroid, modelos: { TAMANHO_TOTAL_MB, modelosBaixados, baixarModelos, apagarModelos } };
+export default {
+  ia: iaAndroid,
+  modelos: { tamanhoDownloadMb, nomeDoMotor, idDoMotor, modelosBaixados, baixarModelos, apagarModelos },
+};

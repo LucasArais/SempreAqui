@@ -10,9 +10,11 @@ export type IaLocalNativo = {
   gerarPerguntas(instrucoes: string, prompt: string): Promise<string[]>;
 };
 
-/** Download dos modelos abertos, só no Android. */
+/** Modelos do Android: o motor escolhido pelo celular e o download, com consentimento. */
 export type ModelosAndroid = {
-  TAMANHO_TOTAL_MB: number;
+  tamanhoDownloadMb(): number;
+  nomeDoMotor(): string;
+  idDoMotor(): string;
   modelosBaixados(): boolean;
   baixarModelos(aoProgredir: (fracao: number) => void): Promise<void>;
   apagarModelos(): Promise<void>;

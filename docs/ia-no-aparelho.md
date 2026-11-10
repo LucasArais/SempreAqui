@@ -102,35 +102,38 @@ O alerta de risco não depende do modelo: a checagem por palavras-chave roda no 
 
 ## Android (construído)
 
-Mesma interface do módulo e mesma lógica em TypeScript (prompts, normalização, regras fixas, guardrails, fila). O que muda é o motor:
+Mesma interface do módulo e mesma lógica em TypeScript (prompts, normalização, regras fixas, guardrails, fila). O que muda é o motor, escolhido pelo próprio celular, sempre de graça:
+
+| Ordem | Motor | Quando | O que o app baixa |
+|---|---|---|---|
+| 1 | **Gemini Nano** (ML Kit GenAI, pelo app AICore do Android) | O aparelho tem o Nano | Só o Whisper (190 MB). O Nano vem com o Android e o Google cuida dele |
+| 2 | **Llama 3.2 3B Instruct** (llama.cpp via llama.rn, Q4_K_M) | Sem Nano e com 6 GB de RAM ou mais | Whisper e Llama (2,2 GB no total) |
+| 3 | Nuvem, com os mesmos guardrails | Os demais | Nada |
 
 | Etapa | Tecnologia | Onde |
 |---|---|---|
-| Converter o áudio | O app grava em m4a; o Whisper só lê WAV de 16 kHz. Um módulo nativo em Kotlin decodifica com o MediaCodec do Android, junta os canais e reamostra para 16 kHz | [app/modules/ia-local/android](../app/modules/ia-local/android) |
-| Transcrição | Whisper `small` quantizado (whisper.cpp via whisper.rn), 190 MB | [app/modules/ia-local/adaptador.android.ts](../app/modules/ia-local/adaptador.android.ts) |
-| Extração, memória e perguntas | Qwen2.5 1.5B Instruct quantizado (llama.cpp via llama.rn), 1,1 GB, com a saída presa a um JSON Schema que espelha o `RegistroDiario`: o equivalente da geração guiada da Apple | mesmo arquivo |
-| Resumo | O mesmo modelo, texto livre, conferido pelos guardrails | mesmo arquivo |
+| Converter o áudio | O app grava em m4a; o Whisper só lê WAV de 16 kHz. O módulo nativo em Kotlin decodifica com o MediaCodec, junta os canais e reamostra | [app/modules/ia-local/android](../app/modules/ia-local/android) |
+| Transcrição | Whisper `small` quantizado (whisper.cpp via whisper.rn) | [app/modules/ia-local/adaptador.android.ts](../app/modules/ia-local/adaptador.android.ts) |
+| Organizar com o Llama | Saída presa a um JSON Schema que espelha o `RegistroDiario`, com todos os campos obrigatórios: o equivalente da geração guiada da Apple | mesmo arquivo |
+| Organizar com o Gemini Nano | O pedido leva as instruções e um molde do JSON; a resposta passa pela mesma normalização e pelas mesmas regras fixas. A saída estruturada nativa do Nano exige um compilador de esquema ainda em versão alpha | Kotlin (`nanoStatus`, `nanoBaixar`, `nanoGerar`) e o adaptador |
 
-**Download com consentimento.** Os modelos (1,2 GB no total) são baixados uma vez, em Família → Privacidade e dados, de preferência no Wi-Fi, com progresso na tela e retomada se a conexão cair. A versão é fixa (commit do Hugging Face) e o tamanho de cada arquivo é conferido. Dá para apagar a qualquer momento, e os relatos voltam para a nuvem. Até baixar, o app usa a nuvem.
+**Download com consentimento.** Em Família → Privacidade e dados, com o tamanho, o motor escolhido e o progresso na tela. Versão fixa (commit do Hugging Face) e tamanho conferido; modelos de versões anteriores do app são apagados para liberar espaço. Dá para apagar a qualquer momento, e os relatos voltam para a nuvem.
 
-**Quem tem.** Aparelhos com pelo menos 3,5 GB de RAM. Nos demais, a nuvem, com os mesmos guardrails.
+**Testar a IA do celular.** Um botão em Privacidade roda um relato fictício já gravado pelo caminho inteiro, sem internet, e mostra a transcrição, o registro, o resumo e o tempo.
 
-**Testar a IA do celular.** Um botão em Privacidade roda um relato fictício já gravado pelo caminho inteiro, sem internet, e mostra a transcrição, o registro, o resumo e o tempo. Serve para conferir o aparelho e para a demonstração.
+**O iPhone não carrega nada disso.** O Metro escolhe `adaptador.android.ts` só no Android, e `react-native.config.js` tira o llama.rn e o whisper.rn do build do iOS. O Android mínimo passou a ser o 8.0 (API 26), que o Gemini Nano exige.
 
-**O iPhone não carrega nada disso.** O Metro escolhe `adaptador.android.ts` só no Android, e `react-native.config.js` tira o llama.rn e o whisper.rn do build do iOS.
+**Por que esses modelos.** Veja a comparação em [avaliacao.md](avaliacao.md): o Llama 3.2 3B acertou 83% dos campos do gabarito; os modelos menores, de 4% a 42%. O Qwen2.5 3B ficou de fora pela licença, que é só para pesquisa.
 
-**Primeiros números (emulador Android 16 num Mac com Apple Silicon, só CPU):**
-- Relato de 45 segundos com voz natural: transcrição quase perfeita.
-- Caminho inteiro, da transcrição ao resumo: cerca de 50 segundos. Num celular intermediário deve ser mais lento.
-- Voz muito robótica (a voz "Eddy" do macOS) derruba o Whisper pequeno: a transcrição sai pelo som, ilegível. O Whisper `large-v3-turbo` acerta, mas tem 574 MB e é três vezes mais lento.
+**Licenças.** Whisper: MIT. Llama 3.2: Llama 3.2 Community License (uso gratuito, inclusive comercial, abaixo de 700 milhões de usuários por mês), com o crédito "Built with Llama" no app e no README. Gemini Nano: termos do ML Kit; só pode ser usado com o app em primeiro plano.
 
-**O que o modelo pequeno ainda erra, e como o app se protege:**
-- Deixa campos como "não foi falado" mesmo quando o relato fala deles (remédios, cansaço). A família corrige com um toque, e a correção entra no prompt seguinte.
-- Às vezes escreve "Não há sinais de alerta" dentro da lista de alertas. O app e o backend descartam frases que negam o alerta.
-- Às vezes devolve o relato inteiro no lugar do resumo, ou abre com "Aqui está um resumo". Resumo acima de 500 caracteres é reprovado e refeito; aberturas são removidas; se nada concreto foi registrado, entra o resumo seguro montado sem IA.
+**O que modelos menores erram, e como o app se protege:**
+- Deixar campos como "não foi falado" mesmo quando o relato fala deles. A família corrige com um toque, e a correção entra no prompt seguinte.
+- Escrever "Não há sinais de alerta" dentro da lista de alertas. O app e o backend descartam frases que negam o alerta.
+- Devolver o relato inteiro no lugar do resumo, ou abrir com "Aqui está um resumo". Resumo acima de 500 caracteres é refeito; aberturas são removidas; sem nada concreto registrado, entra o resumo seguro montado sem IA.
 - O risco não depende do modelo: a checagem por palavras-chave roda no app e no backend.
 
-**Próximos passos:** Gemini Nano (ML Kit) nos aparelhos que têm, testar um modelo de 3B parâmetros nos celulares com mais memória e medir em celulares reais de faixas diferentes.
+**Próximos passos:** medir em celulares reais de faixas diferentes, inclusive num aparelho com Gemini Nano (o emulador não tem), e testar o Whisper `large-v3-turbo` nos celulares mais fortes.
 
 ## Além do Diário: Passaporte e Conversa de hoje
 

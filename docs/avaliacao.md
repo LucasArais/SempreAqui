@@ -95,6 +95,21 @@ As mudanças de padrão não usam IA: são regras explícitas sobre a linha de b
 
 O Apoio é determinístico de propósito: na hora difícil, previsibilidade vale mais que criatividade. Os trechos oficiais são cópias literais do Guia Prático do Cuidador (Ministério da Saúde, 2008), conferidas contra o PDF original com a página de cada um. "Falar de remédio" não é tratado como pergunta médica ("ela não quer tomar o remédio" recebe apoio prático); pedir dose, indicação, troca ou interpretação é.
 
+### Modelos abertos para a IA no Android (10/11/2026)
+
+`uv run python -m evals.comparar_modelos_aparelho modelo.gguf ...` sobe cada modelo no llama.cpp (só CPU) e pede a extração dos três relatos do gabarito com os mesmos prompts do app e a saída presa ao esquema do registro, com todos os campos obrigatórios, como no celular.
+
+| Modelo | Licença | Campos certos | Risco certo | Tempo por relato |
+|---|---|---|---|---|
+| **Llama 3.2 3B Instruct (Q4_K_M)** | Llama 3.2 Community License | **20/24 (83%)** | 2/3 | 24 s |
+| Llama 3.2 1B Instruct (Q4_K_M) | Llama 3.2 Community License | 7/24 (29%) | 1/3 | 14 s |
+| SmolLM3 3B (Q4_K_M) | Apache 2.0 | 10/24 (42%), JSON inválido em 1 relato | 0/3 | 39 s |
+| Qwen2.5 1.5B Instruct (Q4_K_M) | Apache 2.0 | 1/24 (4%), JSON inválido em 2 relatos | 1/3 | 22 s |
+
+O Llama 3.2 3B virou o modelo do Android para celulares com 6 GB de RAM ou mais. O único erro de risco foi um alerta a mais (tentativa de sair de casa); o detector por palavras-chave do backend continua cobrindo quedas e engasgos independente do modelo. Abaixo de 3B, os modelos erram demais para valer a pena: nesses aparelhos, a nuvem. Uma primeira versão do script tratava campos opcionais como opcionais no JSON Schema e o llama.cpp deixava o modelo pular as horas de sono; corrigido para o mesmo esquema do app.
+
+A transcrição no Android usa o Whisper `small`. Com voz natural, transcreve quase sem erro; com a voz sintética mais robótica do macOS, falha. O `large-v3-turbo` acerta, mas tem 574 MB e é três vezes mais lento.
+
 ## Limitações e próximos passos
 
 - **Tamanho.** Três relatos provam o fluxo, não a robustez. A meta da semana 1 é chegar a 30, com sotaques regionais, ruído de fundo, falas longas e relatos confusos.

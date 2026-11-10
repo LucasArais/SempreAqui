@@ -142,8 +142,8 @@ export default function Privacidade() {
           {modelosAndroid && ia.disponibilidade?.motivo === 'baixar_modelos' && (
             <ListRow
               icone="compartilhar"
-              titulo={progresso === null ? `Baixar a IA para o celular (${modelosAndroid.TAMANHO_TOTAL_MB} MB)` : `Baixando a IA... ${Math.round(progresso * 100)}%`}
-              subtitulo="Uma vez só. Use o Wi-Fi"
+              titulo={progresso === null ? `Baixar a IA para o celular (${modelosAndroid.tamanhoDownloadMb()} MB)` : `Baixando a IA... ${Math.round(progresso * 100)}%`}
+              subtitulo={`${modelosAndroid.nomeDoMotor()}${modelosAndroid.idDoMotor() === 'gemini-nano' ? ', do próprio Android' : ''}. Uma vez só, use o Wi-Fi`}
               navega={false}
               onPress={progresso === null ? baixarIa : undefined}
             />
@@ -158,7 +158,7 @@ export default function Privacidade() {
             />
           )}
           {modelosAndroid && modelosAndroid.modelosBaixados() && (
-            <ListRow icone="lixeira" titulo="Apagar a IA do celular" subtitulo={`Libera ${modelosAndroid.TAMANHO_TOTAL_MB} MB. Os relatos voltam para a nuvem`} navega={false} onPress={apagarIa} />
+            <ListRow icone="lixeira" titulo="Apagar a IA do celular" subtitulo={`${modelosAndroid.nomeDoMotor()}. Libera ${modelosAndroid.tamanhoDownloadMb()} MB; os relatos voltam para a nuvem`} navega={false} onPress={apagarIa} />
           )}
         </ListGroup>
       </Section>

@@ -110,7 +110,8 @@ Personas que guiam cada decisão: **Cláudia**, 52 anos, cuida da mãe e abre o 
 - [ ] Medir no aparelho com o conjunto de avaliação do Diário: qualidade, tempo e bateria
 - [x] Regra fixa para o campo de remédios quando o relato não fala de remédio
 - [x] Android: transcrição com Whisper no aparelho, com conversor de áudio nativo
-- [ ] Android, passo 2: Gemini Nano pelo ML Kit nos aparelhos com suporte
+- [x] Android: Gemini Nano pelo ML Kit nos aparelhos com suporte
+- [x] Android: Llama 3.2 3B nos celulares com 6 GB ou mais, escolhido por comparação com o gabarito
 - [x] Android: modelo aberto pequeno via llama.cpp com JSON Schema, baixado com consentimento
 - [ ] Android: medir em celulares reais de faixas diferentes
 
