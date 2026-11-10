@@ -67,6 +67,27 @@ Sem IA, o SempreAqui seria mais um app de anotações que ninguém atualiza. Com
 
 Tudo isso está detalhado em [docs/etica-e-seguranca.md](docs/etica-e-seguranca.md).
 
+## IA no próprio celular
+
+A direção do SempreAqui é rodar a IA **dentro do celular de quem cuida**, com a nuvem só como reserva. Hoje o Diário já funciona sem internet: o áudio fica guardado no aparelho e é enviado sozinho quando a conexão volta. O próximo passo é transcrever e organizar o relato no próprio aparelho.
+
+Os ganhos:
+
+- **O áudio nunca sai do celular.** A transcrição e a extração acontecem no aparelho, e só o registro organizado é compartilhado com a família. É a forma mais forte de cumprir a LGPD: minimização de dados (art. 6º, III) e menos dado sensível de saúde (art. 11) trafegando ou guardado por terceiros.
+- **Nenhum provedor de IA vê a vida da família.** Sem envio para modelos externos, não há risco de os dados serem usados para treinar modelos nem de vazarem num serviço de fora.
+- **Custo de IA perto de zero.** O que mais custa hoje é mandar áudio para um modelo na nuvem. Rodando no aparelho, isso some, e o app pode continuar gratuito para as famílias.
+- **Funciona sem internet de verdade.** O resultado aparece na hora, mesmo no interior, no hospital ou com o plano de dados acabado.
+
+Como vai funcionar:
+
+| Etapa | iPhone | Android | Reserva |
+|---|---|---|---|
+| Transcrição | Reconhecimento de fala da Apple, no aparelho (iOS 26) | Whisper pequeno rodando local | Modelo na nuvem via OpenRouter |
+| Organizar o relato | Modelo local da Apple, com saída presa ao formato do registro | Modelo aberto pequeno (Gemma ou Qwen) | Modelo na nuvem via OpenRouter |
+| Guardrails | Regras determinísticas no próprio app | Regras determinísticas no próprio app | As mesmas regras no backend |
+
+A troca só acontece com evidência: o modelo local precisa passar nas mesmas avaliações do Diário, com risco detectado em 3 de 3 casos e zero violações de guardrail. Se não passar, o celular cuida da transcrição e a nuvem fica só com os relatos que exigem mais cuidado. Aparelhos sem suporte continuam usando a nuvem, com os mesmos guardrails.
+
 ## Arquitetura
 
 ```mermaid
@@ -176,12 +197,13 @@ Trabalhamos em ciclos curtos, cada um entregando uma funcionalidade de ponta a p
 |---|---|---|
 | Fase 0 | Documentação, PoC, guardrails com avaliação, app navegável | concluído |
 | 1 | Diário redondo: gravação real, offline, correção com um toque, histórico | concluído |
-| 2 | Resumo da semana, mudanças de padrão, lista para a consulta em PDF | próximo |
-| 3 | Passaporte de Memória montado só falando | |
+| 2 | Resumo da semana, mudanças de padrão, lista para a consulta em PDF | construído |
+| 3 | Passaporte de Memória montado só falando | próximo |
 | 4 | Conversas de Reminiscência geradas a partir do Passaporte | |
 | 5 | Apoio na Hora Difícil com fontes oficiais e 192 | |
 | 6 | Rede da Família: convite, tarefas e "obrigado" | |
 | 7 | Polimento, acessibilidade, deploy e roteiro do Demo Day | |
+| Em paralelo | IA no próprio celular: transcrição e organização do relato sem sair do aparelho | em estudo |
 
 O que mudou em cada ciclo está no [CHANGELOG](CHANGELOG.md).
 

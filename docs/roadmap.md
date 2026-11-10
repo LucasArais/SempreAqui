@@ -81,6 +81,15 @@ Personas que guiam cada decisão: **Cláudia**, 52 anos, cuida da mãe e abre o 
 - [ ] Deploy do backend e build instalável do app
 - [ ] Roteiro de demo de 3 a 5 minutos e slide com os números das evals e dos testes com usuários
 
+## IA no próprio celular (em estudo)
+
+**Pronto quando:** um relato é transcrito e organizado no iPhone, sem internet, passando nas mesmas avaliações do Diário (risco 3/3, zero violações).
+
+- [ ] Teste de um dia no iPhone: transcrição da Apple e modelo local, medindo qualidade, tempo e bateria
+- [ ] Guardrails determinísticos também no app
+- [ ] Android com Whisper e modelo aberto pequeno, baixado pelo Wi-Fi
+- [ ] Nuvem como reserva para aparelhos sem suporte
+
 ## Em paralelo, o tempo todo
 
 - Testes com cuidadores conduzidos pelo Laércio ([roteiro](testes-usuarios/roteiro.md)), virando melhorias priorizadas a cada rodada.
