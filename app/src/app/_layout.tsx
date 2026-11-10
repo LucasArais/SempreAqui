@@ -101,6 +101,7 @@ export default function Raiz() {
       {(!sessao.restaurada || (sessao.token && !sessao.pronta)) ? <CarregamentoSessao /> : <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: cores.background } }}>
         <Stack.Protected guard={!sessao.pronta}>
           <Stack.Screen name="entrar" />
+          <Stack.Screen name="criar-conta" />
         </Stack.Protected>
         <Stack.Protected guard={sessao.pronta}>
         <Stack.Screen name="index" />
@@ -175,6 +176,7 @@ export default function Raiz() {
         <Stack.Screen name="convite/index" options={{ presentation: 'modal', title: 'Convite' }} />
         <Stack.Screen name="convite/[codigo]" options={{ presentation: 'modal', title: 'Convite' }} />
         </Stack.Protected>
+        <Stack.Screen name="documento-conta" options={{ presentation: 'modal' }} />
       </Stack>}
       <ToastHost />
       {abrindo && <Abertura aoTerminar={terminarAbertura} />}

@@ -86,6 +86,7 @@ export class ErroApi extends Error {
   constructor(
     mensagem: string,
     readonly semConexao = false,
+    readonly status?: number,
   ) {
     super(mensagem);
   }
@@ -109,7 +110,7 @@ async function chamar<T>(caminho: string, init: RequestInit = {}): Promise<T> {
   if (resposta.status === 204) return undefined as T;
   if (!resposta.ok) {
     const detalhe = typeof corpo?.detail === 'string' ? corpo.detail : null;
-    throw new ErroApi(detalhe ?? 'Algo não saiu como esperado. Quer tentar de novo?');
+    throw new ErroApi(detalhe ?? 'Algo não saiu como esperado. Quer tentar de novo?', false, resposta.status);
   }
   return corpo as T;
 }
@@ -139,6 +140,10 @@ export function enviarRelato(envio: EnvioRelato) {
 }
 
 export const api = {
+  cadastrar: (dados: { nome: string; email: string; senha: string; aceite_termos: true; versao_termos: string }) =>
+    chamar<{ criado: boolean }>('/auth/cadastro', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados),
+    }),
   relato: (id: string) => chamar<Relato>(`/diario/relatos/${id}`),
   relatos: () => chamar<Relato[]>('/diario/relatos'),
   campos: () => chamar<CampoEditavel[]>('/diario/campos'),

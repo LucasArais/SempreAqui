@@ -23,8 +23,8 @@ export function LoginField({ rotulo, erro, senha, ref, ...props }: TextInputProp
           ref={ref}
           accessibilityLabel={rotulo}
           accessibilityHint={erro ?? undefined}
-          autoCapitalize="none"
-          autoCorrect={false}
+          autoCapitalize={props.autoCapitalize ?? "none"}
+          autoCorrect={props.autoCorrect ?? false}
           secureTextEntry={senha && !visivel}
           placeholderTextColor={cores.secondaryLabel}
           style={[tipografia.body, { flex: 1, minHeight: tamanho.botao, padding: espaco.s2, color: cores.label }]}

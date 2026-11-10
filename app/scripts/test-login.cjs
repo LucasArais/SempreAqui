@@ -137,3 +137,17 @@ test('cópias offline são isoladas por conta e preservadas depois de sair', asy
   await s.entrarComSenha('a@example.com', 'senha');
   assert.equal(await storage.getItem('familia.v1'), 'dados da conta A');
 });
+
+
+test('cadastro exige nome, e-mail válido, senha com requisitos e aceite', () => {
+  const v = ambiente().load('validar-login');
+  const correto = v.validarCadastro('Cláudia', 'claudia@example.com', 'Senha123', true);
+  assert.equal(Object.values(correto).every((e) => e === null), true);
+  for (const [campo, valores] of [
+    ['nome', [' ', 'a']], ['email', ['errado', '@exemplo.com']], ['senha', ['curta1', 'soletRas', '123456789']],
+  ]) for (const valor of valores) {
+    const d = { nome: 'Cláudia', email: 'c@example.com', senha: 'Senha123', aceite: true, [campo]: valor };
+    assert.ok(v.validarCadastro(d.nome, d.email, d.senha, d.aceite)[campo]);
+  }
+  assert.ok(v.validarCadastro('Cláudia', 'c@example.com', 'Senha123', false).aceite);
+});

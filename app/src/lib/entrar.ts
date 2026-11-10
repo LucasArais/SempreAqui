@@ -1,5 +1,5 @@
 import { api } from './api';
-import { definirFamilia, garantirLogin, marcarErroSessao, marcarAbrindoSessao } from './sessao';
+import { definirFamilia, garantirLogin, marcarErroSessao, marcarAbrindoSessao, sessaoAtual } from './sessao';
 
 /** Restaura o login e mantém a criação/entrada na família já existente no backend. */
 let emAndamento: Promise<void> | null = null;
@@ -14,7 +14,7 @@ async function restaurar() {
   marcarAbrindoSessao();
   try {
     if (!(await garantirLogin())) return;
-    const { familia, papel } = await api.sessao();
+    const { familia, papel } = await api.sessao(sessaoAtual().nome ?? undefined);
     definirFamilia(familia, papel);
   } catch {
     marcarErroSessao('Não consegui abrir sua família agora. Confira sua conexão e tente de novo.');

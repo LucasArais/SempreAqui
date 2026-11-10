@@ -34,13 +34,14 @@ export type EstadoSessao = {
   pronta: boolean;
   restaurada: boolean;
   usuario: string | null;
+  nome: string | null;
   token: string | null;
   familia: string | null;
   papel: string | null;
   erro: string | null;
 };
 
-let estado: EstadoSessao = { pronta: false, restaurada: false, usuario: null, token: null, familia: null, papel: null, erro: null };
+let estado: EstadoSessao = { pronta: false, restaurada: false, usuario: null, nome: null, token: null, familia: null, papel: null, erro: null };
 const ouvintes = new Set<() => void>();
 const trocas = new Set<() => void>();
 export function aoTrocarConta(limpar: () => void) { trocas.add(limpar); }
@@ -59,9 +60,9 @@ export function useSessao() {
 
 supabase?.auth.onAuthStateChange((_evento, sessao) => {
   if (sessao && !sessao.user.is_anonymous) {
-    definir({ token: sessao.access_token, usuario: sessao.user.id });
+    definir({ token: sessao.access_token, usuario: sessao.user.id, nome: sessao.user.user_metadata?.nome ?? null });
   } else {
-    definir({ token: null, usuario: null, familia: null, papel: null, pronta: false });
+    definir({ token: null, usuario: null, nome: null, familia: null, papel: null, pronta: false });
   }
 });
 if (supabase && Platform.OS !== 'web') {
@@ -86,7 +87,7 @@ export async function garantirLogin(): Promise<string | null> {
     definir({ restaurada: true });
     return null;
   }
-  definir({ token: data.session.access_token, usuario: data.session.user.id, restaurada: true });
+  definir({ token: data.session.access_token, usuario: data.session.user.id, nome: data.session.user.user_metadata?.nome ?? null, restaurada: true });
   return data.session.access_token;
 }
 
@@ -94,7 +95,7 @@ export async function entrarComSenha(email: string, senha: string) {
   if (!supabase) throw new Error('O login ainda não está configurado neste app.');
   const { data, error } = await supabase.auth.signInWithPassword({ email: normalizarEmail(email), password: senha });
   if (error) throw new Error(mensagemLogin(error));
-  definir({ token: data.session.access_token, usuario: data.user.id, restaurada: true, erro: null });
+  definir({ token: data.session.access_token, usuario: data.user.id, nome: data.user.user_metadata?.nome ?? null, restaurada: true, erro: null });
 }
 
 export function definirFamilia(familia: string, papel: string) {
@@ -108,5 +109,5 @@ export async function sair() {
     const { error } = await supabase.auth.signOut({ scope: 'local' });
     if (error) throw new Error('Não consegui sair agora. Tente de novo.');
   }
-  definir({ token: null, usuario: null, familia: null, papel: null, pronta: false, restaurada: true, erro: null });
+  definir({ token: null, usuario: null, nome: null, familia: null, papel: null, pronta: false, restaurada: true, erro: null });
 }

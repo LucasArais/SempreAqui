@@ -1,7 +1,8 @@
+import { router } from 'expo-router';
 import { useRef, useState, type ComponentRef } from 'react';
 import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, ScrollView, TextInput, View } from 'react-native';
 
-import { Coluna, Logo, PrimaryButton, Text } from '@/components';
+import { Coluna, Logo, PrimaryButton, SecondaryButton, Text } from '@/components';
 import { LoginField } from '@/components/LoginField';
 import { entrar } from '@/lib/entrar';
 import { haptic } from '@/lib/haptics';
@@ -62,6 +63,7 @@ export default function Entrar() {
           {!supabase && <Text variante="callout" cor="secondaryLabel">O login ainda não está configurado neste app.</Text>}
           <View style={{ gap: espaco.s1 }}>
             <PrimaryButton titulo={enviando ? 'Entrando…' : 'Entrar'} onPress={() => void enviar()} desativado={!email.trim() || !senha || enviando || !supabase} />
+            {!enviando && <SecondaryButton titulo="Criar nova conta" onPress={() => router.push('/criar-conta')} />}
             {enviando && <ActivityIndicator color={cores.accentStrong} accessibilityLabel="Entrando na sua conta" />}
           </View>
         </Coluna>
