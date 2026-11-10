@@ -21,6 +21,8 @@ export type Tarefa = {
   criada_por: string | null;
   quando: string | null;
   concluida: boolean;
+  /** Quem assumiu é a conta de quem está usando o app. */
+  minha: boolean;
 };
 export type ItemFeed = {
   id: string;
@@ -105,6 +107,15 @@ export async function assumirTarefa(id: string) {
   const tarefa = await api.mudarTarefa(id, { assumir: true });
   trocarTarefa(tarefa);
   await agendarLembrete(tarefa);
+  void atualizarFeed();
+  return tarefa;
+}
+
+/** Desistir de uma tarefa assumida: ela volta a ficar livre para a família. */
+export async function largarTarefa(id: string) {
+  const tarefa = await api.mudarTarefa(id, { largar: true });
+  trocarTarefa(tarefa);
+  await cancelarLembrete(id);
   void atualizarFeed();
   return tarefa;
 }

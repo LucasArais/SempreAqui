@@ -119,3 +119,29 @@ def test_cada_pessoa_tem_a_propria_foto(tmp_path):
     repo.entrar_na_familia("u1", "familia-a", "Rafael", "familiar")
     repo.atualizar_membro("familia-a", "u1", "Rafael", "familiar", "up-0123456789abcdef01234567")
     assert repo.membros_da_familia("familia-a")[0]["foto"] == "up-0123456789abcdef01234567"
+
+
+def test_tarefa_fica_ligada_a_conta_e_acompanha_o_nome(tmp_path):
+    from core.repositorio import Repositorio
+
+    repo = Repositorio(tmp_path)
+    repo.entrar_na_familia("u1", "familia-a", "Rafael", "familiar")
+    t = repo.criar_tarefa("familia-a", {"titulo": "Folga", "tipo": "cobrir_folga"})
+    repo.atualizar_tarefa(
+        "familia-a", t["id"], {"responsavel_nome": "Rafael", "responsavel_usuario": "u1"}
+    )
+    repo.atualizar_membro("familia-a", "u1", "Rafa", "familiar")
+    depois = repo.obter_tarefa("familia-a", t["id"])
+    assert depois["responsavel_nome"] == "Rafa" and depois["responsavel_usuario"] == "u1"
+
+
+def test_largar_tarefa_volta_a_ficar_livre(ambiente):  # noqa: F811
+    cliente, *_ = ambiente
+    tid = cliente.post(
+        "/tarefas", json={"titulo": "Visita", "tipo": "visita"}, headers=FAMILIA
+    ).json()["id"]
+    assert cliente.patch(f"/tarefas/{tid}", json={"assumir": True}, headers=FAMILIA).json()[
+        "responsavel_nome"
+    ]
+    livre = cliente.patch(f"/tarefas/{tid}", json={"largar": True}, headers=FAMILIA).json()
+    assert livre["responsavel_nome"] is None and livre["minha"] is False

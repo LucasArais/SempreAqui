@@ -206,7 +206,7 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(dados),
     }),
-  mudarTarefa: (id: string, mudanca: { assumir?: boolean; concluida?: boolean }) =>
+  mudarTarefa: (id: string, mudanca: { assumir?: boolean; largar?: boolean; concluida?: boolean }) =>
     chamar<import('./familia').Tarefa>(`/tarefas/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },

@@ -324,6 +324,10 @@ class RepositorioSupabase:
             "where grupo_id = %s and usuario_id = %s",
             (nome, papel, foto, self.grupo(familia_id), usuario_id),
         )
+        self._sql(
+            "update tarefas set responsavel_nome = %s where grupo_id = %s and responsavel_usuario = %s",
+            (nome, self.grupo(familia_id), usuario_id),
+        )
 
     def criar_convite(self, familia_id: str, codigo: str, papel: str, expira_em: str) -> None:
         self._sql(
@@ -385,7 +389,14 @@ class RepositorioSupabase:
     def atualizar_tarefa(self, familia_id: str, tarefa_id: str, campos: dict) -> dict | None:
         if not self.obter_tarefa(familia_id, tarefa_id):
             return None
-        permitidos = {"titulo", "tipo", "responsavel_nome", "quando", "concluida"}
+        permitidos = {
+            "titulo",
+            "tipo",
+            "responsavel_nome",
+            "responsavel_usuario",
+            "quando",
+            "concluida",
+        }
         campos = {k: v for k, v in campos.items() if k in permitidos}
         if "concluida" in campos:
             campos["concluida"] = bool(campos["concluida"])

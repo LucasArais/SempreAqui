@@ -2,6 +2,14 @@
 
 O que mudou em cada ciclo, do mais recente para o mais antigo.
 
+## Tarefas mais claras (novembro de 2026)
+
+- A tarefa assumida fica ligada à conta de quem assumiu, não só ao nome: aparece "Com você" e continua sua se você mudar de nome.
+- Botões à vista na linha: "Eu assumo" quando está livre, "Concluir" quando é sua.
+- Tarefa de outra pessoa: um toque abre "Marcar como feita" ou "Assumir no meu lugar". O feed registra quem marcou ("Ligar para a Dona Isabel (de Rafael)").
+- "Não vou conseguir": a tarefa volta a ficar livre para a família e o lembrete é cancelado.
+- Migração `004_tarefa_ligada_a_conta.sql`.
+
 ## README com as telas atuais (novembro de 2026)
 
 - 20 prints novos das telas como estão hoje, no README em destaque e numa galeria "O app, tela por tela". Saíram as capturas antigas e as do modo escuro, que o app não usa mais.

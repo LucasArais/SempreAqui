@@ -103,6 +103,7 @@ create table if not exists tarefas (
   titulo text not null,
   tipo text not null,
   responsavel_nome text,
+  responsavel_usuario text,
   criada_por text,
   quando text,
   concluida integer not null default 0,
@@ -185,6 +186,9 @@ class Repositorio:
         self.arquivo = self.pasta / "sempreaqui.db"
         with self._conexao() as c:
             c.executescript(ESQUEMA)
+            colunas = {x["name"] for x in c.execute("pragma table_info(tarefas)")}
+            if "responsavel_usuario" not in colunas:
+                c.execute("alter table tarefas add column responsavel_usuario text")
 
     @contextmanager
     def _conexao(self):
@@ -450,6 +454,11 @@ class Repositorio:
                 "where familia_id = ? and usuario_id = ?",
                 (nome, papel, foto, familia_id, usuario_id),
             )
+            # As tarefas assumidas acompanham o nome novo.
+            c.execute(
+                "update tarefas set responsavel_nome = ? where familia_id = ? and responsavel_usuario = ?",
+                (nome, familia_id, usuario_id),
+            )
 
     def criar_convite(self, familia_id: str, codigo: str, papel: str, expira_em: str) -> None:
         with self._conexao() as c:
@@ -509,7 +518,14 @@ class Repositorio:
         return self.obter_tarefa(familia_id, tarefa_id)  # type: ignore[return-value]
 
     def atualizar_tarefa(self, familia_id: str, tarefa_id: str, campos: dict) -> dict | None:
-        permitidos = {"titulo", "tipo", "responsavel_nome", "quando", "concluida"}
+        permitidos = {
+            "titulo",
+            "tipo",
+            "responsavel_nome",
+            "responsavel_usuario",
+            "quando",
+            "concluida",
+        }
         campos = {k: v for k, v in campos.items() if k in permitidos}
         if "concluida" in campos:
             campos["concluida_em"] = agora() if campos["concluida"] else None
@@ -823,6 +839,9 @@ def _tarefa(linha: dict) -> dict:
         "titulo": linha["titulo"],
         "tipo": linha["tipo"],
         "responsavel_nome": linha.get("responsavel_nome"),
+        "responsavel_usuario": str(linha["responsavel_usuario"])
+        if linha.get("responsavel_usuario")
+        else None,
         "criada_por": linha.get("criada_por"),
         "quando": iso(linha.get("quando")),
         "concluida": bool(linha["concluida"]),

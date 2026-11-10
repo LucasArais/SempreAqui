@@ -1163,6 +1163,7 @@ class MudancaTarefa(BaseModel):
     responsavel_nome: str | None = Field(default=None, max_length=60)
     concluida: bool | None = None
     assumir: bool | None = None
+    largar: bool | None = None
 
 
 def _quando_valido(quando: str | None) -> str | None:
@@ -1174,11 +1175,22 @@ def _quando_valido(quando: str | None) -> str | None:
         raise HTTPException(422, "Data inválida.") from erro
 
 
+def _para_mim(tarefa: dict, usuario: str | None) -> dict:
+    """A tarefa como o app mostra: "minha" quando quem assumiu é a conta de quem pergunta."""
+    dono = tarefa.get("responsavel_usuario")
+    return {
+        **{k: v for k, v in tarefa.items() if k != "responsavel_usuario"},
+        "minha": bool(usuario and dono == usuario),
+    }
+
+
 @app.get("/tarefas")
 def listar_tarefas(
-    familia_id: str = Depends(obter_familia), repo: Repositorio = Depends(obter_repositorio)
+    usuario: str | None = Depends(obter_usuario),
+    familia_id: str = Depends(obter_familia),
+    repo: Repositorio = Depends(obter_repositorio),
 ) -> list[dict]:
-    return repo.listar_tarefas(familia_id)
+    return [_para_mim(t, usuario) for t in repo.listar_tarefas(familia_id)]
 
 
 @app.post("/tarefas", status_code=201)
@@ -1191,7 +1203,7 @@ def criar_tarefa(
     if tarefa.tipo not in TIPOS_TAREFA:
         raise HTTPException(422, "Tipo de tarefa desconhecido.")
     eu = _eu(repo, familia_id, usuario)
-    return repo.criar_tarefa(
+    criada = repo.criar_tarefa(
         familia_id,
         {
             "titulo": tarefa.titulo.strip(),
@@ -1201,6 +1213,7 @@ def criar_tarefa(
             "criada_por": eu["nome"],
         },
     )
+    return _para_mim(criada, usuario)
 
 
 @app.patch("/tarefas/{tarefa_id}")
@@ -1211,29 +1224,36 @@ def mudar_tarefa(
     familia_id: str = Depends(obter_familia),
     repo: Repositorio = Depends(obter_repositorio),
 ) -> dict:
-    """Assumir, concluir ou editar. Assumir e concluir aparecem no feed da família."""
+    """Assumir, largar, concluir, reabrir ou editar. O que muda aparece no feed da família.
+
+    Qualquer pessoa da família pode marcar uma tarefa como feita (às vezes quem cuida vê que o
+    irmão já ligou); o feed registra quem marcou.
+    """
     antes = repo.obter_tarefa(familia_id, tarefa_id)
     if not antes:
         raise HTTPException(404, "Não encontrei essa tarefa.")
     eu = _eu(repo, familia_id, usuario)
-    campos = mudanca.model_dump(exclude_none=True, exclude={"assumir"})
+    campos = mudanca.model_dump(exclude_none=True, exclude={"assumir", "largar"})
     if "quando" in campos:
         campos["quando"] = _quando_valido(campos["quando"])
     if mudanca.assumir:
         campos["responsavel_nome"] = eu["nome"]
+        campos["responsavel_usuario"] = usuario
+    elif mudanca.largar:
+        campos["responsavel_nome"] = None
+        campos["responsavel_usuario"] = None
     tarefa = repo.atualizar_tarefa(familia_id, tarefa_id, campos)
     ref = f"tarefa:{tarefa_id}"
-    if mudanca.assumir and antes["responsavel_nome"] != eu["nome"]:
+    era_minha = bool(usuario and antes.get("responsavel_usuario") == usuario)
+    if mudanca.assumir and not era_minha:
         repo.registrar_feed(familia_id, "tarefa_assumida", eu["nome"], antes["titulo"], ref)
     if mudanca.concluida and not antes["concluida"]:
-        repo.registrar_feed(
-            familia_id,
-            "tarefa_concluida",
-            tarefa["responsavel_nome"] or eu["nome"],
-            antes["titulo"],
-            ref,
+        dono = antes["responsavel_nome"]
+        texto = (
+            antes["titulo"] if not dono or dono == eu["nome"] else f"{antes['titulo']} (de {dono})"
         )
-    return tarefa
+        repo.registrar_feed(familia_id, "tarefa_concluida", eu["nome"], texto, ref)
+    return _para_mim(tarefa, usuario)
 
 
 @app.delete("/tarefas/{tarefa_id}", status_code=204)
