@@ -1058,8 +1058,9 @@ def _eu(repo: Repositorio, familia_id: str, usuario: str | None) -> dict:
                     "usuario_id": usuario,
                     "nome": m["nome"] or "Alguém da família",
                     "papel": m["papel"],
+                    "foto": m.get("foto"),
                 }
-    return {"usuario_id": usuario, "nome": "Alguém da família", "papel": None}
+    return {"usuario_id": usuario, "nome": "Alguém da família", "papel": None, "foto": None}
 
 
 @app.get("/familia")
@@ -1069,7 +1070,12 @@ def ver_familia(
     repo: Repositorio = Depends(obter_repositorio),
 ) -> dict:
     membros = [
-        {"nome": m["nome"] or "Sem nome", "papel": m["papel"], "eu": m["usuario_id"] == usuario}
+        {
+            "nome": m["nome"] or "Sem nome",
+            "papel": m["papel"],
+            "foto": m.get("foto"),
+            "eu": m["usuario_id"] == usuario,
+        }
         for m in repo.membros_da_familia(familia_id)
     ]
     return {"membros": membros, "eu": _eu(repo, familia_id, usuario) | {"usuario_id": None}}
@@ -1078,6 +1084,7 @@ def ver_familia(
 class Eu(BaseModel):
     nome: str = Field(min_length=1, max_length=60)
     papel: str
+    foto: str | None = Field(default=None, pattern=r"^(up-[0-9a-f]{24}|[A-Za-z]{2,30})$")
 
 
 @app.patch("/familia/eu")
@@ -1091,8 +1098,8 @@ def atualizar_eu(
         raise HTTPException(401, "Entre no app para continuar.")
     if dados.papel not in PAPEIS:
         raise HTTPException(422, "Papel desconhecido.")
-    repo.atualizar_membro(familia_id, usuario, dados.nome.strip(), dados.papel)
-    return {"nome": dados.nome.strip(), "papel": dados.papel}
+    repo.atualizar_membro(familia_id, usuario, dados.nome.strip(), dados.papel, dados.foto)
+    return {"nome": dados.nome.strip(), "papel": dados.papel, "foto": dados.foto}
 
 
 class NovoConvite(BaseModel):

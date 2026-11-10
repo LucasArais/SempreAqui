@@ -7,6 +7,7 @@ import { fotos } from '@/data/familia';
 import { api, ErroApi } from '@/lib/api';
 import {
   agradecer,
+  fotoDoMembro,
   carregarFamilia,
   type ItemFeed,
   meuNome,
@@ -33,7 +34,7 @@ function ItemDoFeed({ item }: { item: ItemFeed }) {
   return (
     <Card>
       <View style={{ flexDirection: 'row', gap: espaco.s1, alignItems: 'center' }}>
-        {aviso && <Icon nome="atencao" cor={cores.emergency} />}
+        {aviso ? <Icon nome="atencao" cor={cores.emergency} /> : fotoDoMembro(item.autor) ? <Avatar nome={item.autor} fonte={fotoDaChave(fotoDoMembro(item.autor))} /> : null}
         <Text variante="headline" style={{ flex: 1 }}>
           {TITULO_FEED[item.tipo](item)}
         </Text>
@@ -126,7 +127,7 @@ export default function Familia() {
               key={`${m.nome}-${i}`}
               titulo={m.eu ? `${meuNome() || 'Você'} (você)` : m.nome}
               subtitulo={PAPEIS[m.papel]}
-              esquerda={<Avatar nome={m.nome} tom={i % 5} />}
+              esquerda={<Avatar nome={m.nome} tom={i % 5} fonte={fotoDaChave(m.foto)} />}
               onPress={m.eu ? () => router.push('/eu') : undefined}
               dica={m.eu ? 'Toque para mudar seu nome ou papel' : undefined}
             />

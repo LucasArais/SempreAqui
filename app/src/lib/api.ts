@@ -181,11 +181,11 @@ export const api = {
   },
   familia: () =>
     chamar<{ membros: import('./familia').Membro[]; eu: { nome: string; papel: import('./familia').Papel | null } }>('/familia'),
-  atualizarEu: (nome: string, papel: string) =>
-    chamar<{ nome: string; papel: import('./familia').Papel }>('/familia/eu', {
+  atualizarEu: (nome: string, papel: string, foto: string | null) =>
+    chamar<{ nome: string; papel: import('./familia').Papel; foto: string | null }>('/familia/eu', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nome, papel }),
+      body: JSON.stringify({ nome, papel, foto }),
     }),
   criarConvite: (papel = 'familiar') =>
     chamar<{ codigo: string; mensagem: string }>('/familia/convites', {

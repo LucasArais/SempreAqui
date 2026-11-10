@@ -302,18 +302,27 @@ class RepositorioSupabase:
 
     def membros_da_familia(self, familia_id: str) -> list[dict]:
         linhas = self._sql(
-            "select usuario_id, nome_exibicao, papel from membros where grupo_id = %s order by criado_em",
+            "select usuario_id, nome_exibicao, papel, foto from membros where grupo_id = %s "
+            "order by criado_em",
             (self.grupo(familia_id),),
         )
         return [
-            {"usuario_id": str(x["usuario_id"]), "nome": x["nome_exibicao"], "papel": x["papel"]}
+            {
+                "usuario_id": str(x["usuario_id"]),
+                "nome": x["nome_exibicao"],
+                "papel": x["papel"],
+                "foto": x["foto"],
+            }
             for x in linhas
         ]
 
-    def atualizar_membro(self, familia_id: str, usuario_id: str, nome: str, papel: str) -> None:
+    def atualizar_membro(
+        self, familia_id: str, usuario_id: str, nome: str, papel: str, foto: str | None = None
+    ) -> None:
         self._sql(
-            "update membros set nome_exibicao = %s, papel = %s where grupo_id = %s and usuario_id = %s",
-            (nome, papel, self.grupo(familia_id), usuario_id),
+            "update membros set nome_exibicao = %s, papel = %s, foto = %s "
+            "where grupo_id = %s and usuario_id = %s",
+            (nome, papel, foto, self.grupo(familia_id), usuario_id),
         )
 
     def criar_convite(self, familia_id: str, codigo: str, papel: str, expira_em: str) -> None:

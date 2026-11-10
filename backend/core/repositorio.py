@@ -60,6 +60,7 @@ create table if not exists membros (
   familia_id text not null,
   nome_exibicao text,
   papel text not null,
+  foto text,
   criado_em text not null,
   primary key (usuario_id, familia_id)
 );
@@ -426,20 +427,28 @@ class Repositorio:
     def membros_da_familia(self, familia_id: str) -> list[dict]:
         with self._conexao() as c:
             linhas = c.execute(
-                "select usuario_id, nome_exibicao, papel from membros where familia_id = ? "
+                "select usuario_id, nome_exibicao, papel, foto from membros where familia_id = ? "
                 "order by criado_em",
                 (familia_id,),
             ).fetchall()
         return [
-            {"usuario_id": x["usuario_id"], "nome": x["nome_exibicao"], "papel": x["papel"]}
+            {
+                "usuario_id": x["usuario_id"],
+                "nome": x["nome_exibicao"],
+                "papel": x["papel"],
+                "foto": x["foto"],
+            }
             for x in linhas
         ]
 
-    def atualizar_membro(self, familia_id: str, usuario_id: str, nome: str, papel: str) -> None:
+    def atualizar_membro(
+        self, familia_id: str, usuario_id: str, nome: str, papel: str, foto: str | None = None
+    ) -> None:
         with self._conexao() as c:
             c.execute(
-                "update membros set nome_exibicao = ?, papel = ? where familia_id = ? and usuario_id = ?",
-                (nome, papel, familia_id, usuario_id),
+                "update membros set nome_exibicao = ?, papel = ?, foto = ? "
+                "where familia_id = ? and usuario_id = ?",
+                (nome, papel, foto, familia_id, usuario_id),
             )
 
     def criar_convite(self, familia_id: str, codigo: str, papel: str, expira_em: str) -> None:

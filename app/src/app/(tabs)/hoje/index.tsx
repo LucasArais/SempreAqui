@@ -6,6 +6,7 @@ import {
   AttentionBadge,
   Card,
   EmptyState,
+  EmergencyButton,
   Icon,
   LinhaTarefa,
   ListGroup,
@@ -22,6 +23,7 @@ import { reacoes } from '@/data/familia';
 import { avisoDasUltimas24h, ehHoje, meuNome, useFamilia } from '@/lib/familia';
 import { atualizarSeMudouODia, useConversa } from '@/lib/conversa';
 import { fotoDaChave } from '@/lib/passaporte';
+import { ligarEmergencia } from '@/lib/abrir';
 import { useSemana } from '@/lib/semana';
 import { useSessao } from '@/lib/sessao';
 import { atualizarRelatos, useAtualizarAoFocar, useDiario } from '@/lib/diario';
@@ -110,6 +112,7 @@ export default function Hoje() {
           onPress={() => router.push('/ajuda')}
         />
       </ListGroup>
+      <EmergencyButton onPress={ligarEmergencia} />
 
       {roteiro && feitaHoje && (
         <Section titulo="Uma conversa para hoje">

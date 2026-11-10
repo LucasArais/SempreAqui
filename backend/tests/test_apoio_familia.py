@@ -110,3 +110,12 @@ def test_entrar_com_convite_muda_de_familia(tmp_path):
     assert repo.familia_do_usuario("u1") == {"familia": "familia-b", "papel": "familiar"}
     repo.criar_convite("familia-b", "VENCIDO2", "familiar", "2000-01-01T00:00:00+00:00")
     assert repo.usar_convite("VENCIDO2") is None
+
+
+def test_cada_pessoa_tem_a_propria_foto(tmp_path):
+    from core.repositorio import Repositorio
+
+    repo = Repositorio(tmp_path)
+    repo.entrar_na_familia("u1", "familia-a", "Rafael", "familiar")
+    repo.atualizar_membro("familia-a", "u1", "Rafael", "familiar", "up-0123456789abcdef01234567")
+    assert repo.membros_da_familia("familia-a")[0]["foto"] == "up-0123456789abcdef01234567"

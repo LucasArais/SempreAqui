@@ -60,14 +60,14 @@ export default function Ajustes() {
   return (
     <Screen>
       <Coluna centro gap="s1">
-        <Avatar nome={nome || '?'} tom={1} grande />
+        <Avatar nome={nome || '?'} tom={1} grande fonte={fotoDaChave(eu?.foto)} />
         <Text variante="title2" centro>
           {nome || 'Você'}
         </Text>
         <Text variante="callout" cor="secondaryLabel" centro>
           {eu?.papel ? PAPEIS[eu.papel] : 'Diga seu nome para a família saber quem é quem'}
         </Text>
-        <SecondaryButton titulo={nome ? 'Mudar nome ou papel' : 'Dizer meu nome'} onPress={() => ir('/eu')} />
+        <SecondaryButton titulo={nome ? 'Mudar nome, foto ou papel' : 'Dizer meu nome e pôr uma foto'} onPress={() => ir('/eu')} />
       </Coluna>
 
       <Section titulo="Família">

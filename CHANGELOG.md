@@ -10,6 +10,9 @@ O que mudou em cada ciclo, do mais recente para o mais antigo.
 - Pergunta por voz. O campo fica fixo embaixo, como num app de mensagens, e sobe com o teclado. A conversa fica só no celular e dá para apagar.
 - Ajustes, a 5ª aba, ao lado das outras: seu nome e papel, trocar a foto da família, dados dela, convite, IA no celular, privacidade, termo, fonte oficial e código aberto.
 
+- Cada pessoa da família pode pôr a própria foto (Ajustes, em "Mudar nome, foto ou papel"). Ela aparece na lista da família e no feed.
+- 192: na tela Hoje, logo abaixo de "Precisa de ajuda agora?", e como botão pequeno no cabeçalho do Ajudante. No chat, o botão grande só aparece quando a pergunta indica risco.
+
 **Bastidores**
 - `core/assistente.py` e rota `POST /assistente`: intenções reconhecidas por regras e respondidas com os dados da família, sem IA e sem custo. O que não reconhece volta com um contexto curto e verdadeiro; no iPhone com IA no aparelho, o modelo da Apple tenta responder só com esse contexto, e a resposta passa pelos guardrails.
 - Campo `foto_familia` no Passaporte.

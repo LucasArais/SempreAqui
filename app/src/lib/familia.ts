@@ -12,7 +12,7 @@ import { sessaoAtual } from './sessao';
  */
 
 export type Papel = 'quem_cuida' | 'familiar' | 'cuidador_profissional';
-export type Membro = { nome: string; papel: Papel; eu: boolean };
+export type Membro = { nome: string; papel: Papel; foto?: string | null; eu: boolean };
 export type Tarefa = {
   id: string;
   titulo: string;
@@ -41,7 +41,7 @@ export const PAPEIS: Record<Papel, string> = {
 
 type Estado = {
   membros: Membro[];
-  eu: { nome: string; papel: Papel | null } | null;
+  eu: { nome: string; papel: Papel | null; foto?: string | null } | null;
   tarefas: Tarefa[];
   feed: ItemFeed[];
   carregado: boolean;
@@ -152,9 +152,16 @@ export async function avisarFamilia(texto: string) {
   void atualizarFeed();
 }
 
-export async function atualizarEu(nome: string, papel: Papel) {
-  const eu = await api.atualizarEu(nome, papel);
-  definir({ eu, membros: estado.membros.map((m) => (m.eu ? { ...m, nome: eu.nome, papel: eu.papel } : m)) });
+export async function atualizarEu(nome: string, papel: Papel, foto: string | null) {
+  const eu = await api.atualizarEu(nome, papel, foto);
+  definir({ eu, membros: estado.membros.map((m) => (m.eu ? { ...m, nome: eu.nome, papel: eu.papel, foto: eu.foto } : m)) });
+  void atualizarFeed();
+}
+
+/** Foto de quem aparece pelo nome (no feed, nas tarefas). */
+export function fotoDoMembro(nome: string | null | undefined) {
+  if (!nome) return undefined;
+  return estado.membros.find((m) => m.nome === nome)?.foto ?? undefined;
 }
 
 // Lembretes ------------------------------------------------------------------

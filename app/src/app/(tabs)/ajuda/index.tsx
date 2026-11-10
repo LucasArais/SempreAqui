@@ -229,13 +229,11 @@ export default function Ajudante() {
         style={{ flex: 1 }}
         contentContainerStyle={{ padding: margem, paddingBottom: espaco.s2, gap: espaco.s2 }}
       >
-        <EmergencyButton onPress={ligarEmergencia} />
-
         <View style={{ flexDirection: 'row', gap: espaco.s1, alignItems: 'flex-start' }}>
           <Logo tamanho={28} decorativa />
           <View style={{ flex: 1, gap: espaco.s1, backgroundColor: cores.secondaryBackground, borderRadius: 20, borderTopLeftRadius: 6, padding: espaco.s2 }}>
             <Text variante="body">
-              Oi! Eu sou o Ajudante. Respondo com o que a família registrou sobre a {chamada} e, na hora difícil, digo o que costuma funcionar com ela. Não dou diagnóstico nem indico remédio.
+              Oi! Eu sou o Ajudante. Respondo com o que a família registrou sobre a {chamada} e, na hora difícil, digo o que costuma funcionar com ela. Não dou diagnóstico nem indico remédio. Emergência: toque no 192 lá em cima.
             </Text>
             {mensagens.length === 0 && <Chips itens={INICIAIS} onEscolher={enviar} />}
           </View>
