@@ -114,6 +114,50 @@ Os dois lados usam a mesma interface do módulo nativo (`disponibilidade`, `tran
 
 Arquitetura, requisitos, contrato de sincronização, plano do Android e como avaliamos: [docs/ia-no-aparelho.md](docs/ia-no-aparelho.md).
 
+## Integração com o SUS
+
+O cuidado de quem vive com Alzheimer no Brasil passa pelo SUS: o diagnóstico, os remédios, a UBS, a emergência. O SempreAqui liga a família a essa rede pública, que é a parte "pertencimento da sociedade brasileira" do tema.
+
+**Cartão SUS e UBS de referência**
+- Ficam no Passaporte de Memória, em "Saúde e SUS".
+- O número do Cartão Nacional de Saúde é conferido pelo dígito verificador oficial: 15 dígitos, começando com 1, 2, 7, 8 ou 9, e a soma ponderada múltipla de 11. Número digitado errado não entra.
+- Vai para o PDF do passaporte (para o hospital ou o cuidador) e para o PDF "Para levar na consulta". **Nunca aparece no link compartilhado.**
+- O Ajudante responde "qual o cartão SUS dela?" com o número e o caminho para o Meu SUS Digital.
+
+**Programas e serviços do SUS** (tela "SUS", em Memórias ou Ajustes; todos os links conferidos no ar)
+
+| Programa ou serviço | Para que serve |
+|---|---|
+| [Componente Especializado da Assistência Farmacêutica](https://www.gov.br/saude/pt-br/composicao/sectics/daf/ceaf) | Remédios do Alzheimer de graça, com receita e laudo do médico |
+| [Protocolo Clínico e Diretrizes Terapêuticas da Doença de Alzheimer](https://www.gov.br/saude/pt-br/assuntos/pcdt/d/doenca-de-alzheimer/view) | O protocolo oficial que orienta diagnóstico e tratamento na rede pública |
+| [Melhor em Casa](https://www.gov.br/saude/pt-br/composicao/saes/melhor-em-casa) | Atendimento do SUS em casa, para quem tem dificuldade de sair |
+| [Brasil que Cuida](https://www.gov.br/mds/pt-br/acoes-e-programas/brasil-que-cuida) | Política Nacional de Cuidados ([Lei 15.069/2024](https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2024/lei/l15069.htm)): apoio a quem cuida e a quem é cuidado |
+| [Meu SUS Digital](https://meususdigital.saude.gov.br) | Cartão SUS digital, carteira de vacinação, exames e histórico de atendimentos |
+| [Farmácia Popular](https://www.gov.br/saude/pt-br/composicao/sectics/farmacia-popular) | Remédios de graça ou com desconto em farmácias credenciadas |
+| [Vacinação](https://www.gov.br/saude/pt-br/vacinacao) | Calendário e campanhas do Ministério da Saúde |
+| [Ouvidoria do SUS](https://www.gov.br/saude/pt-br/canais-de-atendimento/ouvsus) | Reclamações, sugestões e informações (136) |
+| Telefones | 192 (SAMU), 136 (Disque Saúde), 100 (violência contra a pessoa idosa) |
+
+**Mapa "Perto de você": hospitais, UPAs, UBS e CAPS**
+- Usa os **dados abertos do Cadastro Nacional de Estabelecimentos de Saúde (CNES)**, do Ministério da Saúde, que trazem nome, endereço, telefone, coordenadas, se atende pelo SUS e se funciona 24 horas. Não precisa de cadastro.
+- O celular informa a cidade e a posição; o backend acha o município pelo IBGE, busca as unidades do tipo pedido e calcula as mais próximas.
+- Três buscas: **Emergência** (UPA, pronto-socorro, hospital, unidade mista), **Postos e UBS** e **CAPS**.
+- Em emergência, quando a distância é parecida, vem antes o que é do SUS (não cobra) e o que funciona 24 horas. Hospitais particulares continuam na lista, sem o selo do SUS.
+- Como UBS só entram unidades **públicas que atendem pelo SUS**: no cadastro, clínicas particulares às vezes usam o mesmo tipo de unidade.
+- Mapa nativo (Apple Maps) e lista com distância, "24 horas" e "Atende pelo SUS". Um toque dá a rota no Mapas ou liga para a unidade.
+- Atalhos: "Hospitais e UPAs perto de você" no Hoje, "Hospitais e UPAs perto" quando o Ajudante reconhece risco, e a pergunta "tem hospital perto?" no Ajudante.
+- A lista de cada cidade fica guardada no servidor por 7 dias. A primeira busca numa cidade leva alguns segundos; as seguintes são imediatas.
+
+**Privacidade**
+- A localização do celular é usada só para calcular a distância e **não é guardada**.
+- O SempreAqui **não acessa os sistemas do SUS**: guarda o número que a família digitou, usa dados abertos e aponta para os serviços oficiais.
+
+**Limites que assumimos**
+- Algumas coordenadas do próprio CNES estão desatualizadas, e uma unidade pode aparecer mais perto do que está. O app avisa para conferir o endereço antes de sair.
+- Ler prontuário, exames ou vacinação direto do SUS exige credenciamento na **RNDS** (Rede Nacional de Dados em Saúde). Por enquanto, o app leva a família ao Meu SUS Digital, onde esses dados já estão. Exportar o resumo da semana no padrão da RNDS está no roadmap.
+
+Código: [backend/core/sus.py](backend/core/sus.py), [app/src/lib/sus.ts](app/src/lib/sus.ts), [app/src/app/sus.tsx](app/src/app/sus.tsx) e [app/src/app/perto.tsx](app/src/app/perto.tsx).
+
 ## Arquitetura
 
 O SempreAqui tem dois caminhos de IA. No celular que aguenta, tudo acontece no aparelho e só o resultado organizado sobe. Nos outros, o áudio vai para o backend, que usa modelos na nuvem. Nos dois caminhos, os mesmos guardrails e o mesmo formato de registro.
@@ -179,6 +223,7 @@ Decisões e detalhes em [docs/arquitetura.md](docs/arquitetura.md).
 | Backend | Python, FastAPI |
 | Orquestração de IA | LangGraph, um grafo por função |
 | Modelos na nuvem | Gemini 3 Flash via OpenRouter (escolhido por benchmark próprio de transcrição), só como reserva e só com provedores que não guardam dados |
+| Dados do SUS | Dados abertos do CNES (Ministério da Saúde) para unidades perto, IBGE para o município; mapa nativo com expo-maps e localização com expo-location |
 | Fontes oficiais | Acervo de trechos literais do Guia Prático do Cuidador (Ministério da Saúde), com página e link; busca por palavras, explicável e sem custo. pgvector entra quando o acervo crescer |
 | Banco | Supabase (Postgres) com Row Level Security por grupo familiar, ou SQLite local |
 | Qualidade | pytest, ruff, guardrails iguais no app e no backend checados no CI, avaliações próprias |
@@ -252,6 +297,7 @@ Trabalhamos em ciclos curtos, cada um entregando uma funcionalidade de ponta a p
 | 6 | Rede da Família: convite no WhatsApp, "Eu assumo", lembretes e "obrigado" | construído |
 | 7 | Polimento, acessibilidade, deploy e roteiro do Demo Day | em andamento: navegação e visual feitos |
 | Em paralelo | IA no próprio celular: transcrição e organização do relato sem sair do aparelho | construído no iPhone |
+| Em paralelo | Integração com o SUS: Cartão SUS, programas oficiais e mapa de unidades perto | construído |
 
 O que mudou em cada ciclo está no [CHANGELOG](CHANGELOG.md).
 
