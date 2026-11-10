@@ -28,6 +28,8 @@ export type Passaporte = {
   como_se_comunica: string;
   foto?: string | null;
   foto_familia?: string | null;
+  cartao_sus?: string | null;
+  ubs_referencia?: string | null;
   pessoas_importantes: PessoaImportante[];
   rotina: Item[];
   acalma: Item[];

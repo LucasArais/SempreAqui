@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from fpdf import FPDF
 
+from core.sus import formatar_cns
+
 QUALIDADE = {"boa": "Boa", "regular": "Regular", "ruim": "Ruim", "nao_informado": "-", None: "-"}
 
 
@@ -22,7 +24,9 @@ def _latin(texto: str) -> str:
     return texto.encode("latin-1", "replace").decode("latin-1")
 
 
-def pdf_consulta(fatos: dict, nome: str) -> bytes:
+def pdf_consulta(
+    fatos: dict, nome: str, cartao_sus: str | None = None, ubs: str | None = None
+) -> bytes:
     pdf = FPDF(format="A4")
     pdf.set_auto_page_break(auto=False)
     pdf.add_page()
@@ -40,6 +44,14 @@ def pdf_consulta(fatos: dict, nome: str) -> bytes:
         new_x="LMARGIN",
         new_y="NEXT",
     )
+    sus = [
+        f"Cartão SUS: {formatar_cns(cartao_sus)}" if cartao_sus else "",
+        f"UBS: {ubs}" if ubs else "",
+    ]
+    if any(sus):
+        pdf.cell(
+            largura, 6, _latin(". ".join(x for x in sus if x) + "."), new_x="LMARGIN", new_y="NEXT"
+        )
     pdf.ln(4)
 
     pdf.set_text_color(28, 28, 30)

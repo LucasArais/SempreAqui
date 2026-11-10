@@ -24,6 +24,7 @@ import { compartilharArquivo } from '@/lib/compartilhar';
 import { haptic } from '@/lib/haptics';
 import { fotoDaChave, oQueFalta, SECOES, type SecaoLista, usePassaporte } from '@/lib/passaporte';
 import { gerarPassaportePdf } from '@/lib/passaporte-pdf';
+import { formatarCns } from '@/lib/sus';
 import { espaco } from '@/theme';
 
 type Cor = 'success' | 'attention' | 'accentStrong';
@@ -201,6 +202,18 @@ export default function Memorias() {
             icone="texto"
             onPress={() => editar('como_se_comunica')}
           />
+        </ListGroup>
+      </Section>
+
+      <Section titulo="Saúde e SUS" acao={<LinkDaSecao titulo="Serviços do SUS" onPress={() => router.push('/sus')} />}>
+        <ListGroup rodape="O número vai para o PDF do passaporte e da consulta. Nunca aparece no link compartilhado.">
+          <ListRow
+            titulo="Cartão SUS"
+            subtitulo={p.cartao_sus ? formatarCns(p.cartao_sus) : 'Toque para cadastrar os 15 números'}
+            icone="documento"
+            onPress={() => editar('sus')}
+          />
+          <ListRow titulo="UBS de referência" subtitulo={p.ubs_referencia || 'Onde ela é acompanhada'} icone="casa" onPress={() => editar('sus')} />
         </ListGroup>
       </Section>
 

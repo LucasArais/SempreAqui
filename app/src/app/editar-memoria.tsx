@@ -6,6 +6,7 @@ import { ScrollView, TextInput, View } from 'react-native';
 import { Coluna, mostrarToast, Photo, PrimaryButton, SecondaryButton, Text } from '@/components';
 import { ErroApi } from '@/lib/api';
 import { haptic } from '@/lib/haptics';
+import { cnsValido, soDigitos } from '@/lib/sus';
 import {
   apagarItem,
   enviarFoto,
@@ -20,13 +21,18 @@ import {
 } from '@/lib/passaporte';
 import { espaco, raio, tipografia, useTema } from '@/theme';
 
-type SecaoTexto = 'perfil' | 'quem_ela' | 'como_se_comunica';
+type SecaoTexto = 'perfil' | 'quem_ela' | 'como_se_comunica' | 'sus';
 
 type Campo = { chave: string; rotulo: string; exemplo: string; longo?: boolean; teclado?: 'number-pad' | 'url' };
 
 /** Campos de cada tipo de item. A lista é curta de propósito: título e um detalhe opcional. */
 function camposDe(secao: SecaoLista | SecaoTexto): Campo[] {
   switch (secao) {
+    case 'sus':
+      return [
+        { chave: 'cartao_sus', rotulo: 'Número do Cartão SUS (15 números)', exemplo: '000 0000 0000 0000', teclado: 'number-pad' },
+        { chave: 'ubs_referencia', rotulo: 'UBS ou unidade que acompanha', exemplo: 'UBS Vila Mariana' },
+      ];
     case 'perfil':
       return [
         { chave: 'como_gosta_de_ser_chamada', rotulo: 'Como gosta de ser chamada', exemplo: 'Dona Isabel' },
@@ -60,6 +66,7 @@ const SECOES_TEXTO: Record<SecaoTexto, string> = {
   perfil: 'Sobre ela',
   quem_ela: 'Quem ela é',
   como_se_comunica: 'Como se comunica',
+  sus: 'Cartão SUS e UBS',
 };
 
 /** Sheet para criar, editar ou apagar um item do Passaporte de Memória. */
@@ -108,10 +115,15 @@ export default function EditarMemoria() {
   }
 
   async function salvar() {
+    if (secao === 'sus' && valores.cartao_sus?.trim() && !cnsValido(valores.cartao_sus)) {
+      setErro('Esse número de Cartão SUS não confere. Confira os 15 números do cartão.');
+      return;
+    }
     setSalvando(true);
     setErro(null);
     const limpos: Record<string, string | null> = Object.fromEntries(Object.entries(valores).map(([k, v]) => [k, v.trim() || null]));
     if (comFoto) limpos.foto = foto;
+    if (secao === 'sus' && limpos.cartao_sus) limpos.cartao_sus = soDigitos(limpos.cartao_sus);
     try {
       if (ehTexto) {
         const idade = limpos.idade ? Number(limpos.idade) : null;

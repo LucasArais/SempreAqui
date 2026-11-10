@@ -115,6 +115,13 @@ Personas que guiam cada decisão: **Cláudia**, 52 anos, cuida da mãe e abre o 
 
 Detalhes em [ia-no-aparelho.md](ia-no-aparelho.md).
 
+## Integração com o SUS (construído)
+
+- [x] Cartão SUS (com dígito verificador) e UBS de referência no Passaporte e nos PDFs
+- [x] Programas do SUS para o Alzheimer e serviços oficiais, com links conferidos
+- [x] Unidades perto em mapa e lista, do CNES (dados abertos do Ministério da Saúde)
+- [ ] Exportar o resumo no padrão da RNDS (exige credenciamento no Ministério da Saúde)
+
 ## Em paralelo, o tempo todo
 
 - Testes com cuidadores conduzidos pelo Laércio ([roteiro](testes-usuarios/roteiro.md)), virando melhorias priorizadas a cada rodada.

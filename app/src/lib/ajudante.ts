@@ -17,7 +17,7 @@ export type RespostaAjudante = {
   texto: string | null;
   origem: string | null;
   sugestoes?: string[];
-  acao?: 'ver_semana' | 'ver_tarefas' | 'nova_tarefa' | 'ver_passaporte' | 'abrir_conversa';
+  acao?: 'ver_semana' | 'ver_tarefas' | 'nova_tarefa' | 'ver_passaporte' | 'abrir_conversa' | 'ver_sus' | 'ver_perto';
   relato_id?: string;
   apoio?: RespostaApoio;
   contexto?: string;

@@ -117,6 +117,11 @@ export default function Hoje() {
             { titulo: '192', icone: 'telefone', cor: cores.emergency, dica: 'Liga para o SAMU', onPress: () => void ligarEmergencia() },
           ]}
         />
+        <Pressable onPress={() => router.push({ pathname: '/perto', params: { grupo: 'emergencia' } })} accessibilityRole="link" style={{ alignSelf: 'center', paddingVertical: espaco.meio }}>
+          <Text variante="callout" style={{ color: cores.accentStrong }}>
+            Hospitais e UPAs perto de você
+          </Text>
+        </Pressable>
       </View>
 
       {(roteiro || tarefasHoje.length > 0) && (

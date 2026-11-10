@@ -145,3 +145,43 @@ def test_largar_tarefa_volta_a_ficar_livre(ambiente):  # noqa: F811
     ]
     livre = cliente.patch(f"/tarefas/{tid}", json={"largar": True}, headers=FAMILIA).json()
     assert livre["responsavel_nome"] is None and livre["minha"] is False
+
+
+def test_cartao_sus_validado_e_fora_do_link_publico(ambiente):  # noqa: F811
+    from core.sus import cns_valido, formatar_cns
+    from demo.passaporte import PASSAPORTE_DEMO
+
+    # Número de exemplo gerado pelo próprio dígito verificador (não é de ninguém).
+    assert not cns_valido("123456789012345") and not cns_valido("12345")
+    cliente, *_ = ambiente
+    bom = next(
+        n
+        for n in (f"7{str(i).zfill(14)}" for i in range(10000))
+        if sum(int(d) * (15 - j) for j, d in enumerate(n)) % 11 == 0
+    )
+    assert formatar_cns(bom).count(" ") == 3
+    ruim = cliente.put(
+        "/passaporte", json={**PASSAPORTE_DEMO, "cartao_sus": "123456789012345"}, headers=FAMILIA
+    )
+    assert ruim.status_code == 422
+    ok = cliente.put(
+        "/passaporte",
+        json={
+            **PASSAPORTE_DEMO,
+            "cartao_sus": formatar_cns(bom),
+            "ubs_referencia": "UBS Vila Mariana",
+        },
+        headers=FAMILIA,
+    )
+    assert ok.status_code == 200 and ok.json()["cartao_sus"] == bom
+    url = cliente.post("/passaporte/link", headers=FAMILIA).json()["url"]
+    pagina = cliente.get("/p/" + url.rsplit("/p/", 1)[1]).text
+    assert bom not in pagina and formatar_cns(bom) not in pagina, (
+        "o Cartão SUS nunca vai para o link público"
+    )
+    resposta = cliente.post(
+        "/assistente", json={"texto": "Qual o cartão SUS dela?"}, headers=FAMILIA
+    ).json()
+    assert formatar_cns(bom) in resposta["texto"] and resposta["acao"] == "ver_sus"
+    pdf = cliente.get("/semana/consulta.pdf", headers=FAMILIA)
+    assert pdf.status_code == 200

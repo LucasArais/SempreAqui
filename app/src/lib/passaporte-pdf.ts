@@ -4,6 +4,7 @@ import { readAsStringAsync } from 'expo-file-system/legacy';
 import * as Print from 'expo-print';
 
 import { fotoDaChave, type Passaporte } from '@/lib/passaporte';
+import { formatarCns } from '@/lib/sus';
 import { claro } from '@/theme/colors';
 
 /**
@@ -112,6 +113,7 @@ export async function gerarPassaportePdf(p: Passaporte): Promise<string> {
         <h1>${escapar(pessoa.comoGostaDeSerChamada)}</h1>
         <div class="sub">${escapar([pessoa.nome, pessoa.idade ? `${pessoa.idade} anos` : ''].filter(Boolean).join(', '))}</div>
         <div class="chamar">Gosta de ser chamada de <strong>${escapar(pessoa.comoGostaDeSerChamada)}</strong>.</div>
+        ${p.cartao_sus || p.ubs_referencia ? `<div class="sub">${[p.cartao_sus ? `Cartão SUS: ${formatarCns(p.cartao_sus)}` : '', p.ubs_referencia ? `UBS: ${escapar(p.ubs_referencia)}` : ''].filter(Boolean).join('. ')}</div>` : ''}
       </div>
     </div>
     <div class="grade">

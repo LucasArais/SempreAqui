@@ -100,3 +100,10 @@ def test_textos_respeitam_os_guardrails():
         r = perguntar(pergunta)
         assert r["tipo"] == "resposta", pergunta
         assert not verificar_texto_familia(r["texto"]), (pergunta, r["texto"])
+
+
+def test_perto_e_sus():
+    assert perguntar("Tem hospital perto?")["acao"] == "ver_perto"
+    assert perguntar("Onde fica a UBS mais próxima?")["acao"] == "ver_perto"
+    assert perguntar("Qual o cartão SUS dela?")["acao"] == "ver_sus"
+    assert perguntar("Ela caiu, tem hospital perto?")["tipo"] == "apoio", "risco vem antes"

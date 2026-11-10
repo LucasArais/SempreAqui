@@ -49,6 +49,19 @@ class Musica(BaseModel):
 
 
 class Passaporte(BaseModel):
+    @field_validator("cartao_sus")
+    @classmethod
+    def _cns(cls, valor: str | None) -> str | None:
+        from core.sus import cns_valido, so_digitos
+
+        if valor is None or not so_digitos(valor):
+            return None
+        if not cns_valido(valor):
+            raise ValueError(
+                "Esse número de Cartão SUS não confere. Confira os 15 números do cartão."
+            )
+        return so_digitos(valor)
+
     nome: str = Field(default="", max_length=80)
     como_gosta_de_ser_chamada: str = Field(default="", max_length=80)
     idade: int | None = Field(default=None, ge=0, le=130)
@@ -58,6 +71,10 @@ class Passaporte(BaseModel):
     foto: str | None = Field(default=None, max_length=40)
     # Foto da família reunida, mostrada na aba Família. Trocada em Ajustes.
     foto_familia: str | None = Field(default=None, max_length=40)
+    # SUS: número do Cartão Nacional de Saúde (conferido pelo dígito verificador) e a unidade
+    # que acompanha. Vão para o PDF do passaporte e da consulta; nunca para o link público.
+    cartao_sus: str | None = Field(default=None, max_length=20)
+    ubs_referencia: str | None = Field(default=None, max_length=120)
     pessoas_importantes: list[PessoaImportante] = Field(default_factory=list, max_length=30)
     rotina: list[Item] = Field(default_factory=list, max_length=30)
     acalma: list[Item] = Field(default_factory=list, max_length=30)

@@ -52,7 +52,7 @@ from agents.diario import (
     violacoes_do_resumo,
 )
 from agents.semana import resumir_semana
-from core import apoio, assistente, campos, guardrails, prompts, reminiscencia
+from core import apoio, assistente, campos, guardrails, prompts, reminiscencia, sus
 from core.auth import TokenInvalido, usuario_do_token
 from core.cadastro import router as router_cadastro
 from core.config import config
@@ -85,7 +85,10 @@ app.include_router(router_cadastro)
 @app.exception_handler(RequestValidationError)
 async def validacao_sem_senha(request: Request, erro: RequestValidationError):
     if request.url.path == "/auth/cadastro":
-        return JSONResponse(status_code=422, content={"detail": "Confira seu nome, e-mail, senha e aceite dos termos."})
+        return JSONResponse(
+            status_code=422,
+            content={"detail": "Confira seu nome, e-mail, senha e aceite dos termos."},
+        )
     return await request_validation_exception_handler(request, erro)
 
 
@@ -449,7 +452,13 @@ def semana_pdf(
 ) -> Response:
     """Lista "Para levar na consulta" em PDF de uma página."""
     nome_limpo = re.sub(r"[^A-Za-zÀ-ÿ ]", "", nome)[:40].strip() or "Pessoa cuidada"
-    conteudo = pdf_consulta(_fatos_da_semana(repo, familia_id, fim), nome_limpo)
+    p = _passaporte(repo, familia_id)
+    conteudo = pdf_consulta(
+        _fatos_da_semana(repo, familia_id, fim),
+        nome_limpo,
+        cartao_sus=p.get("cartao_sus"),
+        ubs=p.get("ubs_referencia"),
+    )
     return Response(
         conteudo,
         media_type="application/pdf",
@@ -766,7 +775,7 @@ def salvar_passaporte(
 
 
 def _textos_do_passaporte(p: Passaporte) -> list[str]:
-    textos = [p.quem_ela, p.como_se_comunica]
+    textos = [p.quem_ela, p.como_se_comunica, p.ubs_referencia or ""]
     for lista in (p.rotina, p.acalma, p.agita, p.comidas, p.lembrancas):
         textos += [f"{i.titulo} {i.detalhe or ''}" for i in lista]
     textos += [f"{x.nome} {x.relacao or ''}" for x in p.pessoas_importantes]
@@ -1397,6 +1406,49 @@ def ver_feed(
     ]
     antigos = [a for a in avisos if a not in recentes]
     return recentes + sorted(resto + antigos, key=lambda i: i["quando"], reverse=True)[:40]
+
+
+# SUS: unidades de saúde perto da família (dados abertos do CNES) ----------
+
+
+@app.get("/sus/unidades")
+def unidades_perto(
+    lat: float = Query(ge=-35, le=6),
+    lon: float = Query(ge=-75, le=-28),
+    cidade: str = Query(min_length=2, max_length=80),
+    uf: str = Query(min_length=2, max_length=2),
+    grupo: str = "emergencia",
+    familia_id: str = Depends(obter_familia),
+) -> dict:
+    """Hospitais, UPAs, UBS ou CAPS mais perto, do cadastro oficial do SUS.
+
+    A localização vem do celular só para calcular a distância. Não é guardada.
+    """
+    del familia_id  # só exige login
+    if grupo not in sus.GRUPOS:
+        raise HTTPException(422, "Tipo de unidade desconhecido.")
+    pasta = config().dados_dir / "cnes"
+    try:
+        municipio = sus.codigo_municipio(cidade, uf, pasta)
+        if municipio is None:
+            raise HTTPException(404, "Não encontrei essa cidade no cadastro do SUS.")
+        unidades = [
+            u
+            for tipo in sus.GRUPOS[grupo]
+            for u in sus.unidades_do_municipio(municipio, tipo, pasta)
+        ]
+    except HTTPException:
+        raise
+    except Exception as erro:  # noqa: BLE001
+        log.warning("sus.unidades_falhou erro=%s", type(erro).__name__)
+        raise HTTPException(
+            503, "O cadastro do SUS não respondeu agora. Em emergência, ligue 192."
+        ) from erro
+    return {
+        "grupo": grupo,
+        "unidades": sus.mais_proximas(lat, lon, unidades, grupo),
+        "fonte": "Cadastro Nacional de Estabelecimentos de Saúde (CNES), Ministério da Saúde",
+    }
 
 
 # Conversa de hoje (reminiscência) -----------------------------------------

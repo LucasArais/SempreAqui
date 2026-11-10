@@ -23,6 +23,8 @@ const ACOES: Record<NonNullable<RespostaAjudante['acao']>, { titulo: string; ir:
   nova_tarefa: { titulo: 'Pedir ajuda com uma tarefa', ir: () => router.push('/nova-tarefa') },
   ver_passaporte: { titulo: 'Abrir o Passaporte', ir: () => router.push('/memorias') },
   abrir_conversa: { titulo: 'Começar a conversa', ir: () => router.push('/sessao') },
+  ver_sus: { titulo: 'Abrir os serviços do SUS', ir: () => router.push('/sus') },
+  ver_perto: { titulo: 'Ver no mapa', ir: () => router.push({ pathname: '/perto', params: { grupo: 'emergencia' } }) },
 };
 
 function Chips({ itens, onEscolher }: { itens: string[]; onEscolher: (t: string) => void }) {
@@ -65,6 +67,7 @@ function BlocoApoio({ r, pedido }: { r: RespostaApoio; pedido: string }) {
       {r.tipo === 'risco' && (
         <>
           <EmergencyButton onPress={ligarEmergencia} />
+          <SecondaryButton titulo="Hospitais e UPAs perto" icone="atencao" onPress={() => router.push({ pathname: '/perto', params: { grupo: 'emergencia' } })} />
           <SecondaryButton
             titulo={avisado ? 'Família avisada' : 'Avisar a família agora'}
             icone="familia"

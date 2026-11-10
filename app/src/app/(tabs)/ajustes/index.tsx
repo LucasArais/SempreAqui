@@ -78,6 +78,7 @@ export default function Ajustes() {
         <ListGroup>
           <ListRow titulo={`Dados da ${chamada}`} subtitulo="Nome, idade e foto" icone="coracao" onPress={() => ir({ pathname: '/editar-memoria', params: { secao: 'perfil' } })} />
           <ListRow titulo="Quem faz parte" subtitulo={`${membros.length} ${membros.length === 1 ? 'pessoa' : 'pessoas'} no grupo`} icone="familia" onPress={() => ir('/familia')} />
+          <ListRow titulo="Serviços do SUS" subtitulo="Cartão SUS, Meu SUS Digital, remédios e telefones" icone="documento" onPress={() => ir('/sus')} />
           <ListRow titulo="Convidar pelo WhatsApp" icone="adicionar" onPress={convidar} />
           <ListRow titulo="Tenho um código de convite" icone="link" onPress={() => ir('/convite')} />
         </ListGroup>

@@ -2,6 +2,20 @@
 
 O que mudou em cada ciclo, do mais recente para o mais antigo.
 
+
+## Integração com o SUS (novembro de 2026)
+
+**Para a família**
+- Cartão SUS e UBS de referência no Passaporte, com o número conferido pelo dígito verificador oficial. Vão para o PDF do passaporte e da consulta; nunca para o link compartilhado.
+- Tela "SUS": o Cartão SUS dela, os programas do SUS para o Alzheimer (remédios de graça pelo Componente Especializado, protocolo oficial de tratamento, Melhor em Casa, Brasil que Cuida), Meu SUS Digital (cartão digital, vacinação e exames), Farmácia Popular, vacinação, Ouvidoria e telefones 192, 136 e 100. Todos os links conferidos no ar.
+- "Perto de você": hospitais, UPAs, pronto-socorros, UBS e CAPS mais próximos, do cadastro oficial do SUS (CNES), num mapa e numa lista com distância, 24 horas, "Atende pelo SUS", rota no Mapas e telefone. Em emergência, o que é do SUS e funciona 24 horas vem antes.
+- Atalhos: "Hospitais e UPAs perto de você" no Hoje; "Hospitais e UPAs perto" na resposta de risco do Ajudante; o Ajudante responde "qual o cartão SUS dela?" e "tem hospital perto?".
+
+**Bastidores**
+- `core/sus.py`: validação do CNS, código do município pelo IBGE e unidades pela API de dados abertos do Ministério da Saúde, com cache de 7 dias por cidade e tipo. Só UBS públicas que atendem pelo SUS entram como UBS (clínicas particulares às vezes usam o mesmo tipo no cadastro).
+- Rota `GET /sus/unidades`. A localização vem do celular só para a distância e não é guardada.
+- `expo-location` e `expo-maps` (Apple Maps nativo) no app.
+
 ## Cadastro com botão azul (10 de novembro de 2026)
 
 - As ações Criar nova conta e Criar conta usam azul, com contraste validado nos temas claro e escuro.

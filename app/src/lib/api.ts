@@ -170,6 +170,10 @@ export const api = {
       body: JSON.stringify({ resumo }),
     }),
   correcoes: () => chamar<{ texto: string }>('/diario/correcoes'),
+  unidadesSus: (q: { lat: number; lon: number; cidade: string; uf: string; grupo: string }) =>
+    chamar<{ grupo: string; unidades: import('./sus').Unidade[]; fonte: string }>(
+      `/sus/unidades?lat=${q.lat}&lon=${q.lon}&cidade=${encodeURIComponent(q.cidade)}&uf=${q.uf}&grupo=${q.grupo}`,
+    ),
   assistente: (texto: string) =>
     chamar<import('./ajudante').RespostaAjudante>('/assistente', {
       method: 'POST',

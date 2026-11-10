@@ -19,6 +19,7 @@ from collections import Counter
 from datetime import date, datetime
 
 from core import apoio, guardrails
+from core.sus import MEU_SUS_DIGITAL, formatar_cns
 
 PERGUNTAS_SUGERIDAS = [
     "Como ela está hoje?",
@@ -31,6 +32,30 @@ PERGUNTAS_SUGERIDAS = [
 
 _INTENCOES: list[tuple[str, list[str]]] = [
     ("saudacao", [r"^(oi|ola|bom dia|boa tarde|boa noite|e ai|tudo bem)\b[\s!?.]*$"]),
+    (
+        "perto",
+        [
+            r"\bhospita(l|is)\b",
+            r"\bupa\b",
+            r"pronto.?socorro",
+            r"\bperto\b",
+            r"mais proxim",
+            r"onde (fica|tem|e) (o|a|um|uma)? ?(posto|ubs|caps|hospital|upa)",
+        ],
+    ),
+    (
+        "sus",
+        [
+            r"cart(a|ao) (do )?sus",
+            r"carteirinha",
+            r"\bsus\b",
+            r"vacina",
+            r"\bubs\b",
+            r"posto de saude",
+            r"\bexames?\b",
+            r"meu sus",
+        ],
+    ),
     (
         "o_que_sabe",
         [
@@ -184,6 +209,33 @@ def responder(pergunta: str, ctx: dict) -> dict:
             "Eu respondo com o que a família registrou: o Diário, a semana, as tarefas, o Passaporte e a conversa do dia. "
             "Não digo o que um sintoma significa nem indico remédio: isso é com a equipe de saúde. Em risco, ligue 192.",
             sugestoes=PERGUNTAS_SUGERIDAS,
+        )
+
+    if tema == "perto":
+        return _resposta(
+            "Abra o mapa para ver hospitais, UPAs, postos e CAPS perto de onde você está, "
+            "do cadastro oficial do SUS, com rota e telefone. Em emergência, ligue 192.",
+            "Do Cadastro Nacional de Estabelecimentos de Saúde (CNES)",
+            acao="ver_perto",
+        )
+
+    if tema == "sus":
+        partes = []
+        if p.get("cartao_sus"):
+            partes.append(f"O Cartão SUS da {chamada} é {formatar_cns(p['cartao_sus'])}.")
+        else:
+            partes.append(
+                f"O Cartão SUS da {chamada} ainda não foi cadastrado. "
+                "Dá para pôr em Memórias, na parte Saúde e SUS."
+            )
+        if p.get("ubs_referencia"):
+            partes.append(f"A UBS de referência é {p['ubs_referencia']}.")
+        partes.append(
+            f"No Meu SUS Digital (app ou {MEU_SUS_DIGITAL}) dá para ver o Cartão SUS digital, "
+            "a carteira de vacinação e os exames."
+        )
+        return _resposta(
+            " ".join(partes), "Do Passaporte e dos serviços oficiais do SUS", acao="ver_sus"
         )
 
     if tema == "hoje":

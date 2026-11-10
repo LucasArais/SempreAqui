@@ -19,7 +19,8 @@
         "NSCameraUsageDescription": "O SempreAqui usa a câmera para fotografar lembranças para o Passaporte de Memória.",
         "LSApplicationQueriesSchemes": [
           "whatsapp"
-        ]
+        ],
+        "NSLocationWhenInUseUsageDescription": "O SempreAqui usa sua localização só para mostrar hospitais, UPAs e postos de saúde perto de você. Ela não é guardada."
       },
       "bundleIdentifier": "com.lucasarais.sempreaqui"
     },
@@ -66,7 +67,13 @@
           "microphonePermission": false
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "O SempreAqui usa sua localização só para mostrar hospitais, UPAs e postos de saúde perto de você. Ela não é guardada."
+        }
+      ]
     ],
     "scheme": "sempreaqui",
     "experiments": {
