@@ -4,7 +4,7 @@ import { type Href, router } from 'expo-router';
 import { useState } from 'react';
 import { Linking, Share } from 'react-native';
 
-import { Avatar, Coluna, ListGroup, ListRow, mostrarToast, Photo, Screen, SecondaryButton, Section, Text } from '@/components';
+import { Avatar, Coluna, LinkDaSecao, ListGroup, ListRow, mostrarToast, Photo, Screen, Section, Text } from '@/components';
 import { fotos } from '@/data/familia';
 import { abrirLink } from '@/lib/abrir';
 import { api, ErroApi } from '@/lib/api';
@@ -67,12 +67,13 @@ export default function Ajustes() {
         <Text variante="callout" cor="secondaryLabel" centro>
           {eu?.papel ? PAPEIS[eu.papel] : 'Diga seu nome para a família saber quem é quem'}
         </Text>
-        <SecondaryButton titulo={nome ? 'Mudar nome, foto ou papel' : 'Dizer meu nome e pôr uma foto'} onPress={() => ir('/eu')} />
       </Coluna>
+      <ListGroup>
+        <ListRow titulo={nome ? 'Mudar nome, foto ou papel' : 'Dizer meu nome e pôr uma foto'} icone="familia" onPress={() => ir('/eu')} />
+      </ListGroup>
 
-      <Section titulo="Família">
-        <Photo fonte={fotoDaChave(passaporte?.foto_familia) ?? fotos.familiaReunida} rotulo="Foto da família" proporcao={16 / 9} />
-        <SecondaryButton titulo={trocando ? 'Enviando a foto...' : 'Trocar a foto da família'} icone="foto" alinhamento="inicio" onPress={trocarFotoDaFamilia} />
+      <Section titulo="Família" acao={<LinkDaSecao titulo={trocando ? 'Enviando...' : 'Trocar foto'} icone="foto" onPress={trocarFotoDaFamilia} />}>
+        <Photo fonte={fotoDaChave(passaporte?.foto_familia) ?? fotos.familiaReunida} rotulo="Foto da família" proporcao={2.2} />
         <ListGroup>
           <ListRow titulo={`Dados da ${chamada}`} subtitulo="Nome, idade e foto" icone="coracao" onPress={() => ir({ pathname: '/editar-memoria', params: { secao: 'perfil' } })} />
           <ListRow titulo="Quem faz parte" subtitulo={`${membros.length} ${membros.length === 1 ? 'pessoa' : 'pessoas'} no grupo`} icone="familia" onPress={() => ir('/familia')} />

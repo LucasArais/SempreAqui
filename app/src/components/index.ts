@@ -15,3 +15,4 @@ export { Logo } from './Logo';
 export { RelatoView } from './RelatoView';
 export { LinhaTarefa } from './LinhaTarefa';
 export { Header192 } from './Header192';
+export { AcoesRapidas, CartaoExpansivel, LinkDaSecao } from './Clean';

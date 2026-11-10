@@ -5,6 +5,8 @@ import { Alert } from 'react-native';
 import {
   Coluna,
   EmptyState,
+  ListGroup,
+  ListRow,
   mostrarToast,
   PrimaryButton,
   RelatoView,
@@ -119,7 +121,11 @@ export default function RelatoDetalhe() {
         </>
       )}
 
-      {relato && <SecondaryButton titulo="Apagar este relato" icone="lixeira" onPress={apagar} />}
+      {relato && (
+        <ListGroup>
+          <ListRow titulo="Apagar este relato" icone="lixeira" corIcone="emergency" navega={false} onPress={apagar} />
+        </ListGroup>
+      )}
     </Screen>
   );
 }

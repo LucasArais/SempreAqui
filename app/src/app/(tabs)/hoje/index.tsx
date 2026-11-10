@@ -3,15 +3,17 @@ import { useCallback } from 'react';
 import { Pressable, View } from 'react-native';
 
 import {
+  AcoesRapidas,
   AttentionBadge,
   Avatar,
+  CartaoExpansivel,
   Card,
   EmptyState,
   Icon,
   LinhaTarefa,
   ListGroup,
+  LinkDaSecao,
   ListRow,
-  type NomeIcone,
   RecordButton,
   Screen,
   Section,
@@ -23,65 +25,17 @@ import { ligarEmergencia } from '@/lib/abrir';
 import { atualizarSeMudouODia, useConversa } from '@/lib/conversa';
 import { atualizarRelatos, useAtualizarAoFocar, useDiario } from '@/lib/diario';
 import { avisoDasUltimas24h, ehHoje, meuNome, useFamilia } from '@/lib/familia';
-import { haptic } from '@/lib/haptics';
 import { fotoDaChave } from '@/lib/passaporte';
 import { formatarData, MENSAGEM_ETAPA } from '@/lib/rotulos';
 import { useSemana } from '@/lib/semana';
 import { useSessao } from '@/lib/sessao';
-import { espaco, raio, tamanho, useTema } from '@/theme';
+import { espaco, useTema } from '@/theme';
 
 function saudacao() {
   const hora = new Date().getHours();
   if (hora < 12) return 'Bom dia';
   if (hora < 18) return 'Boa tarde';
   return 'Boa noite';
-}
-
-/** Link discreto no título de uma seção ("Ver todos"), no padrão dos apps da Apple. */
-function LinkDaSecao({ titulo, onPress }: { titulo: string; onPress: () => void }) {
-  const { cores } = useTema();
-  return (
-    <Pressable onPress={onPress} accessibilityRole="link" hitSlop={10}>
-      <Text variante="callout" style={{ color: cores.accentStrong }}>
-        {titulo}
-      </Text>
-    </Pressable>
-  );
-}
-
-/** Ação rápida em pílula: duas lado a lado, sem ocupar a tela. */
-function AcaoRapida({ titulo, icone, cor, onPress, dica }: { titulo: string; icone: NomeIcone; cor: string; onPress: () => void; dica: string }) {
-  const { cores } = useTema();
-  return (
-    <Pressable
-      onPress={() => {
-        haptic.toque();
-        onPress();
-      }}
-      accessibilityRole="button"
-      accessibilityLabel={titulo}
-      accessibilityHint={dica}
-      style={({ pressed }) => ({
-        flex: 1,
-        minHeight: tamanho.botao,
-        borderRadius: raio.botao,
-        borderCurve: 'continuous',
-        borderWidth: 1.5,
-        borderColor: cor,
-        backgroundColor: pressed ? cores.secondaryBackground : 'transparent',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: espaco.s1,
-        paddingHorizontal: espaco.s1,
-      })}
-    >
-      <Icon nome={icone} cor={cor} tamanho={20} />
-      <Text variante="headline" style={{ color: cor }} numberOfLines={1}>
-        {titulo}
-      </Text>
-    </Pressable>
-  );
 }
 
 /**
@@ -109,13 +63,19 @@ export default function Hoje() {
 
   const secaoSemana = semana && semana.dias_com_relato > 0 && (
     <Section titulo="Esta semana" acao={<LinkDaSecao titulo="Ver detalhes" onPress={() => router.push('/hoje/semana')} />}>
-      <Pressable onPress={() => router.push('/hoje/semana')} accessibilityRole="button" accessibilityHint="Abre a semana e a lista para a consulta">
-        <SummaryCard meta={`${semana.periodo}, ${semana.dias_com_relato} de 7 dias com relato`} texto={semana.resumo}>
-          {semana.mudancas.slice(0, 2).map((m) => (
-            <AttentionBadge key={m.texto} texto={m.texto} />
-          ))}
-        </SummaryCard>
-      </Pressable>
+      <CartaoExpansivel
+        meta={`${semana.periodo}, ${semana.dias_com_relato} de 7 dias com relato`}
+        texto={semana.resumo}
+        resumoFechado={
+          semana.mudancas.length
+            ? `${semana.mudancas.length} ${semana.mudancas.length === 1 ? 'mudança' : 'mudanças'} em relação ao habitual. Toque para ver`
+            : 'Nada diferente do habitual. Toque para ler tudo'
+        }
+      >
+        {semana.mudancas.map((m) => (
+          <AttentionBadge key={m.texto} texto={m.texto} />
+        ))}
+      </CartaoExpansivel>
     </Section>
   );
 
@@ -151,10 +111,12 @@ export default function Hoje() {
             </Text>
           )}
         </Card>
-        <View style={{ flexDirection: 'row', gap: espaco.s1 + espaco.meio }}>
-          <AcaoRapida titulo="Pedir ajuda" icone="texto" cor={cores.accentStrong} dica="Abre o Ajudante: agitação, recusa, noite difícil" onPress={() => router.push('/ajuda')} />
-          <AcaoRapida titulo="192" icone="telefone" cor={cores.emergency} dica="Liga para o SAMU" onPress={() => void ligarEmergencia()} />
-        </View>
+        <AcoesRapidas
+          acoes={[
+            { titulo: 'Pedir ajuda', icone: 'texto', dica: 'Abre o Ajudante: agitação, recusa, noite difícil', onPress: () => router.push('/ajuda') },
+            { titulo: '192', icone: 'telefone', cor: cores.emergency, dica: 'Liga para o SAMU', onPress: () => void ligarEmergencia() },
+          ]}
+        />
       </View>
 
       {(roteiro || tarefasHoje.length > 0) && (

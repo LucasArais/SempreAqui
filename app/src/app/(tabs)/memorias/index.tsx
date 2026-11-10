@@ -3,17 +3,16 @@ import { useEffect, useState } from 'react';
 import { Alert, Pressable, Share, View } from 'react-native';
 
 import {
+  AcoesRapidas,
   Avatar,
-  Card,
   Coluna,
   type NomeIcone,
+  LinkDaSecao,
   ListGroup,
   ListRow,
   mostrarToast,
   Photo,
-  PrimaryButton,
   Screen,
-  SecondaryButton,
   Section,
   Skeleton,
   Text,
@@ -23,16 +22,16 @@ import { compartilharArquivo } from '@/lib/compartilhar';
 import { haptic } from '@/lib/haptics';
 import { carregarPassaporte, fotoDaChave, oQueFalta, SECOES, type SecaoLista, usePassaporte } from '@/lib/passaporte';
 import { gerarPassaportePdf } from '@/lib/passaporte-pdf';
-import { espaco, useTema } from '@/theme';
+import { espaco } from '@/theme';
 
 type Cor = 'success' | 'attention' | 'accentStrong';
 
 const editar = (secao: string, id?: string) =>
   router.push({ pathname: '/editar-memoria', params: id ? { secao, id } : { secao } });
 
-/** Linha final de cada seção: adicionar sempre a um toque. */
+/** "Adicionar" no título de cada seção: adicionar sempre a um toque, sem linha extra. */
 function Adicionar({ secao }: { secao: SecaoLista }) {
-  return <ListRow titulo={SECOES[secao].novo} icone="adicionar" corIcone="accentStrong" onPress={() => editar(secao)} />;
+  return <LinkDaSecao titulo="Adicionar" icone="adicionar" onPress={() => editar(secao)} />;
 }
 
 function Lista({
@@ -50,7 +49,12 @@ function Lista({
   const [aberta, setAberta] = useState(false);
   const visiveis = aberta ? itens : itens.slice(0, 3);
   return (
-    <Section titulo={SECOES[secao].titulo}>
+    <Section titulo={SECOES[secao].titulo} acao={<Adicionar secao={secao} />}>
+      {itens.length === 0 ? (
+        <Text variante="callout" cor="secondaryLabel">
+          Ainda vazio. Toque em Adicionar.
+        </Text>
+      ) : (
       <ListGroup>
         {visiveis.map((i) => (
           <ListRow
@@ -66,14 +70,13 @@ function Lista({
         {itens.length > 3 && !aberta && (
           <ListRow titulo={`Ver mais ${itens.length - 3}`} icone="chevron" corIcone="secondaryLabel" navega={false} onPress={() => setAberta(true)} />
         )}
-        <Adicionar secao={secao} />
       </ListGroup>
+      )}
     </Section>
   );
 }
 
 export default function Memorias() {
-  const { cores } = useTema();
   const { passaporte: p } = usePassaporte();
   const [gerando, setGerando] = useState(false);
   const [link, setLink] = useState<{ ativo: boolean; url: string | null } | null>(null);
@@ -160,28 +163,23 @@ export default function Memorias() {
         </Coluna>
       </Pressable>
 
-      <PrimaryButton titulo="Contar uma memória" icone="gravar" dica="Fale ou escreva. A IA separa nas seções e você confere" onPress={() => router.push('/nova-memoria')} />
+      <AcoesRapidas
+        acoes={[
+          { titulo: 'Contar memória', icone: 'gravar', dica: 'Fale ou escreva. A IA separa nas seções e você confere', onPress: () => router.push('/nova-memoria') },
+          { titulo: gerando ? 'Preparando...' : 'Enviar PDF', icone: 'compartilhar', desativado: gerando, dica: 'PDF de uma página para cuidador, centro-dia ou hospital', onPress: compartilharPassaporte },
+        ]}
+      />
 
       {falta.vazias.length > 0 && (
-        <Card>
-          <Text variante="headline">
-            Falta pouco: {falta.preenchidas} de {falta.total} partes preenchidas
-          </Text>
-          <Text variante="callout" cor="secondaryLabel">
-            Para ajudar quem cuida dela, responda falando:
-          </Text>
-          {falta.vazias.slice(0, 3).map((v) => (
-            <Text key={v.chave} variante="body">
-              {v.pergunta}
-            </Text>
-          ))}
-          <SecondaryButton
-            titulo="Responder por voz"
+        <ListGroup>
+          <ListRow
+            titulo={`Falta pouco: ${falta.preenchidas} de ${falta.total} partes`}
+            subtitulo={`Responda falando: ${falta.vazias[0].pergunta}`}
             icone="gravar"
-            alinhamento="inicio"
+            corIcone="accentStrong"
             onPress={() => router.push({ pathname: '/contar-memoria', params: { modo: 'voz' } })}
           />
-        </Card>
+        </ListGroup>
       )}
 
       <Section titulo="Quem ela é">
@@ -201,7 +199,7 @@ export default function Memorias() {
         </ListGroup>
       </Section>
 
-      <Section titulo={SECOES.pessoas_importantes.titulo}>
+      <Section titulo={SECOES.pessoas_importantes.titulo} acao={<Adicionar secao="pessoas_importantes" />}>
         <ListGroup comAvatar>
           {p.pessoas_importantes.map((x, i) => (
             <ListRow
@@ -213,7 +211,6 @@ export default function Memorias() {
               onPress={() => editar('pessoas_importantes', x.id)}
             />
           ))}
-          <Adicionar secao="pessoas_importantes" />
         </ListGroup>
       </Section>
 
@@ -227,7 +224,7 @@ export default function Memorias() {
       />
       <Lista secao="comidas" icone="comida" itens={p.comidas.map((x) => ({ ...x, subtitulo: x.detalhe }))} />
 
-      <Section titulo={SECOES.lembrancas.titulo}>
+      <Section titulo={SECOES.lembrancas.titulo} acao={<Adicionar secao="lembrancas" />}>
         {comFoto.length > 0 && (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espaco.meio / 2 + 2 }}>
             {comFoto.map((l) => (
@@ -243,34 +240,28 @@ export default function Memorias() {
             ))}
           </View>
         )}
-        <ListGroup>
-          {p.lembrancas
-            .filter((l) => !fotoDaChave(l.foto))
-            .map((l) => (
-              <ListRow key={l.id} titulo={l.titulo} subtitulo={l.detalhe ?? undefined} icone="coracao" onPress={() => editar('lembrancas', l.id)} />
-            ))}
-          <Adicionar secao="lembrancas" />
-        </ListGroup>
+        {p.lembrancas.some((l) => !fotoDaChave(l.foto)) && (
+          <ListGroup>
+            {p.lembrancas
+              .filter((l) => !fotoDaChave(l.foto))
+              .map((l) => (
+                <ListRow key={l.id} titulo={l.titulo} subtitulo={l.detalhe ?? undefined} icone="coracao" onPress={() => editar('lembrancas', l.id)} />
+              ))}
+          </ListGroup>
+        )}
         <Text variante="footnote" cor="secondaryLabel">
           Cada lembrança, pessoa, música e comida vira tema da conversa do dia.
         </Text>
       </Section>
 
-      <Coluna gap="s1">
-        <PrimaryButton
-          titulo={gerando ? 'Preparando o passaporte...' : 'Compartilhar o passaporte'}
-          icone="compartilhar"
-          desativado={gerando}
-          dica="Gera um PDF de uma página para cuidadores, centro-dia ou hospital"
-          onPress={compartilharPassaporte}
-        />
-        <Text variante="footnote" cor="secondaryLabel" centro style={{ color: cores.secondaryLabel }}>
-          Vai como PDF de uma página, com o que está aqui.
-        </Text>
-      </Coluna>
-
-      <Section titulo="Link somente leitura">
-        <ListGroup rodape="Para o cuidador, o centro-dia ou o hospital verem o passaporte sempre atualizado, sem instalar nada. Nunca inclui o Diário.">
+      <Section titulo="Compartilhar">
+        <ListGroup rodape="Para o cuidador, o centro-dia ou o hospital. O link mostra o passaporte sempre atualizado, sem instalar nada. Nunca inclui o Diário.">
+          <ListRow
+            titulo={gerando ? 'Preparando o PDF...' : 'PDF de uma página'}
+            subtitulo="Para imprimir ou mandar"
+            icone="documento"
+            onPress={gerando ? undefined : compartilharPassaporte}
+          />
           {link?.ativo && link.url ? (
             <>
               <ListRow

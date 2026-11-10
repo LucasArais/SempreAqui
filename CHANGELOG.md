@@ -4,6 +4,11 @@ O que mudou em cada ciclo, do mais recente para o mais antigo.
 
 ## Tela Hoje reorganizada (novembro de 2026)
 
+- Resumo da semana no Hoje fechado em duas linhas, com quantas mudanças houve; abre ali mesmo com um toque.
+- O mesmo visual em todas as telas: "Adicionar", "Ver tudo", "Convidar", "Trocar foto" e "Salvar PDF" no título das seções; ações principais em pílulas lado a lado; ações de lista (baixar cópia, apagar) como linhas, sem botões soltos.
+- Memórias: "Contar memória" e "Enviar PDF" lado a lado; "Falta pouco" numa linha; seções com "Adicionar" no título; PDF e link juntos em "Compartilhar".
+- Família: tarefas com "Pedir ajuda" no título, feed com "Ver tudo", "Convidar" no título de quem cuida; atalhos que já existem em Hoje e Ajustes saíram daqui.
+
 - Ação principal no topo: contar o dia. Logo abaixo, "Pedir ajuda" e "192" lado a lado, no lugar de duas faixas inteiras.
 - "Para hoje" junta numa lista só a conversa do dia (com miniatura da foto, ou "feita" com a reação) e as tarefas com "Eu assumo".
 - Último relato e semana viram cartões que abrem o detalhe com um toque, com "Ver todos" e "Ver detalhes" no título da seção, no lugar de botões soltos.

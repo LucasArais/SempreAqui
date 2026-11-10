@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Switch } from 'react-native';
 
-import { Coluna, ListGroup, ListRow, mostrarToast, PrimaryButton, Screen, SecondaryButton, Section, Text } from '@/components';
+import { ListGroup, ListRow, mostrarToast, Screen, Section, Text } from '@/components';
 import { api, cabecalhos } from '@/lib/api';
 import { CHAVE_ONBOARDING } from '@/lib/chaves';
 import { compartilharArquivo } from '@/lib/compartilhar';
@@ -100,21 +100,23 @@ export default function Privacidade() {
         </ListGroup>
       </Section>
 
-      <Coluna gap="s1">
-        <PrimaryButton
-          titulo={baixando ? 'Preparando a cópia...' : 'Baixar uma cópia de tudo'}
-          icone="compartilhar"
-          desativado={baixando}
-          dica="Gera um arquivo com os dados e os áudios para salvar ou enviar"
-          onPress={baixarCopia}
-        />
-        <SecondaryButton
-          titulo={apagando ? 'Apagando...' : 'Apagar todos os dados da família'}
-          icone="lixeira"
-          dica="Apaga tudo para todos do grupo. Pede confirmação antes"
-          onPress={confirmarApagar}
-        />
-      </Coluna>
+      <Section titulo="Seus direitos">
+        <ListGroup rodape="Apagar tudo vale para todos do grupo e pede confirmação antes.">
+          <ListRow
+            titulo={baixando ? 'Preparando a cópia...' : 'Baixar uma cópia de tudo'}
+            subtitulo="Dados e áudios, para salvar ou enviar"
+            icone="compartilhar"
+            onPress={baixando ? undefined : baixarCopia}
+          />
+          <ListRow
+            titulo={apagando ? 'Apagando...' : 'Apagar todos os dados da família'}
+            icone="lixeira"
+            corIcone="emergency"
+            navega={false}
+            onPress={apagando ? undefined : confirmarApagar}
+          />
+        </ListGroup>
+      </Section>
     </Screen>
   );
 }

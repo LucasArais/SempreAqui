@@ -8,12 +8,12 @@ import {
   Card,
   EmptyState,
   Icon,
+  LinkDaSecao,
   ListGroup,
   ListRow,
   mostrarToast,
   PrimaryButton,
   Screen,
-  SecondaryButton,
   Section,
   Skeleton,
   Text,
@@ -148,7 +148,10 @@ export default function SemanaTela() {
         </Card>
       </Section>
 
-      <Section titulo="Para levar na consulta">
+      <Section
+        titulo="Para levar na consulta"
+        acao={<LinkDaSecao titulo={gerando ? 'Gerando...' : 'Salvar PDF'} icone="documento" onPress={salvarPdf} />}
+      >
         <ListGroup rodape="Só fatos registrados pela família. Quem interpreta é a equipe de saúde.">
           {semana.para_consulta.map((p) => (
             <ListRow key={p} titulo={p} icone="consulta" />
@@ -156,14 +159,9 @@ export default function SemanaTela() {
         </ListGroup>
       </Section>
 
-      <PrimaryButton
-        titulo={gerando ? 'Gerando o PDF...' : 'Salvar PDF para a consulta'}
-        icone="documento"
-        desativado={gerando}
-        dica="Gera uma página para imprimir ou enviar à equipe de saúde"
-        onPress={salvarPdf}
-      />
-      <SecondaryButton titulo="Ver os relatos da semana" onPress={() => router.push('/hoje/diario')} />
+      <ListGroup>
+        <ListRow titulo="Ver os relatos da semana" icone="historico" onPress={() => router.push('/hoje/diario')} />
+      </ListGroup>
     </Screen>
   );
 }

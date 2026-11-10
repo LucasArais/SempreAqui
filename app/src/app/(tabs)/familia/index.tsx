@@ -2,7 +2,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Linking, Pressable, Share, View } from 'react-native';
 
-import { Avatar, Card, Icon, LinhaTarefa, ListGroup, ListRow, mostrarToast, Photo, PrimaryButton, Screen, SecondaryButton, Section, Text } from '@/components';
+import { Avatar, Card, Icon, LinhaTarefa, LinkDaSecao, ListGroup, ListRow, mostrarToast, Photo, Screen, Section, Text } from '@/components';
 import { fotos } from '@/data/familia';
 import { api, ErroApi } from '@/lib/api';
 import {
@@ -68,7 +68,7 @@ function ItemDoFeed({ item }: { item: ItemFeed }) {
 }
 
 export default function Familia() {
-  const { membros, tarefas, feed, eu } = useFamilia();
+  const { membros, tarefas, feed } = useFamilia();
   usePassaporte();
   const [convidando, setConvidando] = useState(false);
   const [feedAberto, setFeedAberto] = useState(false);
@@ -93,9 +93,9 @@ export default function Familia() {
 
   return (
     <Screen aoAtualizar={carregarFamilia}>
-      <Photo fonte={fotoDaChave(passaporteAtual().foto_familia) ?? fotos.familiaReunida} rotulo={`Quem cuida da ${chamada}`} proporcao={16 / 9} />
+      <Photo fonte={fotoDaChave(passaporteAtual().foto_familia) ?? fotos.familiaReunida} rotulo={`Quem cuida da ${chamada}`} proporcao={2.2} />
 
-      <Section titulo="Tarefas da semana">
+      <Section titulo="Tarefas da semana" acao={<LinkDaSecao titulo="Pedir ajuda" icone="adicionar" onPress={() => router.push('/nova-tarefa')} />}>
         <ListGroup rodape="Quem assume recebe um lembrete no celular. Quando alguém faz, a família vê e pode agradecer.">
           {abertas.map((t) => (
             <LinhaTarefa key={t.id} tarefa={t} />
@@ -103,11 +103,13 @@ export default function Familia() {
           {feitas.slice(0, 3).map((t) => (
             <LinhaTarefa key={t.id} tarefa={t} />
           ))}
-          <ListRow titulo="Pedir ajuda com uma tarefa" icone="adicionar" corIcone="accentStrong" onPress={() => router.push('/nova-tarefa')} />
         </ListGroup>
       </Section>
 
-      <Section titulo="O que aconteceu">
+      <Section
+        titulo="O que aconteceu"
+        acao={feed.length > 4 ? <LinkDaSecao titulo={feedAberto ? 'Ver menos' : 'Ver tudo'} onPress={() => setFeedAberto((a) => !a)} /> : undefined}
+      >
         {feed.length === 0 ? (
           <Text variante="callout" cor="secondaryLabel">
             Quando alguém enviar um resumo, fizer uma tarefa ou uma conversa, aparece aqui.
@@ -115,12 +117,12 @@ export default function Familia() {
         ) : (
           feed.slice(0, feedAberto ? 30 : 4).map((i) => <ItemDoFeed key={i.id} item={i} />)
         )}
-        {feed.length > 4 && !feedAberto && (
-          <SecondaryButton titulo={`Ver mais ${Math.min(feed.length, 30) - 4}`} alinhamento="inicio" onPress={() => setFeedAberto(true)} />
-        )}
       </Section>
 
-      <Section titulo={`Quem cuida da ${chamada}`}>
+      <Section
+        titulo={`Quem cuida da ${chamada}`}
+        acao={<LinkDaSecao titulo={convidando ? 'Preparando...' : 'Convidar'} icone="adicionar" onPress={convidar} />}
+      >
         <ListGroup comAvatar>
           {membros.map((m, i) => (
             <ListRow
@@ -134,29 +136,7 @@ export default function Familia() {
           ))}
           <ListRow titulo="Tenho um código de convite" icone="link" onPress={() => router.push('/convite')} />
         </ListGroup>
-        <PrimaryButton
-          titulo={convidando ? 'Preparando o convite...' : 'Convidar pelo WhatsApp'}
-          icone="adicionar"
-          desativado={convidando}
-          dica="Manda um código para a pessoa entrar no grupo da família"
-          onPress={convidar}
-        />
       </Section>
-
-      {!meuNome() && eu && (
-        <Card>
-          <Text variante="headline">Como a família te chama?</Text>
-          <Text variante="callout" cor="secondaryLabel">
-            Assim todos sabem quem assumiu cada tarefa e quem mandou cada aviso.
-          </Text>
-          <PrimaryButton titulo="Dizer meu nome" onPress={() => router.push('/eu')} />
-        </Card>
-      )}
-
-      <ListGroup>
-        <ListRow titulo="Ver a semana completa" icone="calendario" onPress={() => router.push('/hoje/semana')} />
-        <ListRow titulo="Privacidade e dados da família" icone="cadeado" onPress={() => router.push('/familia/privacidade')} />
-      </ListGroup>
     </Screen>
   );
 }
