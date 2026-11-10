@@ -28,7 +28,6 @@ import { avisoDasUltimas24h, ehHoje, meuNome, useFamilia } from '@/lib/familia';
 import { fotoDaChave } from '@/lib/passaporte';
 import { formatarData, MENSAGEM_ETAPA } from '@/lib/rotulos';
 import { useSemana } from '@/lib/semana';
-import { useSessao } from '@/lib/sessao';
 import { espaco, useTema } from '@/theme';
 
 function saudacao() {
@@ -41,7 +40,7 @@ function saudacao() {
 /**
  * Hoje: a ação principal no topo (contar o dia), ajuda e 192 a um toque, depois o que há para
  * fazer hoje, o último relato e a semana. Cada seção tem um "Ver" no título em vez de botões
- * soltos. Para quem mora longe, a semana vem primeiro.
+ * soltos.
  */
 export default function Hoje() {
   const { cores } = useTema();
@@ -52,7 +51,6 @@ export default function Hoje() {
   useAtualizarAoFocar();
   useFocusEffect(useCallback(() => atualizarSeMudouODia(), []));
 
-  const quemCuida = (useSessao().papel ?? 'quem_cuida') === 'quem_cuida';
   const avisoRecente = avisoDasUltimas24h(feed);
   // O que é para hoje e o que ainda ninguém assumiu (quem mora longe assume daqui).
   const tarefasHoje = tarefas.filter((t) => !t.concluida && (ehHoje(t.quando) || !t.responsavel_nome)).slice(0, 3);
@@ -100,8 +98,6 @@ export default function Hoje() {
         </ListGroup>
       )}
 
-      {!quemCuida && secaoSemana}
-
       <View style={{ gap: espaco.s1 + espaco.meio }}>
         <Card style={{ paddingVertical: espaco.s3 }}>
           <RecordButton gravando={false} onPress={() => router.push('/gravar')} apoio="Toque e fale do seu jeito" />
@@ -146,6 +142,8 @@ export default function Hoje() {
         </Section>
       )}
 
+      {secaoSemana}
+
       <Section
         titulo="Último relato"
         acao={relatos.length > 0 ? <LinkDaSecao titulo="Ver todos" onPress={() => router.push('/hoje/diario')} /> : undefined}
@@ -175,8 +173,6 @@ export default function Hoje() {
           </Card>
         ) : null}
       </Section>
-
-      {quemCuida && secaoSemana}
     </Screen>
   );
 }
