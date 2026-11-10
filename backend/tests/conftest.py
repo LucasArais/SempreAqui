@@ -42,3 +42,13 @@ def provedor_tranquilo():
         estruturado=REGISTRO_TRANQUILO,
         textos=["A mãe teve um dia bom. Dormiu bem e cantou com as músicas do Roberto Carlos."],
     )
+
+
+@pytest.fixture(autouse=True)
+def _zerar_limites():
+    """Cada teste começa sem chamadas contadas no limite de uso."""
+    from api.main import _USO
+
+    _USO.clear()
+    yield
+    _USO.clear()

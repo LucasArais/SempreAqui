@@ -274,6 +274,8 @@ uv run python -m evals.avaliar_apoio      # recusa médica, risco, fontes
 uv run python -m evals.comparar_transcricao google/gemini-3-flash-preview
 ```
 
+**Servidor público para testes:** Cloudflare Tunnel, com as proteções descritas em [docs/deploy.md](docs/deploy.md).
+
 Métricas anônimas de uso, incluindo a taxa de correção dos campos da IA: `curl localhost:8000/metricas` ([docs/metricas.md](docs/metricas.md)).
 
 ## Como medimos a IA

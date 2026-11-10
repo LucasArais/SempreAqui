@@ -32,6 +32,7 @@ class Config:
     supabase_secret_key: str | None
     supabase_database_url: str | None
     aceitar_cabecalho_familia: bool
+    expor_docs: bool
     familia_demo_para_novos: str | None
     fuso: str
 
@@ -56,6 +57,11 @@ def config() -> Config:
         supabase_secret_key=os.getenv("SUPABASE_SECRET_KEY") or None,
         supabase_database_url=os.getenv("SUPABASE_DATABASE_URL") or None,
         # Cabeçalho X-Familia sem login: só para testes e uso local, nunca em produção.
+        # Documentação automática da API (/docs): só no modo local, nunca quando o servidor é público.
+        expor_docs=os.getenv(
+            "EXPOR_DOCS", "1" if os.getenv("REPOSITORIO", "supabase") == "local" else "0"
+        )
+        == "1",
         aceitar_cabecalho_familia=os.getenv(
             "ACEITAR_X_FAMILIA", "1" if os.getenv("REPOSITORIO", "supabase") == "local" else "0"
         )

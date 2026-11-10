@@ -77,6 +77,9 @@ app = FastAPI(
     title="SempreAqui API",
     description="IA que aproxima famílias em torno do cuidado de quem vive com Alzheimer.",
     version="0.2.0",
+    docs_url="/docs" if config().expor_docs else None,
+    redoc_url="/redoc" if config().expor_docs else None,
+    openapi_url="/openapi.json" if config().expor_docs else None,
 )
 
 app.include_router(router_cadastro)
@@ -167,6 +170,27 @@ def obter_familia(
             raise HTTPException(400, "Família inválida.")
         return x_familia
     raise HTTPException(401, "Entre no app para continuar.")
+
+
+# Limite de uso ---------------------------------------------------------------
+#
+# Rotas que gastam IA na nuvem ou consultam serviços de fora têm limite por pessoa (ou por IP,
+# sem login). Em memória: zera quando o servidor reinicia, o suficiente para conter abuso.
+
+_USO: dict[tuple[str, str], list[float]] = {}
+
+
+def limite(nome: str, por_minuto: int, por_dia: int):
+    def verificar(request: Request, usuario: str | None = Depends(obter_usuario)) -> None:
+        quem = usuario or (request.client.host if request.client else "anonimo")
+        agora_s = time.time()
+        chamadas = [t for t in _USO.get((nome, quem), []) if agora_s - t < 86400]
+        if len([t for t in chamadas if agora_s - t < 60]) >= por_minuto or len(chamadas) >= por_dia:
+            raise HTTPException(429, "Muitos pedidos seguidos. Espere um pouco e tente de novo.")
+        chamadas.append(agora_s)
+        _USO[(nome, quem)] = chamadas
+
+    return Depends(verificar)
 
 
 # Modelos de resposta -------------------------------------------------------
@@ -472,7 +496,12 @@ def listar_campos() -> list[dict]:
     return campos.descrever()
 
 
-@app.post("/diario/relatos", response_model=Relato, status_code=202)
+@app.post(
+    "/diario/relatos",
+    response_model=Relato,
+    status_code=202,
+    dependencies=[limite("diario", 6, 60)],
+)
 async def criar_relato(
     background: BackgroundTasks,
     audio: UploadFile,
@@ -793,7 +822,7 @@ def _eh_imagem(conteudo: bytes) -> bool:
     return conteudo[:3] == b"\xff\xd8\xff" or conteudo[:8] == b"\x89PNG\r\n\x1a\n"
 
 
-@app.post("/passaporte/fotos", status_code=201)
+@app.post("/passaporte/fotos", status_code=201, dependencies=[limite("fotos", 10, 100)])
 async def enviar_foto(
     foto: UploadFile,
     familia_id: str = Depends(obter_familia),
@@ -851,7 +880,11 @@ def _filtrar_sugestoes(memoria: MemoriaOrganizada) -> dict:
     return dados
 
 
-@app.post("/passaporte/organizar", response_model=MemoriaOrganizada)
+@app.post(
+    "/passaporte/organizar",
+    response_model=MemoriaOrganizada,
+    dependencies=[limite("organizar", 6, 40)],
+)
 async def organizar_memoria(
     texto: str | None = Form(None),
     audio: UploadFile | None = None,
@@ -983,7 +1016,7 @@ def _relatos_recentes(repo: Repositorio, familia_id: str, dias: int = 60) -> lis
     ]
 
 
-@app.post("/apoio")
+@app.post("/apoio", dependencies=[limite("apoio", 20, 300)])
 def pedir_apoio(
     pedido: PedidoApoio,
     familia_id: str = Depends(obter_familia),
@@ -1000,7 +1033,7 @@ def pedir_apoio(
     return resposta
 
 
-@app.post("/apoio/transcrever")
+@app.post("/apoio/transcrever", dependencies=[limite("transcrever", 10, 100)])
 async def transcrever_apoio(
     audio: UploadFile,
     familia_id: str = Depends(obter_familia),
@@ -1030,7 +1063,7 @@ class Pergunta(BaseModel):
     texto: str = Field(min_length=1, max_length=1000)
 
 
-@app.post("/assistente")
+@app.post("/assistente", dependencies=[limite("assistente", 20, 300)])
 def perguntar_ao_ajudante(
     pergunta: Pergunta,
     familia_id: str = Depends(obter_familia),
@@ -1411,7 +1444,7 @@ def ver_feed(
 # SUS: unidades de saúde perto da família (dados abertos do CNES) ----------
 
 
-@app.get("/sus/unidades")
+@app.get("/sus/unidades", dependencies=[limite("sus", 10, 100)])
 def unidades_perto(
     lat: float = Query(ge=-35, le=6),
     lon: float = Query(ge=-75, le=-28),
@@ -1527,6 +1560,14 @@ def registrar_evento(
 
 
 @app.get("/metricas")
-def metricas(repo: Repositorio = Depends(obter_repositorio)) -> dict:
-    """Painel agregado e anônimo. A taxa de correção é o principal indicador de qualidade da IA."""
+def metricas(
+    usuario: str | None = Depends(obter_usuario),
+    repo: Repositorio = Depends(obter_repositorio),
+) -> dict:
+    """Painel agregado e anônimo. A taxa de correção é o principal indicador de qualidade da IA.
+
+    Exige login quando o servidor está público (no modo local, aberto para o desenvolvimento).
+    """
+    if not usuario and not config().aceitar_cabecalho_familia:
+        raise HTTPException(401, "Entre no app para continuar.")
     return repo.metricas()

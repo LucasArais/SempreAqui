@@ -3,6 +3,13 @@
 O que mudou em cada ciclo, do mais recente para o mais antigo.
 
 
+
+## Servidor público pelo Cloudflare Tunnel (novembro de 2026)
+
+- O app passa a falar com o backend por HTTPS, de qualquer rede, através de um Cloudflare Tunnel. Detalhes e próximos passos em `docs/deploy.md`.
+- Proteções para o servidor público: documentação da API desligada, `/metricas` com login, limite de uso por pessoa nas rotas que gastam IA ou consultam serviços de fora.
+- Contas novas criam a própria família; testadores entram por convite.
+
 ## Integração com o SUS (novembro de 2026)
 
 **Para a família**

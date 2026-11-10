@@ -185,3 +185,10 @@ def test_cartao_sus_validado_e_fora_do_link_publico(ambiente):  # noqa: F811
     assert formatar_cns(bom) in resposta["texto"] and resposta["acao"] == "ver_sus"
     pdf = cliente.get("/semana/consulta.pdf", headers=FAMILIA)
     assert pdf.status_code == 200
+
+
+def test_limite_de_uso_nas_rotas_que_gastam(ambiente):  # noqa: F811
+    cliente, *_ = ambiente
+    for _ in range(20):
+        assert cliente.post("/assistente", json={"texto": "Oi"}, headers=FAMILIA).status_code == 200
+    assert cliente.post("/assistente", json={"texto": "Oi"}, headers=FAMILIA).status_code == 429
