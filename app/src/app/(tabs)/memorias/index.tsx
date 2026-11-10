@@ -1,9 +1,10 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, Pressable, Share, View } from 'react-native';
 
 import {
   Avatar,
+  Card,
   Coluna,
   type NomeIcone,
   ListGroup,
@@ -12,13 +13,15 @@ import {
   Photo,
   PrimaryButton,
   Screen,
+  SecondaryButton,
   Section,
   Skeleton,
   Text,
 } from '@/components';
+import { api, ErroApi } from '@/lib/api';
 import { compartilharArquivo } from '@/lib/compartilhar';
 import { haptic } from '@/lib/haptics';
-import { carregarPassaporte, fotoDaChave, SECOES, type SecaoLista, usePassaporte } from '@/lib/passaporte';
+import { carregarPassaporte, fotoDaChave, oQueFalta, SECOES, type SecaoLista, usePassaporte } from '@/lib/passaporte';
 import { gerarPassaportePdf } from '@/lib/passaporte-pdf';
 import { espaco, useTema } from '@/theme';
 
@@ -67,6 +70,11 @@ export default function Memorias() {
   const { cores } = useTema();
   const { passaporte: p } = usePassaporte();
   const [gerando, setGerando] = useState(false);
+  const [link, setLink] = useState<{ ativo: boolean; url: string | null } | null>(null);
+
+  useEffect(() => {
+    api.linkPassaporte().then(setLink).catch(() => undefined);
+  }, []);
 
   if (!p) {
     return (
@@ -78,6 +86,42 @@ export default function Memorias() {
 
   const chamada = p.como_gosta_de_ser_chamada || p.nome || 'Ela';
   const comFoto = p.lembrancas.filter((l) => fotoDaChave(l.foto));
+
+  const falta = oQueFalta(p);
+
+  function criarLink() {
+    Alert.alert(
+      'Criar um link somente leitura?',
+      `Quem receber o link vê o passaporte da ${chamada}: história, pessoas, rotina, o que acalma e as fotos. Nada do Diário. Você pode desligar o link quando quiser.`,
+      [
+        { text: 'Agora não', style: 'cancel' },
+        {
+          text: 'Criar e enviar',
+          onPress: async () => {
+            try {
+              const novo = await api.criarLinkPassaporte();
+              setLink(novo);
+              haptic.sucesso();
+              await Share.share({ message: `Passaporte de Memória da ${chamada}: ${novo.url}` });
+            } catch (e) {
+              mostrarToast(e instanceof ErroApi ? e.message : 'Não consegui criar o link agora.');
+            }
+          },
+        },
+      ],
+    );
+  }
+
+  async function desligarLink() {
+    try {
+      await api.desligarLinkPassaporte();
+      setLink({ ativo: false, url: null });
+      haptic.sucesso();
+      mostrarToast('Link desligado. Quem tinha o link não vê mais o passaporte.');
+    } catch {
+      mostrarToast('Não consegui desligar agora. Tente de novo em instantes.');
+    }
+  }
 
   async function compartilharPassaporte() {
     setGerando(true);
@@ -109,6 +153,30 @@ export default function Memorias() {
           </Text>
         </Coluna>
       </Pressable>
+
+      <PrimaryButton titulo="Contar uma memória" icone="gravar" dica="Fale ou escreva. A IA separa nas seções e você confere" onPress={() => router.push('/nova-memoria')} />
+
+      {falta.vazias.length > 0 && (
+        <Card>
+          <Text variante="headline">
+            Falta pouco: {falta.preenchidas} de {falta.total} partes preenchidas
+          </Text>
+          <Text variante="callout" cor="secondaryLabel">
+            Para ajudar quem cuida dela, responda falando:
+          </Text>
+          {falta.vazias.slice(0, 3).map((v) => (
+            <Text key={v.chave} variante="body">
+              {v.pergunta}
+            </Text>
+          ))}
+          <SecondaryButton
+            titulo="Responder por voz"
+            icone="gravar"
+            alinhamento="inicio"
+            onPress={() => router.push({ pathname: '/contar-memoria', params: { modo: 'voz' } })}
+          />
+        </Card>
+      )}
 
       <Section titulo="Quem ela é">
         <ListGroup>
@@ -194,6 +262,25 @@ export default function Memorias() {
           Vai como PDF de uma página, com o que está aqui.
         </Text>
       </Coluna>
+
+      <Section titulo="Link somente leitura">
+        <ListGroup rodape="Para o cuidador, o centro-dia ou o hospital verem o passaporte sempre atualizado, sem instalar nada. Nunca inclui o Diário.">
+          {link?.ativo && link.url ? (
+            <>
+              <ListRow
+                titulo="Enviar o link de novo"
+                subtitulo="O link está ligado"
+                icone="link"
+                corIcone="success"
+                onPress={() => Share.share({ message: `Passaporte de Memória da ${chamada}: ${link.url}` })}
+              />
+              <ListRow titulo="Desligar o link" icone="lixeira" corIcone="attention" onPress={desligarLink} />
+            </>
+          ) : (
+            <ListRow titulo="Criar link para enviar" subtitulo="Abre em qualquer celular" icone="link" onPress={criarLink} />
+          )}
+        </ListGroup>
+      </Section>
     </Screen>
   );
 }

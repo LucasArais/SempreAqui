@@ -113,3 +113,19 @@ PASSAPORTE_DEMO = {
         {"id": "l-aniversario", "titulo": "Os 81 anos, com a neta", "foto": "aniversario"},
     ],
 }
+
+# Chave -> arquivo em app/assets/fotos, para a página somente leitura da demonstração.
+FOTOS_DEMO = {
+    "donaIsabel": "dona-isabel.jpg",
+    "claudia": "claudia.jpg",
+    "rafael": "rafael.jpg",
+    "neta": "neta.jpg",
+    "cuidador": "cuidador.jpg",
+    "marido": "marido.jpg",
+    "familiaReunida": "familia-reunida.jpg",
+    "atelie": "atelie-1978.jpg",
+    "claudiaPequena": "claudia-pequena.jpg",
+    "saoJoao": "sao-joao.jpg",
+    "casa": "casa-rua-das-flores.jpg",
+    "aniversario": "aniversario-81.jpg",
+}

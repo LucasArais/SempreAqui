@@ -1,4 +1,5 @@
 import { Asset } from 'expo-asset';
+import { File, Paths } from 'expo-file-system';
 import { readAsStringAsync } from 'expo-file-system/legacy';
 import * as Print from 'expo-print';
 
@@ -10,11 +11,19 @@ import { claro } from '@/theme/colors';
  * Montado no próprio celular a partir de HTML, com as fotos embutidas.
  */
 
-async function imagemBase64(modulo: number, tipo = 'image/jpeg') {
+async function imagemBase64(fonte: number | { uri?: string; headers?: Record<string, string> }, tipo = 'image/jpeg') {
   try {
-    const asset = Asset.fromModule(modulo);
-    await asset.downloadAsync();
-    const dados = await readAsStringAsync(asset.localUri ?? asset.uri, { encoding: 'base64' });
+    let caminho: string;
+    if (typeof fonte === 'number') {
+      const asset = Asset.fromModule(fonte);
+      await asset.downloadAsync();
+      caminho = asset.localUri ?? asset.uri;
+    } else {
+      // Foto enviada pela família: baixa com o login para embutir no PDF.
+      const destino = new File(Paths.cache, `pdf-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`);
+      caminho = (await File.downloadFileAsync(fonte.uri ?? '', destino, { headers: fonte.headers })).uri;
+    }
+    const dados = await readAsStringAsync(caminho, { encoding: 'base64' });
     return `data:${tipo};base64,${dados}`;
   } catch {
     return null;
@@ -34,11 +43,11 @@ function lista(itens: { titulo: string; detalhe?: string | null }[]) {
 export async function gerarPassaportePdf(p: Passaporte): Promise<string> {
   const retratoFonte = fotoDaChave(p.foto);
   const [retrato, logo, ...rostos] = await Promise.all([
-    retratoFonte ? imagemBase64(retratoFonte as number) : Promise.resolve(null),
+    retratoFonte ? imagemBase64(retratoFonte as number | { uri?: string }) : Promise.resolve(null),
     imagemBase64(require('../../assets/simbolo.png'), 'image/png'),
     ...p.pessoas_importantes.map((x) => {
       const f = fotoDaChave(x.foto);
-      return f ? imagemBase64(f as number) : Promise.resolve(null);
+      return f ? imagemBase64(f as number | { uri?: string }) : Promise.resolve(null);
     }),
   ]);
   const c = claro;

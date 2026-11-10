@@ -5,7 +5,7 @@ import { useSyncExternalStore } from 'react';
 
 import { fotos } from '@/data/familia';
 
-import { api, ErroApi } from './api';
+import { API_BASE, api, cabecalhos, ErroApi } from './api';
 import { sessaoAtual } from './sessao';
 
 /**
@@ -67,7 +67,15 @@ export const SECOES: Record<SecaoLista, { titulo: string; novo: string; exemplo:
 
 /** Foto guardada no app a partir da chave do passaporte. Upload de fotos vem depois. */
 export function fotoDaChave(chave?: string | null): ImageSource | undefined {
-  return chave ? fotos[chave] : undefined;
+  if (!chave) return undefined;
+  if (chave.startsWith('up-')) return { uri: `${API_BASE}/passaporte/fotos/${chave}`, headers: cabecalhos(), cacheKey: chave };
+  return fotos[chave];
+}
+
+/** Envia uma foto escolhida pela família e devolve a chave para guardar no passaporte. */
+export async function enviarFoto(uri: string) {
+  const { chave } = await api.enviarFoto(uri);
+  return chave;
 }
 
 export function novoId(prefixo: string) {
@@ -157,4 +165,27 @@ export async function apagarItem(secao: SecaoLista, id: string) {
     const devolvida = [...atual.slice(0, posicao), item, ...atual.slice(posicao)];
     await salvarPassaporte({ ...passaporteAtual(), [secao]: devolvida });
   };
+}
+
+// O que falta ------------------------------------------------------------------
+
+const QUE_FALTAM: { chave: keyof Passaporte; titulo: string; pergunta: string }[] = [
+  { chave: 'quem_ela', titulo: 'Quem ela é', pergunta: 'O que ela fazia? Do que mais gosta de conversar?' },
+  { chave: 'pessoas_importantes', titulo: 'Pessoas importantes', pergunta: 'Quem são as pessoas que ela mais ama?' },
+  { chave: 'acalma', titulo: 'O que acalma', pergunta: 'O que costuma acalmar ela num momento difícil?' },
+  { chave: 'agita', titulo: 'O que agita', pergunta: 'O que costuma deixar ela agitada ou com medo?' },
+  { chave: 'como_se_comunica', titulo: 'Como se comunica', pergunta: 'Qual é o melhor jeito de falar com ela?' },
+  { chave: 'rotina', titulo: 'Rotina', pergunta: 'Como é um dia normal dela, do café até a hora de dormir?' },
+  { chave: 'musicas', titulo: 'Músicas', pergunta: 'Que músicas ela gosta de cantar ou ouvir?' },
+  { chave: 'comidas', titulo: 'Comidas', pergunta: 'Qual é a comida favorita dela?' },
+  { chave: 'lembrancas', titulo: 'Lembranças', pergunta: 'Que história ela mais gosta de contar?' },
+];
+
+/** Seções vazias, com uma pergunta para a família responder falando. Sem IA: sempre funciona. */
+export function oQueFalta(p: Passaporte) {
+  const vazias = QUE_FALTAM.filter(({ chave }) => {
+    const valor = p[chave];
+    return Array.isArray(valor) ? valor.length === 0 : !String(valor ?? '').trim();
+  });
+  return { vazias, preenchidas: QUE_FALTAM.length - vazias.length, total: QUE_FALTAM.length };
 }

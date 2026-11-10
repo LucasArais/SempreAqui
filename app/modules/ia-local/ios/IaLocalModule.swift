@@ -45,6 +45,36 @@ public class IaLocalModule: Module {
       #endif
     }
 
+    AsyncFunction("gerarMemoria") { (instrucoes: String, prompt: String) async throws -> String in
+      #if canImport(FoundationModels)
+      guard #available(iOS 26.0, *) else { throw FalhaIaLocal("ios_antigo") }
+      let sessao = LanguageModelSession(instructions: instrucoes)
+      let resposta = try await sessao.respond(
+        to: prompt,
+        generating: MemoriaGerada.self,
+        options: GenerationOptions(sampling: .greedy)
+      )
+      return resposta.rawContent.jsonString
+      #else
+      throw FalhaIaLocal("sem_modelo")
+      #endif
+    }
+
+    AsyncFunction("gerarPerguntas") { (instrucoes: String, prompt: String) async throws -> [String] in
+      #if canImport(FoundationModels)
+      guard #available(iOS 26.0, *) else { throw FalhaIaLocal("ios_antigo") }
+      let sessao = LanguageModelSession(instructions: instrucoes)
+      let resposta = try await sessao.respond(
+        to: prompt,
+        generating: PerguntasGeradas.self,
+        options: GenerationOptions(temperature: 0.7)
+      )
+      return resposta.content.perguntas
+      #else
+      throw FalhaIaLocal("sem_modelo")
+      #endif
+    }
+
     AsyncFunction("gerarTexto") { (instrucoes: String, prompt: String) async throws -> String in
       #if canImport(FoundationModels)
       guard #available(iOS 26.0, *) else { throw FalhaIaLocal("ios_antigo") }
@@ -232,5 +262,62 @@ struct RegistroGerado {
   var observacoes: [String]
   @Guide(description: "Só situações que podem exigir atendimento imediato: queda com batida na cabeça, engasgo, falta de ar, desmaio, sangramento, violência, pessoa desaparecida. Vazio se nada disso foi relatado.", .maximumCount(4))
   var sinais_de_alerta: [String]
+}
+
+// Espelho de MemoriaOrganizada (backend/core/schemas/passaporte.py): sugestões que a família confere.
+
+@available(iOS 26.0, *)
+@Generable
+struct ItemSugeridoGerado {
+  @Guide(description: "Curto, nas palavras da família.")
+  var titulo: String
+  @Guide(description: "Um detalhe útil, se houver. Vazio se não houver.")
+  var detalhe: String?
+}
+
+@available(iOS 26.0, *)
+@Generable
+struct PessoaSugeridaGerada {
+  @Guide(description: "Como a família chama a pessoa.")
+  var nome: String
+  @Guide(description: "Quem é para ela, em poucas palavras.")
+  var relacao: String?
+}
+
+@available(iOS 26.0, *)
+@Generable
+struct MusicaSugeridaGerada {
+  var titulo: String
+  var artista: String?
+}
+
+@available(iOS 26.0, *)
+@Generable(description: "O que a família contou, separado nas seções do Passaporte. Só o que foi dito.")
+struct MemoriaGerada {
+  @Guide(description: "Trabalho, história de vida, jeito dela. Vazio se não foi falado.")
+  var quem_ela: String?
+  @Guide(description: "Como ela entende e se expressa. Vazio se não foi falado.")
+  var como_se_comunica: String?
+  @Guide(.maximumCount(6))
+  var pessoas_importantes: [PessoaSugeridaGerada]
+  @Guide(description: "Horários e hábitos do dia.", .maximumCount(6))
+  var rotina: [ItemSugeridoGerado]
+  @Guide(description: "O que acalma ou faz bem.", .maximumCount(6))
+  var acalma: [ItemSugeridoGerado]
+  @Guide(description: "O que agita, assusta ou incomoda.", .maximumCount(6))
+  var agita: [ItemSugeridoGerado]
+  @Guide(.maximumCount(6))
+  var musicas: [MusicaSugeridaGerada]
+  @Guide(.maximumCount(6))
+  var comidas: [ItemSugeridoGerado]
+  @Guide(description: "Histórias, lugares, épocas e fatos marcantes.", .maximumCount(6))
+  var lembrancas: [ItemSugeridoGerado]
+}
+
+@available(iOS 26.0, *)
+@Generable(description: "Perguntas abertas e gentis para uma conversa de reminiscência.")
+struct PerguntasGeradas {
+  @Guide(description: "Três perguntas curtas, uma por vez, sobre o tema. Nunca testam a memória.", .count(3))
+  var perguntas: [String]
 }
 #endif

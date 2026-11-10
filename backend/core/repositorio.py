@@ -90,6 +90,12 @@ create table if not exists sessoes (
 );
 create index if not exists sessoes_familia_data on sessoes (familia_id, data desc);
 
+create table if not exists links_passaporte (
+  token text primary key,
+  familia_id text not null unique,
+  criado_em text not null
+);
+
 create table if not exists eventos (
   id integer primary key autoincrement,
   tipo text not null,
@@ -363,8 +369,18 @@ class Repositorio:
         for relato in relatos:
             self.apagar(familia_id, relato["id"])
         with self._conexao() as c:
-            for tabela in ("correcoes", "membros", "consentimentos", "passaportes", "sessoes"):
+            for tabela in (
+                "correcoes",
+                "membros",
+                "consentimentos",
+                "passaportes",
+                "sessoes",
+                "links_passaporte",
+            ):
                 c.execute(f"delete from {tabela} where familia_id = ?", (familia_id,))
+        import shutil
+
+        shutil.rmtree(self.pasta / "fotos" / _seguro(familia_id), ignore_errors=True)
         return len(relatos)
 
     # Passaporte e conversas ------------------------------------------------
@@ -384,6 +400,38 @@ class Repositorio:
                 "atualizado_em = excluded.atualizado_em",
                 (familia_id, json.dumps(dados, ensure_ascii=False), agora()),
             )
+
+    def salvar_foto(self, familia_id: str, chave: str, conteudo: bytes) -> None:
+        pasta = self.pasta / "fotos" / _seguro(familia_id)
+        pasta.mkdir(parents=True, exist_ok=True)
+        (pasta / f"{chave}.jpg").write_bytes(conteudo)
+
+    def ler_foto(self, familia_id: str, chave: str) -> bytes | None:
+        caminho = self.pasta / "fotos" / _seguro(familia_id) / f"{chave}.jpg"
+        return caminho.read_bytes() if caminho.exists() else None
+
+    def definir_link(self, familia_id: str, token: str | None) -> None:
+        with self._conexao() as c:
+            c.execute("delete from links_passaporte where familia_id = ?", (familia_id,))
+            if token:
+                c.execute(
+                    "insert into links_passaporte (token, familia_id, criado_em) values (?, ?, ?)",
+                    (token, familia_id, agora()),
+                )
+
+    def link_da_familia(self, familia_id: str) -> str | None:
+        with self._conexao() as c:
+            linha = c.execute(
+                "select token from links_passaporte where familia_id = ?", (familia_id,)
+            ).fetchone()
+        return linha["token"] if linha else None
+
+    def familia_do_link(self, token: str) -> str | None:
+        with self._conexao() as c:
+            linha = c.execute(
+                "select familia_id from links_passaporte where token = ?", (token,)
+            ).fetchone()
+        return linha["familia_id"] if linha else None
 
     def registrar_sessao(
         self, familia_id: str, roteiro: dict, reacao: str, nota: str | None
@@ -583,3 +631,8 @@ def _sessao(
         "nota": nota,
         "realizada_em": quando if isinstance(quando, str) else quando.isoformat(),
     }
+
+
+def _seguro(texto: str) -> str:
+    """Nome de pasta sem caracteres que escapem do diretório."""
+    return "".join(c for c in texto if c.isalnum() or c in "-_") or "x"

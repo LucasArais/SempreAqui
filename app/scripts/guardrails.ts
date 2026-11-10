@@ -5,7 +5,7 @@
  */
 import { readFileSync } from 'node:fs';
 
-import { detectarRisco, verificarTextoFamilia } from '../src/lib/guardrails.ts';
+import { detectarRisco, validarPerguntas, verificarTextoFamilia } from '../src/lib/guardrails.ts';
 
 const yaml = readFileSync(new URL('../../backend/evals/guardrails/casos.yaml', import.meta.url), 'utf8');
 let secao = '';
@@ -30,3 +30,21 @@ if (!total || erros) {
   process.exit(1);
 }
 console.log(`Guardrails do celular: ${total} de ${total} casos iguais ao backend.`);
+
+// Perguntas da conversa de hoje escritas pela IA do celular.
+
+const perguntas: [string, boolean][] = [
+  ['O que a senhora vê nessa foto?', true],
+  ['Que cheiro tinha a cozinha da sua mãe?', true],
+  ['A senhora lembra do nome dele?', false],
+  ['Você se recorda desse dia?', false],
+  ['Ela esqueceu quem é o filho?', false],
+  ['Como era o paciente nessa época?', false],
+  ['Conta mais.', false],
+];
+const erradas = perguntas.filter(([p, ok]) => validarPerguntas([p]).length === (ok ? 0 : 1));
+if (erradas.length) {
+  console.error('Validação de perguntas divergente:', erradas);
+  process.exit(1);
+}
+console.log(`Perguntas da conversa: ${perguntas.length} de ${perguntas.length} casos corretos.`);

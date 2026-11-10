@@ -2,6 +2,22 @@
 
 O que mudou em cada ciclo, do mais recente para o mais antigo.
 
+## Ciclos 3 e 4 completos (novembro de 2026)
+
+**Para a família**
+- Contar uma memória falando ou escrevendo: a IA separa nas seções do Passaporte e a família marca o que entra. No iPhone com IA no aparelho, o que foi contado não sai do celular.
+- Fotos da galeria ou da câmera nas lembranças, nas pessoas importantes e no retrato dela. Também vão para o PDF.
+- "Falta pouco": as seções vazias aparecem com perguntas para responder por voz.
+- Link somente leitura do passaporte para cuidador, centro-dia ou hospital. Nunca inclui o Diário; a família desliga quando quiser.
+- Na conversa de hoje, a IA do celular reescreve as perguntas pensando nela. Cada pergunta passa por uma validação: nada de "lembra", "recorda" ou "esqueceu". Se falhar, ficam as perguntas revisadas.
+
+**Bastidores**
+- Rotas `POST /passaporte/fotos`, `GET /passaporte/fotos/{chave}`, `POST /passaporte/organizar`, `GET/POST/DELETE /passaporte/link` e a página pública `GET /p/{token}`.
+- Fotos num bucket privado `fotos` do Supabase, por grupo, apagadas junto com a família.
+- Página pública sem JavaScript, com texto escapado, `no-store`, `noindex` e só as fotos que estão no passaporte.
+- Módulo nativo: `gerarMemoria` e `gerarPerguntas` com geração guiada.
+- Testes: fotos isoladas por família, link desligado devolve 404, HTML escapado, sugestões filtradas pelos guardrails.
+
 ## Passaporte editável e Conversa de hoje (novembro de 2026)
 
 **Para a família**

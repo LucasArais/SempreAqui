@@ -47,7 +47,9 @@ Dados de saúde são dados pessoais sensíveis (LGPD, art. 5º, II, e art. 11).
 
 - **Consentimento explícito e por finalidade.** Diário, Passaporte, áudios e fotos, e link compartilhável têm consentimentos separados, com versão do termo e data. Revogar é tão fácil quanto aceitar.
 - **Isolamento por grupo familiar.** Row Level Security no Postgres: cada membro só enxerga o próprio grupo, garantido no banco e não só na API.
-- **Mínimo necessário.** O Passaporte compartilhado é somente leitura, pode ser desligado a qualquer momento e não inclui o Diário.
+- **Mínimo necessário.** O Passaporte compartilhado é somente leitura, pode ser desligado a qualquer momento e não inclui o Diário. O link é um token aleatório longo; a página não é indexada, não fica em cache e só mostra as fotos que estão no passaporte. Antes de criar o link, o app explica o que quem receber vai ver.
+- **Fotos.** Ficam num armazenamento privado por família, só acessível pelo backend, e são apagadas junto com tudo quando a família pede.
+- **Sugestões da IA no Passaporte.** Nada entra sozinho: a IA sugere, a família marca o que fica.
 - **Nada de dado real em logs.** Logs registram rotas, tempos, contagens e erros. Nunca transcrições, nomes, áudios ou conteúdo de prompts.
 - **Exportar e apagar tudo.** A família pode baixar todos os seus dados em formato aberto e apagar o grupo inteiro, o que remove tudo em cascata (LGPD, art. 18).
 - **IA no próprio celular.** No iPhone com Apple Intelligence, o áudio é transcrito e organizado no aparelho e nunca é enviado. Para o backend vai só a transcrição e o registro organizado, que a família precisa compartilhar. Correções nesses relatos também são processadas no aparelho. Os guardrails rodam no celular e de novo no backend. A família pode desligar isso em Privacidade e dados.

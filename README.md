@@ -225,8 +225,8 @@ Trabalhamos em ciclos curtos, cada um entregando uma funcionalidade de ponta a p
 | Fase 0 | Documentação, PoC, guardrails com avaliação, app navegável | concluído |
 | 1 | Diário redondo: gravação real, offline, correção com um toque, histórico | concluído |
 | 2 | Resumo da semana, mudanças de padrão, lista para a consulta em PDF | construído |
-| 3 | Passaporte de Memória editável e em PDF; montado por voz em seguida | em andamento |
-| 4 | Conversa do dia a partir do Passaporte, que muda todo dia e aprende com a reação | em andamento |
+| 3 | Passaporte de Memória por voz, texto e foto, com PDF e link somente leitura | construído |
+| 4 | Conversa do dia que muda todo dia, personalizada no celular e que aprende com a reação | construído |
 | 5 | Apoio na Hora Difícil com fontes oficiais e 192 | |
 | 6 | Rede da Família: convite, tarefas e "obrigado" | |
 | 7 | Polimento, acessibilidade, deploy e roteiro do Demo Day | |

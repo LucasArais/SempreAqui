@@ -2,7 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSyncExternalStore } from 'react';
 
 import { api } from './api';
-import type { Musica } from './passaporte';
+import { personalizarPerguntas } from './ia-local';
+import { type Musica, passaporteAtual } from './passaporte';
 import { sessaoAtual } from './sessao';
 
 /**
@@ -22,11 +23,13 @@ export type Roteiro = {
   musica?: Musica | null;
   conjunto: number;
   perguntas: string[];
+  /** Perguntas reescritas pela IA do celular a partir do roteiro revisado. */
+  personalizada?: boolean;
 };
 
 export type ConversaHoje = { roteiro: Roteiro | null; feitas_hoje: number; ultima_reacao: string | null };
 
-export type SessaoFeita = Omit<Roteiro, 'tipo_rotulo' | 'detalhe' | 'foto' | 'musica'> & {
+export type SessaoFeita = Omit<Roteiro, 'tipo_rotulo' | 'detalhe' | 'foto' | 'musica' | 'personalizada'> & {
   reacao: string;
   nota?: string;
 };
@@ -73,13 +76,40 @@ export async function carregarConversa(pulados: string[] = estado.pulados) {
   try {
     await enviarFila();
     const c = await api.conversaHoje(pulados);
-    definir({ conversa: c, pulados });
-    await AsyncStorage.setItem(CHAVE_ROTEIRO, JSON.stringify(c)).catch(() => undefined);
+    const conversa = c.roteiro ? { ...c, roteiro: await comPerguntasDoCelular(c.roteiro) } : c;
+    definir({ conversa, pulados });
+    await AsyncStorage.setItem(CHAVE_ROTEIRO, JSON.stringify(conversa)).catch(() => undefined);
   } catch {
     // Sem conexão: fica o roteiro guardado.
   } finally {
     definir({ carregando: false });
   }
+}
+
+/**
+ * Com a IA do celular, as perguntas do roteiro revisado viram perguntas pensadas para ela,
+ * guardadas por dia e tema (a mesma conversa não muda ao reabrir). O fechamento é mantido.
+ */
+async function comPerguntasDoCelular(roteiro: Roteiro): Promise<Roteiro> {
+  const chave = `conversa.perguntas.${roteiro.data}.${roteiro.tema_chave}`;
+  try {
+    const guardadas = await AsyncStorage.getItem(chave);
+    if (guardadas) return { ...roteiro, perguntas: JSON.parse(guardadas) as string[], personalizada: true };
+  } catch {
+    // Sem cópia: gera de novo.
+  }
+  const p = passaporteAtual();
+  const novas = await personalizarPerguntas({
+    chamada: p.como_gosta_de_ser_chamada || 'a senhora',
+    tema: roteiro.tema,
+    detalhe: roteiro.detalhe,
+    comoSeComunica: p.como_se_comunica,
+    exemplos: roteiro.perguntas.slice(0, 3),
+  });
+  if (!novas) return roteiro;
+  const perguntas = [...novas, roteiro.perguntas[roteiro.perguntas.length - 1]];
+  await AsyncStorage.setItem(chave, JSON.stringify(perguntas)).catch(() => undefined);
+  return { ...roteiro, perguntas, personalizada: true };
 }
 
 /** Outra conversa hoje: pula o tema atual e pede o próximo. */

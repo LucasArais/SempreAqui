@@ -3,8 +3,17 @@ import { useSyncExternalStore } from 'react';
 
 import IaLocal, { type Disponibilidade } from '../../modules/ia-local';
 import { promptExtracao, promptResumo, SISTEMA } from '../../prompts/diario-aparelho';
+import { promptMemoria, promptPerguntas } from '../../prompts/passaporte-aparelho';
 import { api, type Registro, type Relato } from './api';
-import { alertasDoRelato, normalizar, removerTravessoes, resumoSeguro, violacoesDoResumo } from './guardrails';
+import {
+  alertasDoRelato,
+  normalizar,
+  removerTravessoes,
+  resumoSeguro,
+  validarPerguntas,
+  verificarTextoFamilia,
+  violacoesDoResumo,
+} from './guardrails';
 
 /**
  * IA no próprio celular.
@@ -233,4 +242,67 @@ export async function reescreverResumoNoAparelho(relato: Relato): Promise<Relato
   const { resumo, resumo_seguro } = await escreverResumo(relato.registro, relato.transcricao, relato.alertas);
   if (resumo_seguro) return undefined; // o backend já gravou o resumo seguro com a correção
   return api.resumoDoAparelho(relato.id, resumo);
+}
+
+// Passaporte e conversa -------------------------------------------------------
+
+export type ItemSugerido = { titulo: string; detalhe?: string | null };
+export type MemoriaOrganizada = {
+  quem_ela?: string | null;
+  como_se_comunica?: string | null;
+  pessoas_importantes: { nome: string; relacao?: string | null }[];
+  rotina: ItemSugerido[];
+  acalma: ItemSugerido[];
+  agita: ItemSugerido[];
+  musicas: { titulo: string; artista?: string | null }[];
+  comidas: ItemSugerido[];
+  lembrancas: ItemSugerido[];
+};
+
+const LISTAS_MEMORIA = ['pessoas_importantes', 'rotina', 'acalma', 'agita', 'musicas', 'comidas', 'lembrancas'] as const;
+
+/** Formato garantido e sem nada que viole os guardrails de linguagem, como no backend. */
+export function normalizarMemoria(bruto: Record<string, unknown>): MemoriaOrganizada {
+  const textoOk = (v: unknown) =>
+    typeof v === 'string' && v.trim() && verificarTextoFamilia(v).length === 0 ? v.trim() : null;
+  const saida = { quem_ela: textoOk(bruto.quem_ela), como_se_comunica: textoOk(bruto.como_se_comunica) } as MemoriaOrganizada;
+  for (const secao of LISTAS_MEMORIA) {
+    const lista = Array.isArray(bruto[secao]) ? (bruto[secao] as Record<string, unknown>[]) : [];
+    const principal = secao === 'pessoas_importantes' ? 'nome' : 'titulo';
+    (saida as Record<string, unknown>)[secao] = lista
+      .filter((i) => i && typeof i[principal] === 'string' && String(i[principal]).trim())
+      .filter((i) => verificarTextoFamilia(Object.values(i).filter(Boolean).join(' ')).length === 0)
+      .map((i) => Object.fromEntries(Object.entries(i).map(([k, v]) => [k, typeof v === 'string' ? v.trim() || null : null])));
+  }
+  return saida;
+}
+
+/** Organiza no celular o que a família contou (áudio ou texto). O áudio não sai do aparelho. */
+export async function organizarMemoriaNoAparelho(entrada: { uri?: string; texto?: string }) {
+  if (!IaLocal) throw new Error('IA do aparelho indisponível');
+  const relato = entrada.uri ? (await IaLocal.transcrever(entrada.uri)).trim() : (entrada.texto ?? '').trim();
+  if (!relato) throw new Error('Relato vazio');
+  const json = await IaLocal.gerarMemoria(SISTEMA, promptMemoria(relato));
+  return { relato, memoria: normalizarMemoria(JSON.parse(json) as Record<string, unknown>) };
+}
+
+/**
+ * Perguntas da conversa de hoje escritas pela IA do celular, a partir do roteiro revisado.
+ * Só valem se as 3 passarem na validação; senão, ficam as revisadas.
+ */
+export async function personalizarPerguntas(contexto: {
+  chamada: string;
+  tema: string;
+  detalhe?: string | null;
+  comoSeComunica?: string;
+  exemplos: string[];
+}): Promise<string[] | null> {
+  if (!IaLocal || !iaLocalPronta()) return null;
+  try {
+    const geradas = await IaLocal.gerarPerguntas(SISTEMA, promptPerguntas(contexto));
+    const aprovadas = validarPerguntas(geradas);
+    return aprovadas.length === 3 ? aprovadas : null;
+  } catch {
+    return null;
+  }
 }

@@ -123,6 +123,17 @@ Mesma interface do módulo, mesma lógica em TypeScript. O que muda é o motor p
 
 Cada passo só entra se passar nas avaliações abaixo.
 
+## Além do Diário: Passaporte e Conversa de hoje
+
+A mesma IA do celular é usada em mais dois lugares, com as mesmas regras:
+
+| Onde | O que o celular faz | Reserva na nuvem | Proteção |
+|---|---|---|---|
+| Contar uma memória | Transcreve e separa o relato da família nas seções do Passaporte (`gerarMemoria`, espelho de `MemoriaOrganizada`) | `POST /passaporte/organizar`, sem guardar o áudio | Guardrails de linguagem em cada sugestão; nada entra sem a família marcar |
+| Conversa de hoje | Reescreve as perguntas do roteiro revisado pensando na pessoa (`gerarPerguntas`, exatamente 3) | Não precisa: ficam as perguntas revisadas | `validarPerguntas`: nada de "lembra", "recorda", "esqueceu", guardrails, tamanho e formato. Se uma falhar, nenhuma é usada |
+
+Os roteiros revisados vêm do backend (`core/reminiscencia.py`) e funcionam sem IA. A IA do celular só melhora o que já é seguro.
+
 ## Contrato de sincronização
 
 `POST /diario/relatos/do-aparelho`, autenticado como as demais rotas:

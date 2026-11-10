@@ -1,12 +1,15 @@
+import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, TextInput, View } from 'react-native';
 
-import { Coluna, mostrarToast, PrimaryButton, SecondaryButton, Text } from '@/components';
+import { Coluna, mostrarToast, Photo, PrimaryButton, SecondaryButton, Text } from '@/components';
 import { ErroApi } from '@/lib/api';
 import { haptic } from '@/lib/haptics';
 import {
   apagarItem,
+  enviarFoto,
+  fotoDaChave,
   type ItemDe,
   novoId,
   passaporteAtual,
@@ -72,22 +75,49 @@ export default function EditarMemoria() {
     Object.fromEntries(campos.map((c) => [c.chave, origem[c.chave] == null ? '' : String(origem[c.chave])])),
   );
   const [salvando, setSalvando] = useState(false);
+  const comFoto = secao === 'perfil' || secao === 'pessoas_importantes' || secao === 'lembrancas';
+  const [foto, setFoto] = useState<string | null>((origem.foto as string | null | undefined) ?? null);
+  const [enviandoFoto, setEnviandoFoto] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
   const titulo = ehTexto ? SECOES_TEXTO[secao as SecaoTexto] : existente ? 'Editar' : SECOES[secao as SecaoLista].novo;
   const obrigatorio = campos[0].chave;
   const podeSalvar = ehTexto || valores[obrigatorio].trim().length > 0;
 
+  async function escolherFoto(camera: boolean) {
+    const opcoes: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], allowsEditing: true, quality: 0.7 };
+    if (camera) {
+      const permissao = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permissao.granted) {
+        setErro('Sem permissão para a câmera. Você pode escolher da galeria.');
+        return;
+      }
+    }
+    const resultado = camera ? await ImagePicker.launchCameraAsync(opcoes) : await ImagePicker.launchImageLibraryAsync(opcoes);
+    if (resultado.canceled || !resultado.assets[0]) return;
+    setEnviandoFoto(true);
+    setErro(null);
+    try {
+      setFoto(await enviarFoto(resultado.assets[0].uri));
+      haptic.sucesso();
+    } catch (e) {
+      setErro(e instanceof ErroApi ? e.message : 'Não consegui enviar a foto agora.');
+    } finally {
+      setEnviandoFoto(false);
+    }
+  }
+
   async function salvar() {
     setSalvando(true);
     setErro(null);
-    const limpos = Object.fromEntries(Object.entries(valores).map(([k, v]) => [k, v.trim() || null]));
+    const limpos: Record<string, string | null> = Object.fromEntries(Object.entries(valores).map(([k, v]) => [k, v.trim() || null]));
+    if (comFoto) limpos.foto = foto;
     try {
       if (ehTexto) {
         const idade = limpos.idade ? Number(limpos.idade) : null;
         await salvarPassaporte({
           ...passaporte,
-          ...Object.fromEntries(Object.entries(limpos).map(([k, v]) => [k, v ?? ''])),
+          ...Object.fromEntries(Object.entries(limpos).map(([k, v]) => [k, k === 'foto' ? v : (v ?? '')])),
           ...(secao === 'perfil' ? { idade: Number.isFinite(idade) ? idade : null } : {}),
         });
       } else {
@@ -157,6 +187,20 @@ export default function EditarMemoria() {
           />
         </View>
       ))}
+      {comFoto && (
+        <View style={{ gap: espaco.s1 }}>
+          {foto && <Photo rotulo="Foto escolhida" fonte={fotoDaChave(foto)} proporcao={secao === 'lembrancas' ? 4 / 3 : 1} style={{ maxHeight: 260 }} />}
+          <View style={{ flexDirection: 'row', gap: espaco.s1 }}>
+            <View style={{ flex: 1 }}>
+              <SecondaryButton titulo={enviandoFoto ? 'Enviando...' : foto ? 'Trocar foto' : 'Escolher foto'} icone="foto" onPress={() => escolherFoto(false)} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <SecondaryButton titulo="Tirar foto" icone="foto" onPress={() => escolherFoto(true)} />
+            </View>
+          </View>
+          {foto && <SecondaryButton titulo="Tirar a foto" icone="lixeira" onPress={() => setFoto(null)} />}
+        </View>
+      )}
       {erro && (
         <Text variante="callout" cor="emergency" accessibilityLiveRegion="polite">
           {erro}

@@ -16,11 +16,13 @@ import io
 import json
 import logging
 import re
+import secrets
 import time
 import zipfile
 from collections.abc import Callable
 from datetime import date, datetime
 from functools import lru_cache
+from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -32,9 +34,10 @@ from fastapi import (
     Header,
     HTTPException,
     Query,
+    Request,
     UploadFile,
 )
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from pydantic import BaseModel, Field
 
 from agents.diario import (
@@ -47,10 +50,11 @@ from agents.diario import (
     violacoes_do_resumo,
 )
 from agents.semana import resumir_semana
-from core import campos, guardrails, reminiscencia
+from core import campos, guardrails, prompts, reminiscencia
 from core.auth import TokenInvalido, usuario_do_token
 from core.config import config
 from core.llm import ErroProvedorIA, ProvedorIA, provedor_padrao
+from core.passaporte_html import renderizar as renderizar_passaporte
 from core.pdf import pdf_consulta
 from core.repositorio import (
     EVENTOS_PERMITIDOS,
@@ -59,9 +63,9 @@ from core.repositorio import (
     repositorio_padrao,
 )
 from core.schemas.diario import RegistroDiario
-from core.schemas.passaporte import Passaporte
+from core.schemas.passaporte import MemoriaOrganizada, Passaporte
 from core.semana import montar_semana
-from demo.passaporte import PASSAPORTE_DEMO
+from demo.passaporte import FOTOS_DEMO, PASSAPORTE_DEMO
 
 logging.basicConfig(level=config().log_level.upper())
 log = logging.getLogger("sempreaqui.api")
@@ -754,6 +758,187 @@ def _textos_do_passaporte(p: Passaporte) -> list[str]:
         textos += [f"{i.titulo} {i.detalhe or ''}" for i in lista]
     textos += [f"{x.nome} {x.relacao or ''}" for x in p.pessoas_importantes]
     return [t for t in textos if t.strip()]
+
+
+# Fotos, organização por IA e link do passaporte ---------------------------
+
+CHAVE_FOTO = re.compile(r"^(up-[0-9a-f]{24}|[A-Za-z]{2,30})$")
+FOTO_MAXIMA = 8 * 1024 * 1024
+PASTA_FOTOS_DEMO = Path(__file__).resolve().parents[2] / "app" / "assets" / "fotos"
+
+
+def _eh_imagem(conteudo: bytes) -> bool:
+    return conteudo[:3] == b"\xff\xd8\xff" or conteudo[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+@app.post("/passaporte/fotos", status_code=201)
+async def enviar_foto(
+    foto: UploadFile,
+    familia_id: str = Depends(obter_familia),
+    repo: Repositorio = Depends(obter_repositorio),
+) -> dict:
+    """Foto escolhida pela família. Fica no armazenamento privado do grupo."""
+    conteudo = await foto.read()
+    if len(conteudo) > FOTO_MAXIMA:
+        raise HTTPException(413, "A foto ficou grande demais. Tente outra.")
+    if not _eh_imagem(conteudo):
+        raise HTTPException(415, "Não consegui ler essa imagem. Tente outra foto.")
+    chave = f"up-{secrets.token_hex(12)}"
+    repo.salvar_foto(familia_id, chave, conteudo)
+    return {"chave": chave}
+
+
+def _bytes_da_foto(repo: Repositorio, familia_id: str, chave: str) -> bytes | None:
+    if not CHAVE_FOTO.match(chave):
+        return None
+    if chave.startswith("up-"):
+        return repo.ler_foto(familia_id, chave)
+    arquivo = FOTOS_DEMO.get(chave)
+    caminho = PASTA_FOTOS_DEMO / arquivo if arquivo else None
+    return caminho.read_bytes() if caminho and caminho.exists() else None
+
+
+@app.get("/passaporte/fotos/{chave}")
+def ver_foto(
+    chave: str,
+    familia_id: str = Depends(obter_familia),
+    repo: Repositorio = Depends(obter_repositorio),
+) -> Response:
+    conteudo = _bytes_da_foto(repo, familia_id, chave)
+    if conteudo is None:
+        raise HTTPException(404, "Foto não encontrada.")
+    return Response(
+        conteudo, media_type="image/jpeg", headers={"Cache-Control": "private, max-age=86400"}
+    )
+
+
+def _filtrar_sugestoes(memoria: MemoriaOrganizada) -> dict:
+    """Tira sugestões que violam os guardrails de linguagem. A família confere o resto."""
+    dados = memoria.model_dump()
+    for chave, valor in dados.items():
+        if isinstance(valor, str) and guardrails.verificar_texto_familia(valor):
+            dados[chave] = None
+        elif isinstance(valor, list):
+            dados[chave] = [
+                item
+                for item in valor
+                if not guardrails.verificar_texto_familia(
+                    " ".join(str(v or "") for v in item.values())
+                )
+            ]
+    return dados
+
+
+@app.post("/passaporte/organizar", response_model=MemoriaOrganizada)
+async def organizar_memoria(
+    texto: str | None = Form(None),
+    audio: UploadFile | None = None,
+    familia_id: str = Depends(obter_familia),
+    fabrica: Callable[[], ProvedorIA] = Depends(obter_fabrica_provedor),
+) -> dict:
+    """Separa nas seções do passaporte o que a família contou. Só sugere: nada é salvo aqui.
+
+    É o caminho da nuvem. No iPhone com IA no aparelho, isso acontece no próprio celular.
+    O áudio não é guardado.
+    """
+    del familia_id  # só exige login; nada é lido nem gravado da família
+    conteudo = await audio.read() if audio is not None else None
+    if conteudo is not None and len(conteudo) > TAMANHO_MAXIMO:
+        raise HTTPException(413, "O áudio ficou longo demais. Tente gravar em partes menores.")
+    relato = (texto or "").strip()
+    if not relato and not conteudo:
+        raise HTTPException(422, "Conte alguma coisa por voz ou por escrito.")
+    try:
+        provedor = fabrica()
+        if conteudo:
+            mime = (
+                audio.content_type if audio and audio.content_type in TIPOS_AUDIO else "audio/mp4"
+            )
+            relato = provedor.transcrever_audio(
+                conteudo, mime, prompts.carregar("diario/transcricao", VERSOES["transcricao"])
+            )
+        prompt = prompts.preencher(prompts.carregar("passaporte/organizar", "v1"), relato=relato)
+        memoria = provedor.gerar_estruturado(prompt, prompts.sistema(), MemoriaOrganizada)
+    except Exception as erro:  # noqa: BLE001
+        log.warning("passaporte.organizar_falhou erro=%s", type(erro).__name__)
+        raise HTTPException(
+            503, "Não consegui organizar agora. Tente de novo em instantes."
+        ) from erro
+    return _filtrar_sugestoes(memoria)
+
+
+def _url_link(request: Request, token: str) -> str:
+    return f"{str(request.base_url).rstrip('/')}/p/{token}"
+
+
+@app.get("/passaporte/link")
+def ver_link(
+    request: Request,
+    familia_id: str = Depends(obter_familia),
+    repo: Repositorio = Depends(obter_repositorio),
+) -> dict:
+    token = repo.link_da_familia(familia_id)
+    return {"ativo": bool(token), "url": _url_link(request, token) if token else None}
+
+
+@app.post("/passaporte/link")
+def criar_link(
+    request: Request,
+    familia_id: str = Depends(obter_familia),
+    repo: Repositorio = Depends(obter_repositorio),
+) -> dict:
+    """Cria (ou troca) o link somente leitura. Só o passaporte, nunca o Diário."""
+    token = secrets.token_urlsafe(24)
+    repo.definir_link(familia_id, token)
+    return {"ativo": True, "url": _url_link(request, token)}
+
+
+@app.delete("/passaporte/link", status_code=204)
+def desligar_link(
+    familia_id: str = Depends(obter_familia), repo: Repositorio = Depends(obter_repositorio)
+) -> None:
+    repo.definir_link(familia_id, None)
+
+
+_CABECALHOS_PUBLICOS = {
+    "Cache-Control": "no-store",
+    "Referrer-Policy": "no-referrer",
+    "X-Robots-Tag": "noindex, nofollow",
+    "X-Content-Type-Options": "nosniff",
+}
+
+
+def _familia_do_token(repo: Repositorio, token: str) -> str:
+    valido = re.fullmatch(r"[A-Za-z0-9_-]{20,64}", token)
+    familia = repo.familia_do_link(token) if valido else None
+    if not familia:
+        raise HTTPException(404, "Este link não existe ou foi desligado pela família.")
+    return familia
+
+
+@app.get("/p/{token}", response_class=HTMLResponse)
+def passaporte_publico(token: str, repo: Repositorio = Depends(obter_repositorio)) -> HTMLResponse:
+    familia = _familia_do_token(repo, token)
+    html = renderizar_passaporte(
+        _passaporte(repo, familia), lambda chave: f"/p/{token}/fotos/{chave}"
+    )
+    return HTMLResponse(html, headers=_CABECALHOS_PUBLICOS)
+
+
+@app.get("/p/{token}/fotos/{chave}")
+def foto_publica(
+    token: str, chave: str, repo: Repositorio = Depends(obter_repositorio)
+) -> Response:
+    familia = _familia_do_token(repo, token)
+    p = _passaporte(repo, familia)
+    # Só fotos que estão no passaporte: o link não abre o resto do armazenamento.
+    usadas = {p.get("foto")} | {
+        x.get("foto") for secao in ("pessoas_importantes", "lembrancas") for x in p[secao]
+    }
+    conteudo = _bytes_da_foto(repo, familia, chave) if chave in usadas else None
+    if conteudo is None:
+        raise HTTPException(404, "Foto não encontrada.")
+    return Response(conteudo, media_type="image/jpeg", headers=_CABECALHOS_PUBLICOS)
 
 
 # Conversa de hoje (reminiscência) -----------------------------------------

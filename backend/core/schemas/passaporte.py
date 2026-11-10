@@ -64,3 +64,42 @@ class Passaporte(BaseModel):
     comidas: list[Item] = Field(default_factory=list, max_length=30)
     # Lembranças soltas da família: viram temas de conversa. Foto opcional, pela chave.
     lembrancas: list[Lembranca] = Field(default_factory=list, max_length=60)
+
+
+# Sugestões da IA a partir de um áudio ou texto livre da família. Nada entra no passaporte
+# sem a família conferir e marcar.
+
+
+class ItemSugerido(BaseModel):
+    titulo: str = Field(description="Curto, nas palavras da família.")
+    detalhe: str | None = Field(default=None, description="Um detalhe útil, se houver.")
+
+
+class PessoaSugerida(BaseModel):
+    nome: str = Field(description='Como a família chama a pessoa: "Rafael", "a irmã mais nova".')
+    relacao: str | None = Field(default=None, description="Quem é para ela, em poucas palavras.")
+
+
+class MusicaSugerida(BaseModel):
+    titulo: str
+    artista: str | None = None
+
+
+class MemoriaOrganizada(BaseModel):
+    """O que a família contou, separado nas seções do Passaporte. Só o que foi dito."""
+
+    quem_ela: str | None = Field(
+        default=None, description="Trabalho, história de vida, jeito dela. Vazio se não foi falado."
+    )
+    como_se_comunica: str | None = Field(
+        default=None, description="Como ela entende e se expressa. Vazio se não foi falado."
+    )
+    pessoas_importantes: list[PessoaSugerida] = Field(default_factory=list)
+    rotina: list[ItemSugerido] = Field(default_factory=list, description="Horários e hábitos.")
+    acalma: list[ItemSugerido] = Field(default_factory=list, description="O que acalma ou faz bem.")
+    agita: list[ItemSugerido] = Field(default_factory=list, description="O que agita ou incomoda.")
+    musicas: list[MusicaSugerida] = Field(default_factory=list)
+    comidas: list[ItemSugerido] = Field(default_factory=list)
+    lembrancas: list[ItemSugerido] = Field(
+        default_factory=list, description="Histórias, lugares, épocas e fatos marcantes."
+    )

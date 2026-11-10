@@ -162,6 +162,20 @@ export const api = {
       body: JSON.stringify({ resumo }),
     }),
   correcoes: () => chamar<{ texto: string }>('/diario/correcoes'),
+  enviarFoto: (uri: string) => {
+    const form = new FormData();
+    form.append('foto', new File(uri) as unknown as Blob, 'foto.jpg');
+    return chamar<{ chave: string }>('/passaporte/fotos', { method: 'POST', body: form });
+  },
+  organizarMemoria: (entrada: { uri?: string; texto?: string }) => {
+    const form = new FormData();
+    if (entrada.uri) form.append('audio', new File(entrada.uri) as unknown as Blob, 'memoria.m4a');
+    if (entrada.texto) form.append('texto', entrada.texto);
+    return chamar<import('./ia-local').MemoriaOrganizada>('/passaporte/organizar', { method: 'POST', body: form });
+  },
+  linkPassaporte: () => chamar<{ ativo: boolean; url: string | null }>('/passaporte/link'),
+  criarLinkPassaporte: () => chamar<{ ativo: boolean; url: string }>('/passaporte/link', { method: 'POST' }),
+  desligarLinkPassaporte: () => chamar<void>('/passaporte/link', { method: 'DELETE' }),
   passaporte: () => chamar<import('./passaporte').Passaporte>('/passaporte'),
   salvarPassaporte: (p: import('./passaporte').Passaporte) =>
     chamar<import('./passaporte').Passaporte>('/passaporte', {

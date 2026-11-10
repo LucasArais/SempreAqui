@@ -31,6 +31,7 @@ from core.repositorio import (
 )
 
 BUCKET = "audios"
+BUCKET_FOTOS = "fotos"
 
 
 class RepositorioSupabase:
@@ -275,6 +276,21 @@ class RepositorioSupabase:
                 headers=self._cabecalhos,
                 timeout=60,
             )
+        grupo = self.grupo(familia_id)
+        fotos = httpx.post(
+            f"{self._storage.rsplit('/object', 1)[0]}/object/list/{BUCKET_FOTOS}",
+            json={"prefix": f"{grupo}/", "limit": 1000},
+            headers=self._cabecalhos,
+            timeout=30,
+        )
+        if fotos.status_code == 200 and fotos.json():
+            httpx.request(
+                "DELETE",
+                f"{self._storage}/{BUCKET_FOTOS}",
+                json={"prefixes": [f"{grupo}/{f['name']}" for f in fotos.json()]},
+                headers=self._cabecalhos,
+                timeout=60,
+            )
         self._sql("delete from grupos_familiares where codigo = %s", (familia_id,))
         self._grupos.pop(familia_id, None)
         return len(relatos)
@@ -313,6 +329,61 @@ class RepositorioSupabase:
             "insert into passaportes (pessoa_id, grupo_id, dados) values (%s, %s, %s)",
             (pessoa, grupo, Jsonb(dados)),
         )
+
+    def _garantir_bucket_fotos(self) -> None:
+        if getattr(self, "_bucket_fotos_ok", False):
+            return
+        base = self._storage.rsplit("/object", 1)[0]
+        resposta = httpx.post(
+            f"{base}/bucket",
+            json={"id": BUCKET_FOTOS, "name": BUCKET_FOTOS, "public": False},
+            headers=self._cabecalhos,
+            timeout=30,
+        )
+        if resposta.status_code not in (200, 201, 400, 409):
+            resposta.raise_for_status()
+        self._bucket_fotos_ok = True
+
+    def salvar_foto(self, familia_id: str, chave: str, conteudo: bytes) -> None:
+        self._garantir_bucket_fotos()
+        resposta = httpx.post(
+            f"{self._storage}/{BUCKET_FOTOS}/{self.grupo(familia_id)}/{chave}.jpg",
+            content=conteudo,
+            headers={**self._cabecalhos, "Content-Type": "image/jpeg", "x-upsert": "true"},
+            timeout=60,
+        )
+        resposta.raise_for_status()
+
+    def ler_foto(self, familia_id: str, chave: str) -> bytes | None:
+        resposta = httpx.get(
+            f"{self._storage}/authenticated/{BUCKET_FOTOS}/{self.grupo(familia_id)}/{chave}.jpg",
+            headers=self._cabecalhos,
+            timeout=60,
+        )
+        return resposta.content if resposta.status_code == 200 else None
+
+    def definir_link(self, familia_id: str, token: str | None) -> None:
+        grupo = self.grupo(familia_id)
+        if not self._sql("select 1 from passaportes where grupo_id = %s", (grupo,)):
+            self.salvar_passaporte(familia_id, {})
+        self._sql(
+            "update passaportes set token_compartilhamento = %s where grupo_id = %s", (token, grupo)
+        )
+
+    def link_da_familia(self, familia_id: str) -> str | None:
+        linhas = self._sql(
+            "select token_compartilhamento from passaportes where grupo_id = %s limit 1",
+            (self.grupo(familia_id),),
+        )
+        return linhas[0]["token_compartilhamento"] if linhas else None
+
+    def familia_do_link(self, token: str) -> str | None:
+        linhas = self._sql(
+            "select g.codigo from passaportes p join grupos_familiares g on g.id = p.grupo_id "
+            "where p.token_compartilhamento = %s",
+            (token,),
+        )
+        return linhas[0]["codigo"] if linhas else None
 
     def registrar_sessao(
         self, familia_id: str, roteiro: dict, reacao: str, nota: str | None

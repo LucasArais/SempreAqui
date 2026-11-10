@@ -108,6 +108,7 @@ export default function Sessao() {
           <Photo rotulo={roteiro.tema} fonte={foto} icone={ICONE_DO_TIPO[roteiro.tipo] ?? 'coracao'} tom={roteiro.conjunto % 5} proporcao={foto ? 4 / 3 : 2} />
           <Text variante="footnote" cor="secondaryLabel">
             {roteiro.tipo_rotulo}: {roteiro.tema}
+            {roteiro.personalizada ? '. Perguntas pensadas para ela aqui no celular.' : ''}
           </Text>
         </View>
         <Animated.View key={passo} entering={FadeIn.duration(300)} style={{ flexGrow: 1, gap: espaco.s2 }}>

@@ -8,6 +8,8 @@ type IaLocalNativo = {
   transcrever(uri: string): Promise<string>;
   gerarRegistro(instrucoes: string, prompt: string): Promise<string>;
   gerarTexto(instrucoes: string, prompt: string): Promise<string>;
+  gerarMemoria(instrucoes: string, prompt: string): Promise<string>;
+  gerarPerguntas(instrucoes: string, prompt: string): Promise<string[]>;
 };
 
 /** null no Android, no simulador sem o módulo e em builds antigos: o app usa a nuvem. */

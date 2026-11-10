@@ -39,25 +39,29 @@ Personas que guiam cada decisão: **Cláudia**, 52 anos, cuida da mãe e abre o 
 - [x] Tela Hoje mostra a semana primeiro para quem mora longe
 - [ ] Testar com o Rafael de verdade: entende a semana em 30 segundos?
 
-## Ciclo 3: Passaporte de Memória
+## Ciclo 3: Passaporte de Memória (construído)
 
 **Pronto quando:** a família monta um passaporte útil em 15 minutos só falando.
 
 - [x] Passaporte editável por seção: adicionar, editar e apagar com Desfazer
 - [x] PDF de uma página para cuidador ou hospital, com o que a família preencheu
-- [ ] Memórias por áudio e foto, além de texto
-- [ ] IA organiza nas seções e mostra o que falta, com perguntas sugeridas
-- [ ] Link somente leitura
+- [x] Memórias por voz, texto e foto (galeria ou câmera), com fotos no armazenamento privado da família
+- [x] IA separa o que a família contou nas seções; a família marca o que entra. No iPhone, no próprio aparelho
+- [x] "Falta pouco": seções vazias com perguntas para responder falando
+- [x] Link somente leitura, sem o Diário, que a família liga e desliga
+- [ ] Medir com uma família de verdade: passaporte útil em 15 minutos só falando
 
-## Ciclo 4: Conversas de Reminiscência
+## Ciclo 4: Conversas de Reminiscência (construído)
 
 **Pronto quando:** uma sessão de 5 minutos roda do início ao fim sem a cuidadora precisar pensar no que dizer.
 
 - [x] Conversa do dia a partir do Passaporte: tema, foto, perguntas gentis e música, mudando todo dia
 - [x] Reação e anotação guardadas, pesando na escolha dos próximos temas
-- [ ] Perguntas personalizadas pela IA do celular, a partir dos roteiros revisados
-- [ ] Modo de exibição para a pessoa: tela cheia, fonte enorme, um elemento por vez
+- [x] Perguntas personalizadas pela IA do celular, a partir dos roteiros revisados, validadas antes de aparecer
+- [x] Modo de exibição para a pessoa: tela cheia, fonte enorme, um elemento por vez
 - [x] Teste automático: nenhum roteiro testa a memória nem viola os guardrails
+- [x] Validação das perguntas da IA ("lembra", "recorda", "esqueceu" e guardrails) checada no CI
+- [ ] Testar uma sessão de 5 minutos com quem cuida de verdade
 
 ## Ciclo 5: Apoio na Hora Difícil
 

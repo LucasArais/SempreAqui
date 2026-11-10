@@ -90,6 +90,15 @@ export default function Raiz() {
           }}
         />
         <Stack.Screen
+          name="contar-memoria"
+          options={{
+            presentation: 'formSheet',
+            sheetGrabberVisible: true,
+            sheetAllowedDetents: [0.75, 1],
+            sheetCornerRadius: 24,
+          }}
+        />
+        <Stack.Screen
           name="editar-memoria"
           options={{
             presentation: 'formSheet',

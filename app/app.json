@@ -14,7 +14,9 @@
         "NSAppTransportSecurity": {
           "NSAllowsLocalNetworking": true
         },
-        "NSSpeechRecognitionUsageDescription": "O SempreAqui transcreve seus relatos aqui no celular, sem enviar o áudio para fora dele."
+        "NSSpeechRecognitionUsageDescription": "O SempreAqui transcreve seus relatos aqui no celular, sem enviar o áudio para fora dele.",
+        "NSPhotoLibraryUsageDescription": "O SempreAqui usa suas fotos para montar o Passaporte de Memória da família.",
+        "NSCameraUsageDescription": "O SempreAqui usa a câmera para fotografar lembranças para o Passaporte de Memória."
       },
       "bundleIdentifier": "com.lucasarais.sempreaqui"
     },
@@ -51,6 +53,14 @@
           "imageWidth": 160,
           "resizeMode": "contain",
           "backgroundColor": "#FFFFFF"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O SempreAqui usa suas fotos para montar o Passaporte de Memória da família.",
+          "cameraPermission": "O SempreAqui usa a câmera para fotografar lembranças para o Passaporte de Memória.",
+          "microphonePermission": false
         }
       ]
     ],

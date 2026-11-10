@@ -122,3 +122,23 @@ export function resumoSeguro(registro: Registro, alertas: string[]) {
   }
   return partes.join(' ') || 'Registro do dia salvo.';
 }
+
+/** Perguntas que testam a memória ou corrigem a pessoa. Espelho de core/reminiscencia.py. */
+const TESTA_MEMORIA = /\b(lembra|lembrar|lembrou|recorda|recordar|esqueceu|esquecer|nao e isso)\b/;
+
+/**
+ * Confere as perguntas que a IA do celular escreveu para a conversa de hoje. Devolve só as
+ * aprovadas: sem testar a memória, sem guardrail violado, curtas e terminando em pergunta.
+ */
+export function validarPerguntas(perguntas: string[]) {
+  return perguntas
+    .map((p) => removerTravessoes(p.trim().replace(/^[-*\d.)\s]+/, '')))
+    .filter(
+      (p) =>
+        p.length >= 8 &&
+        p.length <= 140 &&
+        p.endsWith('?') &&
+        !TESTA_MEMORIA.test(normalizar(p)) &&
+        verificarTextoFamilia(p).length === 0,
+    );
+}
