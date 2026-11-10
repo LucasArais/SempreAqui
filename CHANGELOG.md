@@ -2,6 +2,32 @@
 
 O que mudou em cada ciclo, do mais recente para o mais antigo.
 
+## Ciclos 5 e 6 e navegação mais simples (novembro de 2026)
+
+**Apoio na Hora Difícil**
+- Quem cuida conta a situação falando ou escrevendo e recebe o que costuma funcionar com ela, cada sugestão com a origem: o Passaporte ou o Diário, com as datas em que ajudou.
+- Orientação geral com trechos literais do Guia Prático do Cuidador, do Ministério da Saúde, e link para a página citada.
+- Risco: 192 primeiro e "Avisar a família agora", que aparece no topo do app de todos e abre o WhatsApp.
+- Pergunta sobre remédio, dose ou diagnóstico: recusa gentil, encaminhamento à equipe de saúde e, mesmo assim, o apoio prático do dia a dia.
+- Cansaço de quem cuida: atalho para pedir uma folga à família.
+
+**Rede da Família**
+- Convite pelo WhatsApp com código de 8 letras, válido por 7 dias. Quem recebe entra com o código ou tocando no link.
+- Tarefas da semana: "Eu assumo" com um toque, também na tela Hoje. Quem assume recebe um lembrete no celular.
+- Feed "O que aconteceu": resumos enviados, conversas do dia, tarefas assumidas e feitas, avisos. Cada item tem "Obrigado".
+- Cada pessoa diz seu nome e papel, para todos saberem quem fez o quê.
+
+**Navegação**
+- Tela Hoje em ordem de urgência: aviso, gravar, "Precisa de ajuda agora?", conversa do dia, tarefas, último relato e semana. Para quem mora longe, a semana vem primeiro.
+- Listas longas do Passaporte e do feed mostram poucos itens e "Ver mais".
+- "Ver este relato" e "Ver todos os relatos" no lugar de um botão ambíguo.
+
+**Bastidores**
+- `core/apoio.py` e `core/fontes.py`, rotas `/apoio` e `/apoio/transcrever`.
+- Migração `002_rede_da_familia.sql`: convites, feed e tarefas com responsável por nome. Rotas `/familia`, `/familia/convites`, `/familia/entrar`, `/tarefas`, `/feed`, `/feed/obrigado`, `/familia/avisos`.
+- Tarefas de exemplo no seed da família de demonstração.
+- Corrigido: criar o link do passaporte não apaga mais o passaporte da família.
+
 ## Ciclos 3 e 4 completos (novembro de 2026)
 
 **Para a família**

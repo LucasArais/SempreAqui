@@ -38,7 +38,7 @@ O SempreAqui é um app de celular, pensado para ser usado por voz, que faz três
 | **Passaporte de Memória** | A família manda áudios, fotos e textos sobre a pessoa. Sai um perfil com como ela gosta de ser chamada, história, pessoas importantes, rotina, músicas, comidas, o que acalma, o que agita e como se comunica. Gera link somente leitura e PDF de uma página para cuidadores, centro-dia ou hospital. | IA multimodal transcreve e extrai de áudios, fotos e textos soltos um perfil estruturado |
 | **Conversas de Reminiscência** | Sessões de 5 a 10 minutos com uma foto, música ou lembrança e perguntas abertas e gentis para a família conduzir. Nunca "você lembra?". Registra como a pessoa reagiu. | Gera roteiros personalizados a partir do Passaporte e aprende com as reações |
 | **Diário Inteligente** | Quem cuida grava um áudio contando o dia. Sai um registro de sono, alimentação, humor, agitação, episódios e medicação, um resumo semanal para a família e uma lista objetiva "Para levar na consulta". | Transcreve, extrai campos estruturados e compara com o habitual da própria pessoa |
-| **Apoio na Hora Difícil** | Quem cuida descreve a situação ("ela está agitada e quer ir embora") e recebe o que costuma funcionar para aquela pessoa. Dúvidas gerais são respondidas com fontes oficiais e link. Em risco, orienta ligar 192 e avisa a família. | Agente cruza Passaporte e Diário, e RAG sobre fontes oficiais |
+| **Apoio na Hora Difícil** | Quem cuida descreve a situação ("ela está agitada e quer ir embora") e recebe o que costuma funcionar para aquela pessoa. Dúvidas gerais são respondidas com fontes oficiais e link. Em risco, orienta ligar 192 e avisa a família. | Agente determinístico cruza Passaporte e Diário; busca em trechos oficiais literais, com link para a página |
 | **Rede da Família** | Grupo com papéis, divisão de tarefas (consultas, visitas, cobrir a folga de quem cuida), lembretes e um feed com os resumos. | Os resumos da IA viram o feed que mantém todos por perto |
 
 <p align="center">
@@ -159,7 +159,7 @@ Decisões e detalhes em [docs/arquitetura.md](docs/arquitetura.md).
 | Backend | Python, FastAPI |
 | Orquestração de IA | LangGraph, um grafo por função |
 | Modelos na nuvem | Gemini 3 Flash via OpenRouter (escolhido por benchmark próprio de transcrição), só como reserva e só com provedores que não guardam dados |
-| RAG | Embeddings e pgvector, com fonte e URL em cada trecho |
+| Fontes oficiais | Acervo de trechos literais do Guia Prático do Cuidador (Ministério da Saúde), com página e link; busca por palavras, explicável e sem custo. pgvector entra quando o acervo crescer |
 | Banco | Supabase (Postgres) com Row Level Security por grupo familiar, ou SQLite local |
 | Qualidade | pytest, ruff, guardrails iguais no app e no backend checados no CI, avaliações próprias |
 
@@ -227,8 +227,8 @@ Trabalhamos em ciclos curtos, cada um entregando uma funcionalidade de ponta a p
 | 2 | Resumo da semana, mudanças de padrão, lista para a consulta em PDF | construído |
 | 3 | Passaporte de Memória por voz, texto e foto, com PDF e link somente leitura | construído |
 | 4 | Conversa do dia que muda todo dia, personalizada no celular e que aprende com a reação | construído |
-| 5 | Apoio na Hora Difícil com fontes oficiais e 192 | |
-| 6 | Rede da Família: convite, tarefas e "obrigado" | |
+| 5 | Apoio na Hora Difícil com fontes oficiais, 192 e recusa médica medida em 100% | construído |
+| 6 | Rede da Família: convite no WhatsApp, "Eu assumo", lembretes e "obrigado" | construído |
 | 7 | Polimento, acessibilidade, deploy e roteiro do Demo Day | |
 | Em paralelo | IA no próprio celular: transcrição e organização do relato sem sair do aparelho | construído no iPhone |
 

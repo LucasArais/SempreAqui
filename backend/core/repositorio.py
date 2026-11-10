@@ -96,6 +96,37 @@ create table if not exists links_passaporte (
   criado_em text not null
 );
 
+create table if not exists tarefas (
+  id text primary key,
+  familia_id text not null,
+  titulo text not null,
+  tipo text not null,
+  responsavel_nome text,
+  criada_por text,
+  quando text,
+  concluida integer not null default 0,
+  criado_em text not null,
+  concluida_em text
+);
+
+create table if not exists convites (
+  codigo text primary key,
+  familia_id text not null,
+  papel text not null,
+  criado_em text not null,
+  expira_em text not null
+);
+
+create table if not exists feed_eventos (
+  id text primary key,
+  familia_id text not null,
+  tipo text not null,
+  autor text not null,
+  texto text,
+  ref text,
+  criado_em text not null
+);
+
 create table if not exists eventos (
   id integer primary key autoincrement,
   tipo text not null,
@@ -114,6 +145,7 @@ EVENTOS_PERMITIDOS = {
     "primeiro_diario",
     "sessao_concluida",
     "relato_enviado_offline",
+    "apoio_pedido",
 }
 
 _SAL = "sempreaqui-metricas-v1"
@@ -362,6 +394,8 @@ class Repositorio:
             "consentimentos": consentimentos,
             "passaporte": self.obter_passaporte(familia_id),
             "sessoes": self.sessoes_recentes(familia_id, limite=100000),
+            "tarefas": self.listar_tarefas(familia_id, incluir_antigas=True),
+            "feed": self.feed_eventos(familia_id, limite=100000),
         }
 
     def apagar_familia(self, familia_id: str) -> int:
@@ -376,12 +410,136 @@ class Repositorio:
                 "passaportes",
                 "sessoes",
                 "links_passaporte",
+                "tarefas",
+                "convites",
+                "feed_eventos",
             ):
                 c.execute(f"delete from {tabela} where familia_id = ?", (familia_id,))
         import shutil
 
         shutil.rmtree(self.pasta / "fotos" / _seguro(familia_id), ignore_errors=True)
         return len(relatos)
+
+    # Rede da família ------------------------------------------------------
+
+    def membros_da_familia(self, familia_id: str) -> list[dict]:
+        with self._conexao() as c:
+            linhas = c.execute(
+                "select usuario_id, nome_exibicao, papel from membros where familia_id = ? "
+                "order by criado_em",
+                (familia_id,),
+            ).fetchall()
+        return [
+            {"usuario_id": x["usuario_id"], "nome": x["nome_exibicao"], "papel": x["papel"]}
+            for x in linhas
+        ]
+
+    def atualizar_membro(self, familia_id: str, usuario_id: str, nome: str, papel: str) -> None:
+        with self._conexao() as c:
+            c.execute(
+                "update membros set nome_exibicao = ?, papel = ? where familia_id = ? and usuario_id = ?",
+                (nome, papel, familia_id, usuario_id),
+            )
+
+    def criar_convite(self, familia_id: str, codigo: str, papel: str, expira_em: str) -> None:
+        with self._conexao() as c:
+            c.execute(
+                "insert into convites (codigo, familia_id, papel, criado_em, expira_em) values (?, ?, ?, ?, ?)",
+                (codigo, familia_id, papel, agora(), expira_em),
+            )
+
+    def usar_convite(self, codigo: str) -> dict | None:
+        with self._conexao() as c:
+            linha = c.execute(
+                "select familia_id, papel from convites where codigo = ? and expira_em > ?",
+                (codigo, agora()),
+            ).fetchone()
+        return {"familia": linha["familia_id"], "papel": linha["papel"]} if linha else None
+
+    def mudar_de_familia(self, usuario_id: str, familia_id: str, nome: str, papel: str) -> None:
+        with self._conexao() as c:
+            c.execute("delete from membros where usuario_id = ?", (usuario_id,))
+        self.entrar_na_familia(usuario_id, familia_id, nome, papel)
+
+    def listar_tarefas(self, familia_id: str, incluir_antigas: bool = False) -> list[dict]:
+        filtro = "" if incluir_antigas else "and (concluida = 0 or concluida_em > ?)"
+        parametros: tuple = (familia_id,) if incluir_antigas else (familia_id, _dias_atras(7))
+        with self._conexao() as c:
+            linhas = c.execute(
+                f"select * from tarefas where familia_id = ? {filtro} "
+                "order by concluida, coalesce(quando, '9999'), criado_em",
+                parametros,
+            ).fetchall()
+        return [_tarefa(dict(x)) for x in linhas]
+
+    def obter_tarefa(self, familia_id: str, tarefa_id: str) -> dict | None:
+        with self._conexao() as c:
+            linha = c.execute(
+                "select * from tarefas where id = ? and familia_id = ?", (tarefa_id, familia_id)
+            ).fetchone()
+        return _tarefa(dict(linha)) if linha else None
+
+    def criar_tarefa(self, familia_id: str, dados: dict) -> dict:
+        tarefa_id = str(uuid.uuid4())
+        with self._conexao() as c:
+            c.execute(
+                "insert into tarefas (id, familia_id, titulo, tipo, responsavel_nome, criada_por, quando, "
+                "concluida, criado_em) values (?, ?, ?, ?, ?, ?, ?, 0, ?)",
+                (
+                    tarefa_id,
+                    familia_id,
+                    dados["titulo"],
+                    dados["tipo"],
+                    dados.get("responsavel_nome"),
+                    dados.get("criada_por"),
+                    dados.get("quando"),
+                    agora(),
+                ),
+            )
+        return self.obter_tarefa(familia_id, tarefa_id)  # type: ignore[return-value]
+
+    def atualizar_tarefa(self, familia_id: str, tarefa_id: str, campos: dict) -> dict | None:
+        permitidos = {"titulo", "tipo", "responsavel_nome", "quando", "concluida"}
+        campos = {k: v for k, v in campos.items() if k in permitidos}
+        if "concluida" in campos:
+            campos["concluida_em"] = agora() if campos["concluida"] else None
+            campos["concluida"] = 1 if campos["concluida"] else 0
+        if campos:
+            sets = ", ".join(f"{k} = ?" for k in campos)
+            with self._conexao() as c:
+                c.execute(
+                    f"update tarefas set {sets} where id = ? and familia_id = ?",
+                    (*campos.values(), tarefa_id, familia_id),
+                )
+        return self.obter_tarefa(familia_id, tarefa_id)
+
+    def apagar_tarefa(self, familia_id: str, tarefa_id: str) -> bool:
+        with self._conexao() as c:
+            cursor = c.execute(
+                "delete from tarefas where id = ? and familia_id = ?", (tarefa_id, familia_id)
+            )
+        return cursor.rowcount > 0
+
+    def registrar_feed(
+        self, familia_id: str, tipo: str, autor: str, texto: str | None, ref: str | None
+    ) -> str:
+        evento_id = str(uuid.uuid4())
+        with self._conexao() as c:
+            c.execute(
+                "insert into feed_eventos (id, familia_id, tipo, autor, texto, ref, criado_em) "
+                "values (?, ?, ?, ?, ?, ?, ?)",
+                (evento_id, familia_id, tipo, autor, texto, ref, agora()),
+            )
+        return evento_id
+
+    def feed_eventos(self, familia_id: str, limite: int = 200) -> list[dict]:
+        with self._conexao() as c:
+            linhas = c.execute(
+                "select id, tipo, autor, texto, ref, criado_em from feed_eventos where familia_id = ? "
+                "order by criado_em desc limit ?",
+                (familia_id, limite),
+            ).fetchall()
+        return [dict(x) for x in linhas]
 
     # Passaporte e conversas ------------------------------------------------
 
@@ -636,3 +794,28 @@ def _sessao(
 def _seguro(texto: str) -> str:
     """Nome de pasta sem caracteres que escapem do diretório."""
     return "".join(c for c in texto if c.isalnum() or c in "-_") or "x"
+
+
+def _dias_atras(dias: int) -> str:
+    from datetime import timedelta
+
+    return (datetime.now(UTC) - timedelta(days=dias)).isoformat(timespec="seconds")
+
+
+def _tarefa(linha: dict) -> dict:
+    """Formato comum das tarefas, igual no SQLite e no Supabase."""
+
+    def iso(v: Any) -> str | None:
+        return v if v is None or isinstance(v, str) else v.isoformat()
+
+    return {
+        "id": str(linha["id"]),
+        "titulo": linha["titulo"],
+        "tipo": linha["tipo"],
+        "responsavel_nome": linha.get("responsavel_nome"),
+        "criada_por": linha.get("criada_por"),
+        "quando": iso(linha.get("quando")),
+        "concluida": bool(linha["concluida"]),
+        "criado_em": iso(linha.get("criado_em")),
+        "concluida_em": iso(linha.get("concluida_em")),
+    }

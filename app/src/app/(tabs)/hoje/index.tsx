@@ -1,5 +1,5 @@
 import { router, Stack, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { View } from 'react-native';
 
 import {
@@ -7,6 +7,7 @@ import {
   Card,
   EmptyState,
   Icon,
+  LinhaTarefa,
   ListGroup,
   ListRow,
   MemoryCard,
@@ -17,13 +18,13 @@ import {
   SummaryCard,
   Text,
 } from '@/components';
-import { quemUsa, reacoes, tarefas as tarefasIniciais } from '@/data/familia';
+import { reacoes } from '@/data/familia';
+import { avisoDasUltimas24h, ehHoje, meuNome, useFamilia } from '@/lib/familia';
 import { atualizarSeMudouODia, useConversa } from '@/lib/conversa';
 import { fotoDaChave } from '@/lib/passaporte';
 import { useSemana } from '@/lib/semana';
 import { useSessao } from '@/lib/sessao';
 import { atualizarRelatos, useAtualizarAoFocar, useDiario } from '@/lib/diario';
-import { haptic } from '@/lib/haptics';
 import { formatarData, MENSAGEM_ETAPA } from '@/lib/rotulos';
 import { espaco, useTema } from '@/theme';
 
@@ -36,7 +37,10 @@ function saudacao() {
 
 export default function Hoje() {
   const { cores } = useTema();
-  const [tarefas, setTarefas] = useState(tarefasIniciais.filter((t) => t.hoje));
+  const { tarefas, feed, carregado: familiaCarregada } = useFamilia();
+  // Hoje: o que é para hoje e o que ainda ninguém assumiu (quem mora longe assume daqui).
+  const tarefasHoje = tarefas.filter((t) => !t.concluida && (ehHoje(t.quando) || !t.responsavel_nome)).slice(0, 4);
+  const avisoRecente = avisoDasUltimas24h(feed);
   const { relatos, pendentes, carregado } = useDiario();
   useAtualizarAoFocar();
   const ultimo = relatos[0];
@@ -64,20 +68,29 @@ export default function Hoje() {
     </Section>
   );
 
-  function alternar(id: string) {
-    setTarefas((lista) =>
-      lista.map((t) => {
-        if (t.id !== id) return t;
-        if (!t.feita) haptic.sucesso();
-        return { ...t, feita: !t.feita };
-      }),
-    );
-  }
-
   return (
     <Screen aoAtualizar={atualizarRelatos}>
-      <Stack.Screen options={{ title: `${saudacao()}, ${quemUsa.nome}` }} />
+      <Stack.Screen options={{ title: meuNome() ? `${saudacao()}, ${meuNome()}` : saudacao() }} />
 
+      {avisoRecente && (
+        <Card>
+          <View style={{ flexDirection: 'row', gap: espaco.s1, alignItems: 'flex-start' }}>
+            <Icon nome="atencao" cor={cores.emergency} />
+            <Text variante="headline" style={{ flex: 1 }}>
+              Aviso de {avisoRecente.autor}: {avisoRecente.texto}
+            </Text>
+          </View>
+        </Card>
+      )}
+
+
+      {!quemCuida && secaoSemana}
+
+      {familiaCarregada && !meuNome() && (
+        <ListGroup>
+          <ListRow titulo="Como a família te chama?" subtitulo="Diga seu nome uma vez e pronto" icone="familia" corIcone="accentStrong" onPress={() => router.push('/eu')} />
+        </ListGroup>
+      )}
 
       <Card style={{ paddingVertical: espaco.s3 }}>
         <RecordButton gravando={false} onPress={() => router.push('/gravar')} apoio="Toque e fale do seu jeito" />
@@ -88,63 +101,15 @@ export default function Hoje() {
         )}
       </Card>
 
-      <Section titulo="Último relato">
-        {ultimo?.etapa === 'pronto' && ultimo.resumo ? (
-          <SummaryCard meta={formatarData(ultimo.gravado_em)} texto={ultimo.resumo} original={ultimo.transcricao ?? undefined}>
-            {ultimo.alertas.length > 0 && <AttentionBadge texto="Este relato fala de uma situação de risco" />}
-          </SummaryCard>
-        ) : ultimo ? (
-          <Card>
-            <Text variante="headline">{formatarData(ultimo.gravado_em)}</Text>
-            <Text variante="callout" cor="secondaryLabel">
-              {MENSAGEM_ETAPA[ultimo.etapa]}
-            </Text>
-          </Card>
-        ) : carregado ? (
-          <Card>
-            <EmptyState
-              logo
-              titulo="Seu primeiro relato aparece aqui"
-              texto="Toque no microfone e conte como foi o dia. Em segundos a família recebe um resumo."
-            />
-          </Card>
-        ) : null}
-        {(relatos.length > 0 || pendentes.length > 0) && (
-          <SecondaryButton
-            titulo={ultimo ? 'Ver o relato e todos os outros' : 'Ver o Diário'}
-            alinhamento="inicio"
-            onPress={() =>
-              ultimo
-                ? router.push({ pathname: '/hoje/diario/[id]', params: { id: ultimo.id } })
-                : router.push('/hoje/diario')
-            }
-          />
-        )}
-      </Section>
-
-      {!quemCuida && secaoSemana}
-
-      {quemCuida && secaoSemana}
-
-      <Section titulo="Família hoje">
-        <ListGroup>
-          {tarefas.map((t) => (
-            <ListRow
-              key={t.id}
-              titulo={t.titulo}
-              subtitulo={`${t.quem}, ${t.quando.toLowerCase()}`}
-              riscado={t.feita}
-              esquerda={
-                <Icon nome={t.feita ? 'feito' : 'pendente'} cor={t.feita ? cores.success : cores.tertiaryLabel} />
-              }
-              onPress={() => alternar(t.id)}
-              navega={false}
-              rotuloAcessivel={`${t.titulo}. ${t.quem}. ${t.feita ? 'Concluída' : 'Pendente'}`}
-              dica={t.feita ? 'Toque para marcar como pendente' : 'Toque para marcar como feita'}
-            />
-          ))}
-        </ListGroup>
-      </Section>
+      <ListGroup>
+        <ListRow
+          titulo="Precisa de ajuda agora?"
+          subtitulo="Agitação, recusa, noite difícil: o que costuma funcionar com ela"
+          icone="ajuda"
+          corIcone="accentStrong"
+          onPress={() => router.push('/ajuda')}
+        />
+      </ListGroup>
 
       {roteiro && feitaHoje && (
         <Section titulo="Uma conversa para hoje">
@@ -179,6 +144,51 @@ export default function Hoje() {
           </Text>
         </Section>
       )}
+      {tarefasHoje.length > 0 && (
+        <Section titulo="Família hoje">
+          <ListGroup>
+            {tarefasHoje.map((t) => (
+              <LinhaTarefa key={t.id} tarefa={t} />
+            ))}
+            <ListRow titulo="Ver todas as tarefas" icone="familia" onPress={() => router.push('/familia')} />
+          </ListGroup>
+        </Section>
+      )}
+
+      <Section titulo="Último relato">
+        {ultimo?.etapa === 'pronto' && ultimo.resumo ? (
+          <SummaryCard meta={formatarData(ultimo.gravado_em)} texto={ultimo.resumo} original={ultimo.transcricao ?? undefined}>
+            {ultimo.alertas.length > 0 && <AttentionBadge texto="Este relato fala de uma situação de risco" />}
+          </SummaryCard>
+        ) : ultimo ? (
+          <Card>
+            <Text variante="headline">{formatarData(ultimo.gravado_em)}</Text>
+            <Text variante="callout" cor="secondaryLabel">
+              {MENSAGEM_ETAPA[ultimo.etapa]}
+            </Text>
+          </Card>
+        ) : carregado ? (
+          <Card>
+            <EmptyState
+              logo
+              titulo="Seu primeiro relato aparece aqui"
+              texto="Toque no microfone e conte como foi o dia. Em segundos a família recebe um resumo."
+            />
+          </Card>
+        ) : null}
+        {(relatos.length > 0 || pendentes.length > 0) && (
+          <ListGroup>
+            {ultimo && (
+              <ListRow titulo="Ver este relato" icone="texto" onPress={() => router.push({ pathname: '/hoje/diario/[id]', params: { id: ultimo.id } })} />
+            )}
+            <ListRow titulo="Ver todos os relatos" icone="historico" onPress={() => router.push('/hoje/diario')} />
+          </ListGroup>
+        )}
+      </Section>
+
+      {quemCuida && secaoSemana}
+
+
     </Screen>
   );
 }

@@ -129,3 +129,37 @@ FOTOS_DEMO = {
     "casa": "casa-rua-das-flores.jpg",
     "aniversario": "aniversario-81.jpg",
 }
+
+# Tarefas da família de demonstração. "Cobrir a folga" fica sem responsável: é a que o Rafael
+# assume no demo. Dias relativos à data em que o seed roda.
+TAREFAS_DEMO = [
+    {
+        "titulo": "Ligar para a Dona Isabel",
+        "tipo": "visita",
+        "dias": 0,
+        "hora": 10,
+        "responsavel_nome": "Rafael",
+        "concluida": True,
+    },
+    {
+        "titulo": "Comprar fraldas e lenços",
+        "tipo": "compra",
+        "dias": 0,
+        "hora": 18,
+        "responsavel_nome": "A neta",
+    },
+    {
+        "titulo": "Consulta na UBS",
+        "tipo": "consulta",
+        "dias": 2,
+        "hora": 9,
+        "responsavel_nome": "Cláudia",
+    },
+    {
+        "titulo": "Cobrir a folga da Cláudia no sábado",
+        "tipo": "cobrir_folga",
+        "dias": 4,
+        "hora": 14,
+        "responsavel_nome": None,
+    },
+]

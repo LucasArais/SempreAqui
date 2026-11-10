@@ -9,7 +9,10 @@ import { Platform } from 'react-native';
 import { ToastHost } from '@/components';
 import { Abertura } from '@/components/Abertura';
 import { iniciarDiario } from '@/lib/diario';
+import * as Notifications from 'expo-notifications';
+
 import { carregarConversa } from '@/lib/conversa';
+import { carregarFamilia } from '@/lib/familia';
 import { carregarIaLocal } from '@/lib/ia-local';
 import { carregarPassaporte } from '@/lib/passaporte';
 import { entrar } from '@/lib/entrar';
@@ -20,6 +23,11 @@ SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 // Os modais (gravar, corrigir, onboarding) sempre abrem por cima das abas.
 export const unstable_settings = { anchor: '(tabs)' };
+
+// Lembretes de tarefa aparecem mesmo com o app aberto.
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: false }),
+});
 
 export default function Raiz() {
   const { cores, escuro } = useTema();
@@ -39,6 +47,7 @@ export default function Raiz() {
       .then(() => {
         void carregarPassaporte();
         void carregarConversa();
+        void carregarFamilia();
         return iniciarDiario();
       });
   }, []);
@@ -90,6 +99,24 @@ export default function Raiz() {
           }}
         />
         <Stack.Screen
+          name="nova-tarefa"
+          options={{
+            presentation: 'formSheet',
+            sheetGrabberVisible: true,
+            sheetAllowedDetents: [0.75, 1],
+            sheetCornerRadius: 24,
+          }}
+        />
+        <Stack.Screen
+          name="eu"
+          options={{
+            presentation: 'formSheet',
+            sheetGrabberVisible: true,
+            sheetAllowedDetents: [0.75, 1],
+            sheetCornerRadius: 24,
+          }}
+        />
+        <Stack.Screen
           name="contar-memoria"
           options={{
             presentation: 'formSheet',
@@ -119,6 +146,8 @@ export default function Raiz() {
         <Stack.Screen name="sessao" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="onboarding" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
         <Stack.Screen name="termo" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="convite/index" options={{ presentation: 'modal', title: 'Convite' }} />
+        <Stack.Screen name="convite/[codigo]" options={{ presentation: 'modal', title: 'Convite' }} />
       </Stack>
       <ToastHost />
       {abrindo && <Abertura aoTerminar={terminarAbertura} />}

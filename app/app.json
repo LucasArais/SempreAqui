@@ -16,7 +16,10 @@
         },
         "NSSpeechRecognitionUsageDescription": "O SempreAqui transcreve seus relatos aqui no celular, sem enviar o áudio para fora dele.",
         "NSPhotoLibraryUsageDescription": "O SempreAqui usa suas fotos para montar o Passaporte de Memória da família.",
-        "NSCameraUsageDescription": "O SempreAqui usa a câmera para fotografar lembranças para o Passaporte de Memória."
+        "NSCameraUsageDescription": "O SempreAqui usa a câmera para fotografar lembranças para o Passaporte de Memória.",
+        "LSApplicationQueriesSchemes": [
+          "whatsapp"
+        ]
       },
       "bundleIdentifier": "com.lucasarais.sempreaqui"
     },

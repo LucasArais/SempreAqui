@@ -46,10 +46,13 @@ function Lista({
   cor?: Cor;
   itens: { id: string; titulo: string; subtitulo?: string | null }[];
 }) {
+  // Listas longas mostram 3 itens e "Ver mais": menos rolagem, mesma informação.
+  const [aberta, setAberta] = useState(false);
+  const visiveis = aberta ? itens : itens.slice(0, 3);
   return (
     <Section titulo={SECOES[secao].titulo}>
       <ListGroup>
-        {itens.map((i) => (
+        {visiveis.map((i) => (
           <ListRow
             key={i.id}
             titulo={i.titulo}
@@ -60,6 +63,9 @@ function Lista({
             onPress={() => editar(secao, i.id)}
           />
         ))}
+        {itens.length > 3 && !aberta && (
+          <ListRow titulo={`Ver mais ${itens.length - 3}`} icone="chevron" corIcone="secondaryLabel" navega={false} onPress={() => setAberta(true)} />
+        )}
         <Adicionar secao={secao} />
       </ListGroup>
     </Section>

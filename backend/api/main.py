@@ -20,7 +20,7 @@ import secrets
 import time
 import zipfile
 from collections.abc import Callable
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -50,7 +50,7 @@ from agents.diario import (
     violacoes_do_resumo,
 )
 from agents.semana import resumir_semana
-from core import campos, guardrails, prompts, reminiscencia
+from core import apoio, campos, guardrails, prompts, reminiscencia
 from core.auth import TokenInvalido, usuario_do_token
 from core.config import config
 from core.llm import ErroProvedorIA, ProvedorIA, provedor_padrao
@@ -943,6 +943,379 @@ def foto_publica(
     if conteudo is None:
         raise HTTPException(404, "Foto não encontrada.")
     return Response(conteudo, media_type="image/jpeg", headers=_CABECALHOS_PUBLICOS)
+
+
+# Apoio na Hora Difícil -----------------------------------------------------
+
+
+class PedidoApoio(BaseModel):
+    texto: str = Field(min_length=1, max_length=2000)
+
+
+def _relatos_recentes(repo: Repositorio, familia_id: str, dias: int = 60) -> list[dict]:
+    limite = (datetime.now(ZoneInfo(config().fuso)) - timedelta(days=dias)).isoformat()
+    return [
+        r
+        for r in repo.listar(familia_id, limite=200)
+        if r.get("etapa") == "pronto" and r.get("registro") and r["gravado_em"] >= limite[:10]
+    ]
+
+
+@app.post("/apoio")
+def pedir_apoio(
+    pedido: PedidoApoio,
+    familia_id: str = Depends(obter_familia),
+    repo: Repositorio = Depends(obter_repositorio),
+) -> dict:
+    """O que costuma funcionar para esta pessoa, de onde veio cada sugestão e a fonte oficial.
+
+    O texto do pedido não é guardado. Só um evento anônimo com o tipo da resposta.
+    """
+    resposta = apoio.responder(
+        pedido.texto, _passaporte(repo, familia_id), _relatos_recentes(repo, familia_id)
+    )
+    repo.registrar_evento("apoio_pedido", familia_id, rotulo=resposta["tipo"])
+    return resposta
+
+
+@app.post("/apoio/transcrever")
+async def transcrever_apoio(
+    audio: UploadFile,
+    familia_id: str = Depends(obter_familia),
+    fabrica: Callable[[], ProvedorIA] = Depends(obter_fabrica_provedor),
+) -> dict:
+    """Reserva na nuvem para quem não tem IA no aparelho. O áudio não é guardado."""
+    del familia_id
+    conteudo = await audio.read()
+    if len(conteudo) > TAMANHO_MAXIMO:
+        raise HTTPException(413, "O áudio ficou longo demais.")
+    try:
+        texto = fabrica().transcrever_audio(
+            conteudo,
+            audio.content_type if audio.content_type in TIPOS_AUDIO else "audio/mp4",
+            prompts.carregar("diario/transcricao", VERSOES["transcricao"]),
+        )
+    except Exception as erro:  # noqa: BLE001
+        log.warning("apoio.transcrever_falhou erro=%s", type(erro).__name__)
+        raise HTTPException(503, "Não consegui ouvir agora. Pode escrever?") from erro
+    return {"texto": texto.strip()}
+
+
+# Rede da Família -----------------------------------------------------------
+
+PAPEIS = ("quem_cuida", "familiar", "cuidador_profissional")
+TIPOS_TAREFA = ("consulta", "visita", "cobrir_folga", "compra", "outro")
+ALFABETO_CONVITE = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # sem 0/O e 1/I, para ditar por telefone
+
+
+def _eu(repo: Repositorio, familia_id: str, usuario: str | None) -> dict:
+    """Quem está usando o app agora, pelo login. Sem login (testes), alguém da família."""
+    if usuario:
+        for m in repo.membros_da_familia(familia_id):
+            if m["usuario_id"] == usuario:
+                return {
+                    "usuario_id": usuario,
+                    "nome": m["nome"] or "Alguém da família",
+                    "papel": m["papel"],
+                }
+    return {"usuario_id": usuario, "nome": "Alguém da família", "papel": None}
+
+
+@app.get("/familia")
+def ver_familia(
+    usuario: str | None = Depends(obter_usuario),
+    familia_id: str = Depends(obter_familia),
+    repo: Repositorio = Depends(obter_repositorio),
+) -> dict:
+    membros = [
+        {"nome": m["nome"] or "Sem nome", "papel": m["papel"], "eu": m["usuario_id"] == usuario}
+        for m in repo.membros_da_familia(familia_id)
+    ]
+    return {"membros": membros, "eu": _eu(repo, familia_id, usuario) | {"usuario_id": None}}
+
+
+class Eu(BaseModel):
+    nome: str = Field(min_length=1, max_length=60)
+    papel: str
+
+
+@app.patch("/familia/eu")
+def atualizar_eu(
+    dados: Eu,
+    usuario: str | None = Depends(obter_usuario),
+    familia_id: str = Depends(obter_familia),
+    repo: Repositorio = Depends(obter_repositorio),
+) -> dict:
+    if not usuario:
+        raise HTTPException(401, "Entre no app para continuar.")
+    if dados.papel not in PAPEIS:
+        raise HTTPException(422, "Papel desconhecido.")
+    repo.atualizar_membro(familia_id, usuario, dados.nome.strip(), dados.papel)
+    return {"nome": dados.nome.strip(), "papel": dados.papel}
+
+
+class NovoConvite(BaseModel):
+    papel: str = "familiar"
+
+
+@app.post("/familia/convites", status_code=201)
+def criar_convite(
+    pedido: NovoConvite,
+    familia_id: str = Depends(obter_familia),
+    repo: Repositorio = Depends(obter_repositorio),
+) -> dict:
+    """Código de 8 letras, válido por 7 dias, para mandar no WhatsApp."""
+    if pedido.papel not in PAPEIS:
+        raise HTTPException(422, "Papel desconhecido.")
+    codigo = "".join(secrets.choice(ALFABETO_CONVITE) for _ in range(8))
+    expira = (datetime.now(ZoneInfo("UTC")) + timedelta(days=7)).isoformat(timespec="seconds")
+    repo.criar_convite(familia_id, codigo, pedido.papel, expira)
+    chamada = _passaporte(repo, familia_id).get("como_gosta_de_ser_chamada") or "nossa família"
+    mensagem = (
+        f"Estou usando o SempreAqui para a gente cuidar junto da {chamada}. "
+        f"Instale o app e entre com o código {codigo[:4]}-{codigo[4:]} "
+        f"(ou toque: sempreaqui://convite/{codigo}). Vale por 7 dias."
+    )
+    return {"codigo": codigo, "mensagem": mensagem, "expira_em": expira}
+
+
+class Entrada(BaseModel):
+    codigo: str = Field(min_length=6, max_length=14)
+    nome: str = Field(min_length=1, max_length=60)
+
+
+@app.post("/familia/entrar")
+def entrar_com_convite(
+    entrada: Entrada,
+    usuario: str | None = Depends(obter_usuario),
+    repo: Repositorio = Depends(obter_repositorio),
+) -> dict:
+    if not usuario:
+        raise HTTPException(401, "Entre no app para continuar.")
+    codigo = re.sub(r"[^A-Z0-9]", "", entrada.codigo.upper())
+    convite = repo.usar_convite(codigo)
+    if not convite:
+        raise HTTPException(
+            404, "Esse código não existe ou já venceu. Peça um novo para a família."
+        )
+    repo.mudar_de_familia(usuario, convite["familia"], entrada.nome.strip(), convite["papel"])
+    return {"familia": convite["familia"], "papel": convite["papel"]}
+
+
+class NovaTarefa(BaseModel):
+    titulo: str = Field(min_length=1, max_length=120)
+    tipo: str = "outro"
+    quando: str | None = None
+    responsavel_nome: str | None = Field(default=None, max_length=60)
+
+
+class MudancaTarefa(BaseModel):
+    titulo: str | None = Field(default=None, max_length=120)
+    quando: str | None = None
+    responsavel_nome: str | None = Field(default=None, max_length=60)
+    concluida: bool | None = None
+    assumir: bool | None = None
+
+
+def _quando_valido(quando: str | None) -> str | None:
+    if not quando:
+        return None
+    try:
+        return datetime.fromisoformat(quando.replace("Z", "+00:00")).isoformat()
+    except ValueError as erro:
+        raise HTTPException(422, "Data inválida.") from erro
+
+
+@app.get("/tarefas")
+def listar_tarefas(
+    familia_id: str = Depends(obter_familia), repo: Repositorio = Depends(obter_repositorio)
+) -> list[dict]:
+    return repo.listar_tarefas(familia_id)
+
+
+@app.post("/tarefas", status_code=201)
+def criar_tarefa(
+    tarefa: NovaTarefa,
+    usuario: str | None = Depends(obter_usuario),
+    familia_id: str = Depends(obter_familia),
+    repo: Repositorio = Depends(obter_repositorio),
+) -> dict:
+    if tarefa.tipo not in TIPOS_TAREFA:
+        raise HTTPException(422, "Tipo de tarefa desconhecido.")
+    eu = _eu(repo, familia_id, usuario)
+    return repo.criar_tarefa(
+        familia_id,
+        {
+            "titulo": tarefa.titulo.strip(),
+            "tipo": tarefa.tipo,
+            "quando": _quando_valido(tarefa.quando),
+            "responsavel_nome": (tarefa.responsavel_nome or "").strip() or None,
+            "criada_por": eu["nome"],
+        },
+    )
+
+
+@app.patch("/tarefas/{tarefa_id}")
+def mudar_tarefa(
+    tarefa_id: str,
+    mudanca: MudancaTarefa,
+    usuario: str | None = Depends(obter_usuario),
+    familia_id: str = Depends(obter_familia),
+    repo: Repositorio = Depends(obter_repositorio),
+) -> dict:
+    """Assumir, concluir ou editar. Assumir e concluir aparecem no feed da família."""
+    antes = repo.obter_tarefa(familia_id, tarefa_id)
+    if not antes:
+        raise HTTPException(404, "Não encontrei essa tarefa.")
+    eu = _eu(repo, familia_id, usuario)
+    campos = mudanca.model_dump(exclude_none=True, exclude={"assumir"})
+    if "quando" in campos:
+        campos["quando"] = _quando_valido(campos["quando"])
+    if mudanca.assumir:
+        campos["responsavel_nome"] = eu["nome"]
+    tarefa = repo.atualizar_tarefa(familia_id, tarefa_id, campos)
+    ref = f"tarefa:{tarefa_id}"
+    if mudanca.assumir and antes["responsavel_nome"] != eu["nome"]:
+        repo.registrar_feed(familia_id, "tarefa_assumida", eu["nome"], antes["titulo"], ref)
+    if mudanca.concluida and not antes["concluida"]:
+        repo.registrar_feed(
+            familia_id,
+            "tarefa_concluida",
+            tarefa["responsavel_nome"] or eu["nome"],
+            antes["titulo"],
+            ref,
+        )
+    return tarefa
+
+
+@app.delete("/tarefas/{tarefa_id}", status_code=204)
+def apagar_tarefa(
+    tarefa_id: str,
+    familia_id: str = Depends(obter_familia),
+    repo: Repositorio = Depends(obter_repositorio),
+) -> None:
+    if not repo.apagar_tarefa(familia_id, tarefa_id):
+        raise HTTPException(404, "Não encontrei essa tarefa.")
+
+
+class Aviso(BaseModel):
+    texto: str = Field(min_length=1, max_length=500)
+
+
+@app.post("/familia/avisos", status_code=201)
+def avisar_familia(
+    aviso: Aviso,
+    usuario: str | None = Depends(obter_usuario),
+    familia_id: str = Depends(obter_familia),
+    repo: Repositorio = Depends(obter_repositorio),
+) -> dict:
+    """Aviso urgente para todos da família, no topo do feed."""
+    eu = _eu(repo, familia_id, usuario)
+    evento_id = repo.registrar_feed(familia_id, "aviso", eu["nome"], aviso.texto.strip(), None)
+    return {"id": f"aviso:{evento_id}"}
+
+
+class Obrigado(BaseModel):
+    ref: str = Field(pattern=r"^(relato|tarefa|conversa|aviso):[A-Za-z0-9-]{1,64}$")
+
+
+@app.post("/feed/obrigado", status_code=201)
+def agradecer(
+    obrigado: Obrigado,
+    usuario: str | None = Depends(obter_usuario),
+    familia_id: str = Depends(obter_familia),
+    repo: Repositorio = Depends(obter_repositorio),
+) -> dict:
+    """Um "obrigado" de alguém da família. Uma vez por pessoa em cada item."""
+    eu = _eu(repo, familia_id, usuario)
+    ja = any(
+        e["tipo"] == "obrigado" and e["ref"] == obrigado.ref and e["autor"] == eu["nome"]
+        for e in repo.feed_eventos(familia_id)
+    )
+    if not ja:
+        repo.registrar_feed(familia_id, "obrigado", eu["nome"], None, obrigado.ref)
+    return {"ok": True}
+
+
+def _iso(valor: Any) -> str:
+    return valor if isinstance(valor, str) else valor.isoformat()
+
+
+@app.get("/feed")
+def ver_feed(
+    usuario: str | None = Depends(obter_usuario),
+    familia_id: str = Depends(obter_familia),
+    repo: Repositorio = Depends(obter_repositorio),
+) -> list[dict]:
+    """O que aconteceu no cuidado, do mais recente ao mais antigo, com os obrigados."""
+    eu = _eu(repo, familia_id, usuario)
+    eventos = repo.feed_eventos(familia_id)
+    obrigados: dict[str, list[str]] = {}
+    for e in eventos:
+        if e["tipo"] == "obrigado" and e["ref"]:
+            obrigados.setdefault(e["ref"], []).append(e["autor"])
+    itens: list[dict] = []
+    for e in eventos:
+        if e["tipo"] == "obrigado":
+            continue
+        ref = e["ref"] or f"aviso:{e['id']}"
+        itens.append(
+            {
+                "id": ref if e["tipo"] == "aviso" else f"{e['tipo']}:{e['id']}",
+                "ref": ref,
+                "tipo": e["tipo"],
+                "autor": e["autor"],
+                "texto": e["texto"],
+                "quando": _iso(e["criado_em"]),
+            }
+        )
+    for r in repo.listar(familia_id, limite=30):
+        if r.get("enviado_familia") and r.get("resumo"):
+            itens.append(
+                {
+                    "id": f"relato:{r['id']}",
+                    "ref": f"relato:{r['id']}",
+                    "tipo": "resumo",
+                    "autor": "Diário",
+                    "texto": r["resumo"],
+                    "quando": r["gravado_em"],
+                }
+            )
+    for s in repo.sessoes_recentes(familia_id, limite=15):
+        reacao = {
+            "gostou_muito": "gostou muito",
+            "gostou": "gostou",
+            "neutra": "ficou indiferente",
+            "desconforto": "ficou desconfortável",
+        }.get(s["reacao"] or "", "")
+        itens.append(
+            {
+                "id": f"conversa:{s['id']}",
+                "ref": f"conversa:{s['id']}",
+                "tipo": "conversa",
+                "autor": "Conversa do dia",
+                "texto": f"Conversa sobre {s['tema']}." + (f" Ela {reacao}." if reacao else ""),
+                "quando": _iso(s["realizada_em"]),
+            }
+        )
+    for item in itens:
+        quem = obrigados.get(item["ref"], [])
+        item["obrigados"] = quem
+        item["agradeci"] = eu["nome"] in quem and bool(usuario)
+    avisos = sorted(
+        [i for i in itens if i["tipo"] == "aviso"], key=lambda i: i["quando"], reverse=True
+    )
+    resto = sorted(
+        [i for i in itens if i["tipo"] != "aviso"], key=lambda i: i["quando"], reverse=True
+    )
+    # Avisos das últimas 24 horas ficam no topo.
+    recentes = [
+        a
+        for a in avisos
+        if a["quando"] >= (datetime.now(ZoneInfo("UTC")) - timedelta(days=1)).isoformat()
+    ]
+    antigos = [a for a in avisos if a not in recentes]
+    return recentes + sorted(resto + antigos, key=lambda i: i["quando"], reverse=True)[:40]
 
 
 # Conversa de hoje (reminiscência) -----------------------------------------

@@ -14,4 +14,7 @@ export const haptic = {
   selecao() {
     if (ativo) Haptics.selectionAsync().catch(() => {});
   },
+  aviso() {
+    if (ativo) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+  },
 };

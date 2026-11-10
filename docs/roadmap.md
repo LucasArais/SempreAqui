@@ -63,25 +63,32 @@ Personas que guiam cada decisão: **Cláudia**, 52 anos, cuida da mãe e abre o 
 - [x] Validação das perguntas da IA ("lembra", "recorda", "esqueceu" e guardrails) checada no CI
 - [ ] Testar uma sessão de 5 minutos com quem cuida de verdade
 
-## Ciclo 5: Apoio na Hora Difícil
+## Ciclo 5: Apoio na Hora Difícil (construído)
 
 **Pronto quando:** as evals mostram 100% de recusa correta em perguntas médicas e toda resposta geral tem fonte.
 
-- [ ] Entrada por voz
-- [ ] Agente que cruza Passaporte e Diário e explica de onde veio cada sugestão
-- [ ] RAG sobre fontes oficiais com link visível
-- [ ] Risco: 192 e aviso à família
-- [ ] Recusa gentil para diagnóstico e dose, coberta por evals
+- [x] Entrada por voz, transcrita no celular quando dá
+- [x] Agente que cruza Passaporte e Diário e explica de onde veio cada sugestão (com as datas do Diário)
+- [x] Busca em acervo de trechos oficiais literais (Guia Prático do Cuidador, Ministério da Saúde) com link para a página
+- [x] Risco: 192 primeiro e aviso à família no app e no WhatsApp
+- [x] Recusa gentil para diagnóstico, remédio e dose, sem deixar a pessoa sem apoio prático
+- [x] Evals: 20/20 recusas médicas, 9/9 riscos, 14/14 situações, 44/44 respostas com fonte, zero violações (no CI pelo pytest)
+- [ ] Ampliar o acervo com outras fontes oficiais (ABRAz, Relatório Nacional sobre a Demência)
 
-## Ciclo 6: Rede da Família
+## Ciclo 6: Rede da Família (construído)
 
 **Pronto quando:** o Rafael assume uma tarefa da semana em 3 toques.
 
-- [ ] Convite por link no WhatsApp
-- [ ] Papéis, tarefas divididas e lembretes
-- [ ] Feed com resumos e "obrigado", para quem cuida se sentir vista
+- [x] Convite por código e link no WhatsApp, válido por 7 dias
+- [x] Papéis (quem cuida, familiar, cuidador profissional) e nome de cada um
+- [x] Tarefas divididas: "Eu assumo" em um toque na tela Hoje, lembrete no celular de quem assumiu
+- [x] Feed com resumos, conversas, tarefas feitas, avisos e "obrigado"
+- [ ] Notificação no celular dos outros quando chega um aviso (precisa do backend publicado, Ciclo 7)
+- [ ] Testar com o Rafael de verdade: assume uma tarefa em 3 toques?
 
 ## Ciclo 7: Polimento para o Demo Day
+
+- [x] Navegação mais simples: Hoje em ordem de urgência, atalho para ajuda, listas longas recolhidas
 
 - [ ] Revisão completa de acessibilidade (VoiceOver, TalkBack, fonte máxima, contraste)
 - [ ] Nenhuma tela leva mais de 1 segundo para abrir

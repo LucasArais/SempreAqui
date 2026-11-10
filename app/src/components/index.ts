@@ -13,3 +13,4 @@ export { esconderToast, mostrarToast, ToastHost } from './Toast';
 export { HeaderRecord } from './HeaderRecord';
 export { Logo } from './Logo';
 export { RelatoView } from './RelatoView';
+export { LinhaTarefa } from './LinhaTarefa';

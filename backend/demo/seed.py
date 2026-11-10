@@ -207,6 +207,34 @@ def _historico() -> list[dict]:
     return relatos
 
 
+def semear_rede(repo) -> None:
+    """Passaporte e tarefas da demonstração, só se a família ainda não tiver os seus."""
+    from datetime import datetime, timedelta
+    from zoneinfo import ZoneInfo
+
+    from demo.passaporte import PASSAPORTE_DEMO, TAREFAS_DEMO
+
+    if not repo.obter_passaporte(FAMILIA):
+        repo.salvar_passaporte(FAMILIA, PASSAPORTE_DEMO)
+    if repo.listar_tarefas(FAMILIA, incluir_antigas=True):
+        return
+    hoje = datetime.now(ZoneInfo("America/Sao_Paulo")).replace(minute=0, second=0, microsecond=0)
+    for t in TAREFAS_DEMO:
+        quando = (hoje + timedelta(days=t["dias"])).replace(hour=t["hora"])
+        criada = repo.criar_tarefa(
+            FAMILIA,
+            {
+                "titulo": t["titulo"],
+                "tipo": t["tipo"],
+                "quando": quando.isoformat(),
+                "responsavel_nome": t["responsavel_nome"],
+                "criada_por": "Cláudia",
+            },
+        )
+        if t.get("concluida"):
+            repo.atualizar_tarefa(FAMILIA, criada["id"], {"concluida": True})
+
+
 def main() -> None:
     repo = repositorio_padrao()
     if hasattr(repo, "garantir_grupo"):
@@ -231,6 +259,7 @@ def main() -> None:
         )
         if r["enviado"]:
             repo.marcar_enviado(FAMILIA, r["id"])
+    semear_rede(repo)
     onde = "Supabase" if hasattr(repo, "garantir_grupo") else "banco local"
     total = len(RELATOS) + len(_historico())
     print(

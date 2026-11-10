@@ -27,6 +27,7 @@ from core.repositorio import (
     _hash_familia,
     _semana,
     _sessao,
+    _tarefa,
     extensao_audio,
 )
 
@@ -262,6 +263,8 @@ class RepositorioSupabase:
             "consentimentos": consentimentos,
             "passaporte": self.obter_passaporte(familia_id),
             "sessoes": self.sessoes_recentes(familia_id, limite=100000),
+            "tarefas": self.listar_tarefas(familia_id, incluir_antigas=True),
+            "feed": self.feed_eventos(familia_id, limite=100000),
         }
 
     def apagar_familia(self, familia_id: str) -> int:
@@ -294,6 +297,127 @@ class RepositorioSupabase:
         self._sql("delete from grupos_familiares where codigo = %s", (familia_id,))
         self._grupos.pop(familia_id, None)
         return len(relatos)
+
+    # Rede da família ------------------------------------------------------
+
+    def membros_da_familia(self, familia_id: str) -> list[dict]:
+        linhas = self._sql(
+            "select usuario_id, nome_exibicao, papel from membros where grupo_id = %s order by criado_em",
+            (self.grupo(familia_id),),
+        )
+        return [
+            {"usuario_id": str(x["usuario_id"]), "nome": x["nome_exibicao"], "papel": x["papel"]}
+            for x in linhas
+        ]
+
+    def atualizar_membro(self, familia_id: str, usuario_id: str, nome: str, papel: str) -> None:
+        self._sql(
+            "update membros set nome_exibicao = %s, papel = %s where grupo_id = %s and usuario_id = %s",
+            (nome, papel, self.grupo(familia_id), usuario_id),
+        )
+
+    def criar_convite(self, familia_id: str, codigo: str, papel: str, expira_em: str) -> None:
+        self._sql(
+            "insert into convites (codigo, grupo_id, papel, expira_em) values (%s, %s, %s, %s)",
+            (codigo, self.grupo(familia_id), papel, expira_em),
+        )
+
+    def usar_convite(self, codigo: str) -> dict | None:
+        linhas = self._sql(
+            "select g.codigo as familia, c.papel from convites c join grupos_familiares g on g.id = c.grupo_id "
+            "where c.codigo = %s and c.expira_em > now()",
+            (codigo,),
+        )
+        return {"familia": linhas[0]["familia"], "papel": linhas[0]["papel"]} if linhas else None
+
+    def mudar_de_familia(self, usuario_id: str, familia_id: str, nome: str, papel: str) -> None:
+        self._sql("delete from membros where usuario_id = %s", (usuario_id,))
+        self.entrar_na_familia(usuario_id, familia_id, nome, papel)
+
+    def listar_tarefas(self, familia_id: str, incluir_antigas: bool = False) -> list[dict]:
+        filtro = (
+            ""
+            if incluir_antigas
+            else "and (not concluida or concluida_em > now() - interval '7 days')"
+        )
+        linhas = self._sql(
+            f"select * from tarefas where grupo_id = %s {filtro} "
+            "order by concluida, quando nulls last, criado_em",
+            (self.grupo(familia_id),),
+        )
+        return [_tarefa(x) for x in linhas]
+
+    def obter_tarefa(self, familia_id: str, tarefa_id: str) -> dict | None:
+        try:
+            uuid.UUID(tarefa_id)
+        except ValueError:
+            return None
+        linhas = self._sql(
+            "select * from tarefas where id = %s and grupo_id = %s",
+            (tarefa_id, self.grupo(familia_id)),
+        )
+        return _tarefa(linhas[0]) if linhas else None
+
+    def criar_tarefa(self, familia_id: str, dados: dict) -> dict:
+        linhas = self._sql(
+            "insert into tarefas (grupo_id, titulo, tipo, responsavel_nome, criada_por, quando) "
+            "values (%s, %s, %s, %s, %s, %s) returning *",
+            (
+                self.grupo(familia_id),
+                dados["titulo"],
+                dados["tipo"],
+                dados.get("responsavel_nome"),
+                dados.get("criada_por"),
+                dados.get("quando"),
+            ),
+        )
+        return _tarefa(linhas[0])
+
+    def atualizar_tarefa(self, familia_id: str, tarefa_id: str, campos: dict) -> dict | None:
+        if not self.obter_tarefa(familia_id, tarefa_id):
+            return None
+        permitidos = {"titulo", "tipo", "responsavel_nome", "quando", "concluida"}
+        campos = {k: v for k, v in campos.items() if k in permitidos}
+        if "concluida" in campos:
+            campos["concluida"] = bool(campos["concluida"])
+        if campos:
+            sets = ", ".join(f"{k} = %s" for k in campos)
+            extra = ""
+            if "concluida" in campos:
+                extra = ", concluida_em = case when %s then now() else null end"
+            valores = (*campos.values(), *((campos["concluida"],) if extra else ()))
+            self._sql(
+                f"update tarefas set {sets}{extra} where id = %s and grupo_id = %s",
+                (*valores, tarefa_id, self.grupo(familia_id)),
+            )
+        return self.obter_tarefa(familia_id, tarefa_id)
+
+    def apagar_tarefa(self, familia_id: str, tarefa_id: str) -> bool:
+        if not self.obter_tarefa(familia_id, tarefa_id):
+            return False
+        self._sql(
+            "delete from tarefas where id = %s and grupo_id = %s",
+            (tarefa_id, self.grupo(familia_id)),
+        )
+        return True
+
+    def registrar_feed(
+        self, familia_id: str, tipo: str, autor: str, texto: str | None, ref: str | None
+    ) -> str:
+        linhas = self._sql(
+            "insert into feed_eventos (grupo_id, tipo, autor, texto, ref) values (%s, %s, %s, %s, %s) "
+            "returning id",
+            (self.grupo(familia_id), tipo, autor, texto, ref),
+        )
+        return str(linhas[0]["id"])
+
+    def feed_eventos(self, familia_id: str, limite: int = 200) -> list[dict]:
+        linhas = self._sql(
+            "select id, tipo, autor, texto, ref, criado_em from feed_eventos where grupo_id = %s "
+            "order by criado_em desc limit %s",
+            (self.grupo(familia_id), limite),
+        )
+        return [{**x, "id": str(x["id"]), "criado_em": x["criado_em"].isoformat()} for x in linhas]
 
     # Passaporte e conversas ------------------------------------------------
 

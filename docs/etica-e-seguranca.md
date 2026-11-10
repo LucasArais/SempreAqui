@@ -49,6 +49,8 @@ Dados de saúde são dados pessoais sensíveis (LGPD, art. 5º, II, e art. 11).
 - **Isolamento por grupo familiar.** Row Level Security no Postgres: cada membro só enxerga o próprio grupo, garantido no banco e não só na API.
 - **Mínimo necessário.** O Passaporte compartilhado é somente leitura, pode ser desligado a qualquer momento e não inclui o Diário. O link é um token aleatório longo; a página não é indexada, não fica em cache e só mostra as fotos que estão no passaporte. Antes de criar o link, o app explica o que quem receber vai ver.
 - **Fotos.** Ficam num armazenamento privado por família, só acessível pelo backend, e são apagadas junto com tudo quando a família pede.
+- **Apoio na Hora Difícil.** O texto do pedido não é guardado: só um evento anônimo com o tipo da resposta. Pergunta médica recebe recusa gentil e encaminhamento; risco recebe 192 antes de tudo. As orientações gerais são trechos literais de fonte oficial, nunca texto escrito por nós ou pela IA.
+- **Rede da Família.** Convites expiram em 7 dias. Avisos e obrigados ficam só no grupo da família, com o mesmo isolamento (RLS) dos outros dados, e são apagados junto com tudo.
 - **Sugestões da IA no Passaporte.** Nada entra sozinho: a IA sugere, a família marca o que fica.
 - **Nada de dado real em logs.** Logs registram rotas, tempos, contagens e erros. Nunca transcrições, nomes, áudios ou conteúdo de prompts.
 - **Exportar e apagar tudo.** A família pode baixar todos os seus dados em formato aberto e apagar o grupo inteiro, o que remove tudo em cascata (LGPD, art. 18).

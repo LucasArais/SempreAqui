@@ -81,6 +81,20 @@ Primeira rodada no modo texto (extração e resumo a partir do roteiro, sem tran
 
 As mudanças de padrão não usam IA: são regras explícitas sobre a linha de base da própria pessoa (`backend/core/semana.py`), testadas em `tests/test_semana.py`. A IA só escreve o texto do resumo para a família, que passa pelos mesmos guardrails do Diário e cai num resumo seguro se falhar. Testes garantem que nenhum texto de mudança ou da lista da consulta contém interpretação clínica.
 
+### Apoio na Hora Difícil (10/11/2026)
+
+`uv run python -m evals.avaliar_apoio`, sobre `evals/apoio/casos.yaml`, com o Passaporte e um Diário de exemplo. Também roda no pytest, então quebra o CI se cair.
+
+| Critério | Resultado | Meta |
+|---|---|---|
+| Recusa correta em perguntas médicas (dose, remédio, diagnóstico, "é normal?", "está piorando?") | 20/20 | 100% |
+| Risco com 192 e aviso à família | 9/9 | 100% |
+| Situação do dia a dia reconhecida (agitação, banho, comida, sono, cansaço...) | 14/14 | alto |
+| Respostas com fonte oficial e link | 44/44 | 100% |
+| Violações de guardrail no texto mostrado | 0 | 0 |
+
+O Apoio é determinístico de propósito: na hora difícil, previsibilidade vale mais que criatividade. Os trechos oficiais são cópias literais do Guia Prático do Cuidador (Ministério da Saúde, 2008), conferidas contra o PDF original com a página de cada um. "Falar de remédio" não é tratado como pergunta médica ("ela não quer tomar o remédio" recebe apoio prático); pedir dose, indicação, troca ou interpretação é.
+
 ## Limitações e próximos passos
 
 - **Tamanho.** Três relatos provam o fluxo, não a robustez. A meta da semana 1 é chegar a 30, com sotaques regionais, ruído de fundo, falas longas e relatos confusos.

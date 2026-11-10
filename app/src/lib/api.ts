@@ -162,6 +162,64 @@ export const api = {
       body: JSON.stringify({ resumo }),
     }),
   correcoes: () => chamar<{ texto: string }>('/diario/correcoes'),
+  apoio: (texto: string) =>
+    chamar<import('./apoio').RespostaApoio>('/apoio', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texto }),
+    }),
+  transcreverApoio: (uri: string) => {
+    const form = new FormData();
+    form.append('audio', new File(uri) as unknown as Blob, 'apoio.m4a');
+    return chamar<{ texto: string }>('/apoio/transcrever', { method: 'POST', body: form });
+  },
+  familia: () =>
+    chamar<{ membros: import('./familia').Membro[]; eu: { nome: string; papel: import('./familia').Papel | null } }>('/familia'),
+  atualizarEu: (nome: string, papel: string) =>
+    chamar<{ nome: string; papel: import('./familia').Papel }>('/familia/eu', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome, papel }),
+    }),
+  criarConvite: (papel = 'familiar') =>
+    chamar<{ codigo: string; mensagem: string }>('/familia/convites', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ papel }),
+    }),
+  entrarComConvite: (codigo: string, nome: string) =>
+    chamar<{ familia: string; papel: string }>('/familia/entrar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ codigo, nome }),
+    }),
+  tarefas: () => chamar<import('./familia').Tarefa[]>('/tarefas'),
+  criarTarefa: (dados: { titulo: string; tipo: string; quando: string | null }) =>
+    chamar<import('./familia').Tarefa>('/tarefas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dados),
+    }),
+  mudarTarefa: (id: string, mudanca: { assumir?: boolean; concluida?: boolean }) =>
+    chamar<import('./familia').Tarefa>(`/tarefas/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(mudanca),
+    }),
+  apagarTarefa: (id: string) => chamar<void>(`/tarefas/${id}`, { method: 'DELETE' }),
+  feed: () => chamar<import('./familia').ItemFeed[]>('/feed'),
+  agradecer: (ref: string) =>
+    chamar<{ ok: boolean }>('/feed/obrigado', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ref }),
+    }),
+  avisarFamilia: (texto: string) =>
+    chamar<{ id: string }>('/familia/avisos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texto }),
+    }),
   enviarFoto: (uri: string) => {
     const form = new FormData();
     form.append('foto', new File(uri) as unknown as Blob, 'foto.jpg');

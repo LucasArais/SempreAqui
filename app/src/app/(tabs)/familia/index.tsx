@@ -1,93 +1,160 @@
-import { router } from 'expo-router';
-import { useState } from 'react';
-import { Share } from 'react-native';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { Linking, Pressable, Share, View } from 'react-native';
 
+import { Avatar, Card, Icon, LinhaTarefa, ListGroup, ListRow, mostrarToast, Photo, PrimaryButton, Screen, SecondaryButton, Section, Text } from '@/components';
+import { fotos } from '@/data/familia';
+import { api, ErroApi } from '@/lib/api';
 import {
-  Avatar,
-  Photo,
-  Icon,
-  ListGroup,
-  ListRow,
-  PrimaryButton,
-  Screen,
-  Section,
-  SummaryCard,
-} from '@/components';
-import { familia, feed, fotos, pessoa, tarefas as tarefasIniciais } from '@/data/familia';
+  agradecer,
+  carregarFamilia,
+  type ItemFeed,
+  meuNome,
+  PAPEIS,
+  useFamilia,
+} from '@/lib/familia';
 import { haptic } from '@/lib/haptics';
-import { useTema } from '@/theme';
+import { passaporteAtual } from '@/lib/passaporte';
+import { formatarData } from '@/lib/rotulos';
+import { espaco, tamanho, useTema } from '@/theme';
+
+const TITULO_FEED: Record<ItemFeed['tipo'], (i: ItemFeed) => string> = {
+  aviso: (i) => `Aviso de ${i.autor}`,
+  tarefa_assumida: (i) => `${i.autor} assumiu uma tarefa`,
+  tarefa_concluida: (i) => `${i.autor} fez uma tarefa`,
+  resumo: () => 'Resumo do dia',
+  conversa: () => 'Conversa do dia',
+};
+
+function ItemDoFeed({ item }: { item: ItemFeed }) {
+  const { cores } = useTema();
+  const aviso = item.tipo === 'aviso';
+  const quem = item.obrigados.length ? `Obrigado de ${item.obrigados.join(', ')}` : '';
+  return (
+    <Card>
+      <View style={{ flexDirection: 'row', gap: espaco.s1, alignItems: 'center' }}>
+        {aviso && <Icon nome="atencao" cor={cores.emergency} />}
+        <Text variante="headline" style={{ flex: 1 }}>
+          {TITULO_FEED[item.tipo](item)}
+        </Text>
+        <Text variante="footnote" cor="secondaryLabel">
+          {formatarData(item.quando)}
+        </Text>
+      </View>
+      {item.texto ? <Text variante="body">{item.texto}</Text> : null}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: espaco.s1 }}>
+        <Pressable
+          onPress={() => {
+            haptic.sucesso();
+            void agradecer(item.ref);
+          }}
+          disabled={item.agradeci}
+          accessibilityRole="button"
+          accessibilityLabel={item.agradeci ? 'Você agradeceu' : 'Dizer obrigado'}
+          style={{ minHeight: tamanho.toqueMinimo, flexDirection: 'row', alignItems: 'center', gap: espaco.meio, paddingRight: espaco.s1 }}
+        >
+          <Icon nome="coracao" cor={item.agradeci ? cores.emergency : cores.accentStrong} tamanho={18} />
+          <Text variante="callout" style={{ color: cores.accentStrong }}>
+            {item.agradeci ? 'Agradecido' : 'Obrigado'}
+          </Text>
+        </Pressable>
+        <Text variante="footnote" cor="secondaryLabel" style={{ flex: 1 }} numberOfLines={2}>
+          {quem}
+        </Text>
+      </View>
+    </Card>
+  );
+}
 
 export default function Familia() {
-  const { cores } = useTema();
-  const [tarefas, setTarefas] = useState(tarefasIniciais);
+  const { membros, tarefas, feed, eu } = useFamilia();
+  const [convidando, setConvidando] = useState(false);
+  const [feedAberto, setFeedAberto] = useState(false);
+  const chamada = passaporteAtual().como_gosta_de_ser_chamada || 'ela';
+  useFocusEffect(useCallback(() => void carregarFamilia(), []));
+  const abertas = tarefas.filter((t) => !t.concluida);
+  const feitas = tarefas.filter((t) => t.concluida);
 
-  function alternar(id: string) {
-    setTarefas((lista) =>
-      lista.map((t) => {
-        if (t.id !== id) return t;
-        if (!t.feita) haptic.sucesso();
-        return { ...t, feita: !t.feita };
-      }),
-    );
+  async function convidar() {
+    setConvidando(true);
+    try {
+      const { mensagem } = await api.criarConvite('familiar');
+      const whatsapp = `whatsapp://send?text=${encodeURIComponent(mensagem)}`;
+      if (await Linking.canOpenURL(whatsapp).catch(() => false)) await Linking.openURL(whatsapp);
+      else await Share.share({ message: mensagem });
+    } catch (e) {
+      mostrarToast(e instanceof ErroApi ? e.message : 'Não consegui criar o convite agora.');
+    } finally {
+      setConvidando(false);
+    }
   }
 
   return (
-    <Screen>
-      <Photo fonte={fotos.familiaReunida} rotulo="Dona Isabel com a Cláudia, o Rafael e a neta" proporcao={4 / 3} />
-
-      <Section titulo={`Quem cuida da ${pessoa.comoGostaDeSerChamada}`}>
-        <ListGroup comAvatar>
-          {familia.map((m) => (
-            <ListRow
-              key={m.nome}
-              titulo={m.nome}
-              subtitulo={`${m.papel}. ${m.cidade}`}
-              esquerda={<Avatar nome={m.nome} tom={m.tom} fonte={m.foto} />}
-            />
-          ))}
-        </ListGroup>
-      </Section>
+    <Screen aoAtualizar={carregarFamilia}>
+      <Photo fonte={fotos.familiaReunida} rotulo={`Quem cuida da ${chamada}`} proporcao={16 / 9} />
 
       <Section titulo="Tarefas da semana">
-        <ListGroup rodape="Toque para marcar como feita. Quem se ofereceu recebe um lembrete.">
-          {tarefas.map((t) => (
+        <ListGroup rodape="Quem assume recebe um lembrete no celular. Quando alguém faz, a família vê e pode agradecer.">
+          {abertas.map((t) => (
+            <LinhaTarefa key={t.id} tarefa={t} />
+          ))}
+          {feitas.slice(0, 3).map((t) => (
+            <LinhaTarefa key={t.id} tarefa={t} />
+          ))}
+          <ListRow titulo="Pedir ajuda com uma tarefa" icone="adicionar" corIcone="accentStrong" onPress={() => router.push('/nova-tarefa')} />
+        </ListGroup>
+      </Section>
+
+      <Section titulo="O que aconteceu">
+        {feed.length === 0 ? (
+          <Text variante="callout" cor="secondaryLabel">
+            Quando alguém enviar um resumo, fizer uma tarefa ou uma conversa, aparece aqui.
+          </Text>
+        ) : (
+          feed.slice(0, feedAberto ? 30 : 4).map((i) => <ItemDoFeed key={i.id} item={i} />)
+        )}
+        {feed.length > 4 && !feedAberto && (
+          <SecondaryButton titulo={`Ver mais ${Math.min(feed.length, 30) - 4}`} alinhamento="inicio" onPress={() => setFeedAberto(true)} />
+        )}
+      </Section>
+
+      <Section titulo={`Quem cuida da ${chamada}`}>
+        <ListGroup comAvatar>
+          {membros.map((m, i) => (
             <ListRow
-              key={t.id}
-              titulo={t.titulo}
-              subtitulo={`${t.quem}. ${t.quando}`}
-              riscado={t.feita}
-              esquerda={
-                <Icon nome={t.feita ? 'feito' : 'pendente'} cor={t.feita ? cores.success : cores.tertiaryLabel} />
-              }
-              onPress={() => alternar(t.id)}
-              navega={false}
-              rotuloAcessivel={`${t.titulo}. ${t.quem}. ${t.quando}. ${t.feita ? 'Concluída' : 'Pendente'}`}
-              dica={t.feita ? 'Toque para marcar como pendente' : 'Toque para marcar como feita'}
+              key={`${m.nome}-${i}`}
+              titulo={m.eu ? `${meuNome() || 'Você'} (você)` : m.nome}
+              subtitulo={PAPEIS[m.papel]}
+              esquerda={<Avatar nome={m.nome} tom={i % 5} />}
+              onPress={m.eu ? () => router.push('/eu') : undefined}
+              dica={m.eu ? 'Toque para mudar seu nome ou papel' : undefined}
             />
           ))}
+          <ListRow titulo="Tenho um código de convite" icone="link" onPress={() => router.push('/convite')} />
         </ListGroup>
+        <PrimaryButton
+          titulo={convidando ? 'Preparando o convite...' : 'Convidar pelo WhatsApp'}
+          icone="adicionar"
+          desativado={convidando}
+          dica="Manda um código para a pessoa entrar no grupo da família"
+          onPress={convidar}
+        />
       </Section>
 
-      <Section titulo="Resumos">
-        {feed.map((f) => (
-          <SummaryCard key={f.id} meta={`Diário da ${f.autor}, ${f.quando.toLowerCase()}`} texto={f.resumo} original={f.original} />
-        ))}
-        <ListGroup>
-          <ListRow titulo="Ver a semana completa" icone="calendario" onPress={() => router.push('/hoje/semana')} />
-          <ListRow titulo="Privacidade e dados da família" icone="cadeado" onPress={() => router.push('/familia/privacidade')} />
-        </ListGroup>
-      </Section>
+      {!meuNome() && eu && (
+        <Card>
+          <Text variante="headline">Como a família te chama?</Text>
+          <Text variante="callout" cor="secondaryLabel">
+            Assim todos sabem quem assumiu cada tarefa e quem mandou cada aviso.
+          </Text>
+          <PrimaryButton titulo="Dizer meu nome" onPress={() => router.push('/eu')} />
+        </Card>
+      )}
 
-      <PrimaryButton
-        titulo="Convidar alguém da família"
-        icone="adicionar"
-        dica="Envia um convite para entrar no grupo da família"
-        onPress={() =>
-          Share.share({
-            message: `Estou usando o SempreAqui para cuidar da ${pessoa.comoGostaDeSerChamada}. Entra no nosso grupo para a gente dividir o cuidado?`,
-          })
-        }
-      />
+      <ListGroup>
+        <ListRow titulo="Ver a semana completa" icone="calendario" onPress={() => router.push('/hoje/semana')} />
+        <ListRow titulo="Privacidade e dados da família" icone="cadeado" onPress={() => router.push('/familia/privacidade')} />
+      </ListGroup>
     </Screen>
   );
 }
