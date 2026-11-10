@@ -17,10 +17,12 @@ import {
   Skeleton,
   Text,
 } from '@/components';
+import { StatusDados } from '@/components/StatusDados';
+import { atualizarDados, useCarregamento } from '@/lib/carregamento';
 import { api, ErroApi } from '@/lib/api';
 import { compartilharArquivo } from '@/lib/compartilhar';
 import { haptic } from '@/lib/haptics';
-import { carregarPassaporte, fotoDaChave, oQueFalta, SECOES, type SecaoLista, usePassaporte } from '@/lib/passaporte';
+import { fotoDaChave, oQueFalta, SECOES, type SecaoLista, usePassaporte } from '@/lib/passaporte';
 import { gerarPassaportePdf } from '@/lib/passaporte-pdf';
 import { espaco } from '@/theme';
 
@@ -78,6 +80,7 @@ function Lista({
 
 export default function Memorias() {
   const { passaporte: p } = usePassaporte();
+  const { erro } = useCarregamento();
   const [gerando, setGerando] = useState(false);
   const [link, setLink] = useState<{ ativo: boolean; url: string | null } | null>(null);
 
@@ -87,8 +90,9 @@ export default function Memorias() {
 
   if (!p) {
     return (
-      <Screen aoAtualizar={carregarPassaporte}>
-        <Skeleton linhas={6} />
+      <Screen aoAtualizar={atualizarDados}>
+        <StatusDados />
+        {!erro && <Skeleton linhas={6} />}
       </Screen>
     );
   }
@@ -146,7 +150,8 @@ export default function Memorias() {
   }
 
   return (
-    <Screen aoAtualizar={carregarPassaporte}>
+    <Screen aoAtualizar={atualizarDados}>
+      <StatusDados />
       <Pressable
         onPress={() => editar('perfil')}
         accessibilityRole="button"

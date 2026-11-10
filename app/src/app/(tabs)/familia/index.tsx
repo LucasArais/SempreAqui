@@ -3,12 +3,14 @@ import { useCallback, useState } from 'react';
 import { Linking, Pressable, Share, View } from 'react-native';
 
 import { Avatar, Card, Icon, LinhaTarefa, LinkDaSecao, ListGroup, ListRow, mostrarToast, Photo, Screen, Section, Text } from '@/components';
+import { StatusDados } from '@/components/StatusDados';
+import { Skeleton } from '@/components/Skeleton';
+import { atualizarDados, useCarregamento } from '@/lib/carregamento';
 import { fotos } from '@/data/familia';
 import { api, ErroApi } from '@/lib/api';
 import {
   agradecer,
   fotoDoMembro,
-  carregarFamilia,
   type ItemFeed,
   meuNome,
   PAPEIS,
@@ -68,12 +70,13 @@ function ItemDoFeed({ item }: { item: ItemFeed }) {
 }
 
 export default function Familia() {
-  const { membros, tarefas, feed } = useFamilia();
+  const { membros, tarefas, feed, carregado } = useFamilia();
+  const { erro } = useCarregamento();
   usePassaporte();
   const [convidando, setConvidando] = useState(false);
   const [feedAberto, setFeedAberto] = useState(false);
   const chamada = passaporteAtual().como_gosta_de_ser_chamada || 'ela';
-  useFocusEffect(useCallback(() => void carregarFamilia(), []));
+  useFocusEffect(useCallback(() => void atualizarDados(), []));
   const abertas = tarefas.filter((t) => !t.concluida);
   const feitas = tarefas.filter((t) => t.concluida);
 
@@ -91,8 +94,16 @@ export default function Familia() {
     }
   }
 
+  if (!carregado && !membros.length) return (
+    <Screen aoAtualizar={atualizarDados}>
+      <StatusDados />
+      {!erro && <Skeleton linhas={4} />}
+    </Screen>
+  );
+
   return (
-    <Screen aoAtualizar={carregarFamilia}>
+    <Screen aoAtualizar={atualizarDados}>
+      <StatusDados />
       <Photo fonte={fotoDaChave(passaporteAtual().foto_familia) ?? fotos.familiaReunida} rotulo={`Quem cuida da ${chamada}`} proporcao={2.2} />
 
       <Section titulo="Tarefas da semana" acao={<LinkDaSecao titulo="Pedir ajuda" icone="adicionar" onPress={() => router.push('/nova-tarefa')} />}>

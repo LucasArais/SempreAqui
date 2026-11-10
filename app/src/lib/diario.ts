@@ -9,6 +9,7 @@ import { api, enviarRelato, ErroApi, type EnvioRelato, type Relato } from './api
 import {
   type EtapaLocal,
   iaLocalPronta,
+  iaLocalCarregada,
   MODELO_APARELHO,
   processarNoAparelho,
   type ResultadoLocal,
@@ -153,20 +154,20 @@ export function removerRelatoLocal(id: string) {
 /** Começa a fila, a escuta da rede e carrega o histórico. Pode ser chamado várias vezes. */
 export async function iniciarDiario() {
   if (!sessaoAtual().pronta) return;
-  if (iniciado) {
-    const salva = await AsyncStorage.getItem(CHAVE_FILA).catch(() => null);
-    const pendentes = salva ? JSON.parse(salva) as Pendente[] : [];
-    definir({ pendentes, relatos: mesclar([], pendentes) });
-    await atualizarRelatos();
-    void sincronizar();
-    return;
-  }
-  iniciado = true;
   try {
     pastaDaConta().create({ idempotent: true, intermediates: true });
   } catch {
     // A pasta já existe.
   }
+  if (iniciado) {
+    const salva = await AsyncStorage.getItem(CHAVE_FILA).catch(() => null);
+    const pendentes = salva ? JSON.parse(salva) as Pendente[] : [];
+    definir({ pendentes, relatos: mesclar(estado.relatos, pendentes) });
+    const sucesso = await atualizarRelatos();
+    void sincronizar();
+    return sucesso;
+  }
+  iniciado = true;
   try {
     if (!(await AsyncStorage.getItem(CHAVE_INSTALADO))) {
       await AsyncStorage.setItem(CHAVE_INSTALADO, new Date().toISOString());
@@ -179,8 +180,9 @@ export async function iniciarDiario() {
   } catch {
     // Sem armazenamento: segue só em memória.
   }
-  const rede = await Network.getNetworkStateAsync().catch(() => null);
-  definir({ online: rede?.isInternetReachable ?? rede?.isConnected ?? true });
+  void Network.getNetworkStateAsync().then((rede) => {
+    definir({ online: rede.isInternetReachable ?? rede.isConnected ?? true });
+  }).catch(() => undefined);
   Network.addNetworkStateListener((novo) => {
     const online = novo.isInternetReachable ?? novo.isConnected ?? false;
     definir({ online });
@@ -191,18 +193,20 @@ export async function iniciarDiario() {
     const emAndamento = estado.relatos.some((r) => !['pronto', 'erro'].includes(r.etapa));
     if (emAndamento) void atualizarRelatos();
   }, 20000);
-  await atualizarRelatos();
-  definir({ carregado: true });
+  const sucesso = await atualizarRelatos();
   void sincronizar();
+  return sucesso;
 }
 
 export async function atualizarRelatos() {
   if (!sessaoAtual().pronta) return;
   try {
     const relatos = await api.relatos();
-    definir({ relatos: mesclar(relatos, estado.pendentes), online: true });
+    definir({ relatos: mesclar(relatos, estado.pendentes), online: true, carregado: true });
+    return true;
   } catch (erro) {
     if (erro instanceof ErroApi && erro.semConexao) definir({ online: false });
+    return false;
   }
 }
 
@@ -332,6 +336,7 @@ export async function sincronizar() {
  */
 async function sincronizarDoAparelho(pendente: Pendente): Promise<boolean> {
   if (!pendente.resultado) {
+    if (!iaLocalCarregada()) return false;
     // O app fechou no meio: organiza de novo, se o celular ainda puder. Se não, vai pela nuvem.
     if (emProcessamento.has(pendente.id)) return true;
     if (iaLocalPronta()) void organizarNoAparelho(pendente.id);

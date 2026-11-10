@@ -100,6 +100,7 @@ export async function entrarComSenha(email: string, senha: string) {
 export function definirFamilia(familia: string, papel: string) {
   definir({ familia, papel, pronta: true, erro: null });
 }
+export function marcarAbrindoSessao() { definir({ erro: null }); }
 export function marcarErroSessao(erro: string) { definir({ erro, restaurada: true, pronta: false }); }
 
 export async function sair() {

@@ -72,15 +72,25 @@ export async function carregarConversa(pulados: string[] = estado.pulados) {
     }
   }
   if (!sessaoAtual().pronta) return;
+  const usuario = sessaoAtual().usuario;
   definir({ carregando: true });
   try {
-    await enviarFila();
+    void enviarFila().catch(() => undefined);
     const c = await api.conversaHoje(pulados);
-    const conversa = c.roteiro ? { ...c, roteiro: await comPerguntasDoCelular(c.roteiro) } : c;
-    definir({ conversa, pulados });
-    await AsyncStorage.setItem(CHAVE_ROTEIRO, JSON.stringify(conversa)).catch(() => undefined);
+    if (usuario !== sessaoAtual().usuario) return false;
+    definir({ conversa: c, pulados });
+    await AsyncStorage.setItem(CHAVE_ROTEIRO, JSON.stringify(c)).catch(() => undefined);
+    // A conversa base aparece imediatamente; a personalização local vem depois.
+    if (c.roteiro) void comPerguntasDoCelular(c.roteiro).then((roteiro) => {
+      if (usuario !== sessaoAtual().usuario || estado.conversa !== c) return;
+      const conversa = { ...c, roteiro };
+      definir({ conversa });
+      void AsyncStorage.setItem(CHAVE_ROTEIRO, JSON.stringify(conversa)).catch(() => undefined);
+    }).catch(() => undefined);
+    return true;
   } catch {
     // Sem conexão: fica o roteiro guardado.
+    return false;
   } finally {
     definir({ carregando: false });
   }

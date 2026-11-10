@@ -1,6 +1,7 @@
 import Constants from 'expo-constants';
 import { File } from 'expo-file-system';
 
+import { requisicao } from './requisicao';
 import { sessaoAtual } from './sessao';
 
 /**
@@ -93,11 +94,12 @@ export class ErroApi extends Error {
 async function chamar<T>(caminho: string, init: RequestInit = {}): Promise<T> {
   const usuario = sessaoAtual().usuario;
   let resposta: Response;
+  let corpo;
   try {
-    resposta = await fetch(`${API_BASE}${caminho}`, {
+    ({ resposta, corpo } = await requisicao(`${API_BASE}${caminho}`, {
       ...init,
       headers: { ...cabecalhos(), ...(init.headers ?? {}) },
-    });
+    }, caminho === '/sessao' || (init.method ?? 'GET') === 'GET' ? 20_000 : 120_000));
   } catch (erro) {
     // Só em desenvolvimento, e só o motivo técnico: nunca conteúdo do relato.
     if (__DEV__) console.warn(`[api] ${init.method ?? 'GET'} ${caminho} falhou: ${String(erro)}`);
@@ -105,7 +107,6 @@ async function chamar<T>(caminho: string, init: RequestInit = {}): Promise<T> {
   }
   if (usuario !== sessaoAtual().usuario) throw new ErroApi('A conta foi alterada.');
   if (resposta.status === 204) return undefined as T;
-  const corpo = await resposta.json().catch(() => null);
   if (!resposta.ok) {
     const detalhe = typeof corpo?.detail === 'string' ? corpo.detail : null;
     throw new ErroApi(detalhe ?? 'Algo não saiu como esperado. Quer tentar de novo?');

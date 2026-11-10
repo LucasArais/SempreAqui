@@ -127,8 +127,10 @@ export async function carregarPassaporte() {
     const p = await api.passaporte();
     definir({ passaporte: p, carregado: true });
     await guardarCopia(p);
+    return true;
   } catch {
     definir({ carregado: true });
+    return false;
   }
 }
 

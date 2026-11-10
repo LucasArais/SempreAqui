@@ -55,7 +55,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
     "postinstall": "patch-package",
-    "test:login": "node --test scripts/test-login.cjs"
+    "test:login": "node --test scripts/test-login.cjs",
+    "test:carregamento": "node --test scripts/test-carregamento.cjs"
   },
   "private": true
 }

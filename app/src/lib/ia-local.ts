@@ -55,6 +55,8 @@ export function useIaLocal() {
 }
 
 /** O aparelho tem tudo para rodar a IA local e a família não desligou. */
+export function iaLocalCarregada() { return estado.carregado; }
+
 export function iaLocalPronta() {
   const d = estado.disponibilidade;
   return Boolean(IaLocal && estado.ativa && d?.transcricao && d?.modelo);

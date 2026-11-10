@@ -83,19 +83,25 @@ export async function carregarFamilia() {
   if (!estado.carregado) {
     try {
       const copia = await AsyncStorage.getItem(CHAVE);
-      if (copia) estado = { ...(JSON.parse(copia) as Estado), carregado: false };
+      if (copia) {
+        estado = { ...(JSON.parse(copia) as Estado), carregado: false };
+        ouvintes.forEach((o) => o());
+      }
     } catch {
       // Sem cópia.
     }
   }
   if (!sessaoAtual().pronta) return;
+  const usuario = sessaoAtual().usuario;
   const [familia, tarefas, feed] = await Promise.allSettled([api.familia(), api.tarefas(), api.feed()]);
+  if (usuario !== sessaoAtual().usuario) return false;
   definir({
     ...(familia.status === 'fulfilled' ? { membros: familia.value.membros, eu: familia.value.eu } : {}),
     ...(tarefas.status === 'fulfilled' ? { tarefas: tarefas.value } : {}),
     ...(feed.status === 'fulfilled' ? { feed: feed.value } : {}),
     carregado: true,
   });
+  return [familia, tarefas, feed].every((r) => r.status === 'fulfilled');
 }
 
 function trocarTarefa(tarefa: Tarefa) {

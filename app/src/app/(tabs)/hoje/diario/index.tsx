@@ -1,8 +1,11 @@
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 
-import { EmptyState, Icon, ListGroup, ListRow, PrimaryButton, Screen, Section } from '@/components';
+import { EmptyState, Icon, ListGroup, ListRow, PrimaryButton, Screen, Section, Skeleton } from '@/components';
+import { StatusDados } from '@/components/StatusDados';
+import { atualizarDados, useCarregamento } from '@/lib/carregamento';
 import type { Relato } from '@/lib/api';
-import { type Pendente, atualizarRelatos, useAtualizarAoFocar, useDiario } from '@/lib/diario';
+import { type Pendente, useDiario } from '@/lib/diario';
 import { formatarData, formatarDuracao, MENSAGEM_ETAPA } from '@/lib/rotulos';
 import { useTema } from '@/theme';
 
@@ -21,15 +24,17 @@ function porDia(itens: Item[]) {
 export default function Historico() {
   const { cores } = useTema();
   const { relatos, pendentes, carregado } = useDiario();
-  useAtualizarAoFocar();
+  useFocusEffect(useCallback(() => { void atualizarDados(); }, []));
+  const { erro } = useCarregamento();
   const itens: Item[] = [
     ...pendentes.map((p) => ({ id: p.id, gravado_em: p.gravado_em, pendente: p })),
     ...relatos.map((r) => ({ id: r.id, gravado_em: r.gravado_em, relato: r })),
   ].sort((a, b) => b.gravado_em.localeCompare(a.gravado_em));
 
-  if (carregado && itens.length === 0) {
+  if (carregado && itens.length === 0 && !erro) {
     return (
-      <Screen aoAtualizar={atualizarRelatos}>
+      <Screen aoAtualizar={atualizarDados}>
+      <StatusDados />
         <EmptyState
           logo
           titulo="Seus relatos aparecem aqui"
@@ -42,7 +47,9 @@ export default function Historico() {
   }
 
   return (
-    <Screen aoAtualizar={atualizarRelatos}>
+    <Screen aoAtualizar={atualizarDados}>
+      <StatusDados />
+      {!carregado && !erro && !itens.length && <Skeleton linhas={4} />}
       {porDia(itens).map(([dia, doDia]) => (
         <Section key={dia} titulo={dia.charAt(0).toUpperCase() + dia.slice(1)}>
           <ListGroup>

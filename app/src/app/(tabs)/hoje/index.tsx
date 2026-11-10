@@ -18,12 +18,15 @@ import {
   Screen,
   Section,
   SummaryCard,
+  Skeleton,
   Text,
 } from '@/components';
+import { StatusDados } from '@/components/StatusDados';
+import { atualizarDados, useCarregamento } from '@/lib/carregamento';
 import { reacoes } from '@/data/familia';
 import { ligarEmergencia } from '@/lib/abrir';
-import { atualizarSeMudouODia, useConversa } from '@/lib/conversa';
-import { atualizarRelatos, useAtualizarAoFocar, useDiario } from '@/lib/diario';
+import { useConversa } from '@/lib/conversa';
+import { useDiario } from '@/lib/diario';
 import { avisoDasUltimas24h, ehHoje, meuNome, useFamilia } from '@/lib/familia';
 import { fotoDaChave } from '@/lib/passaporte';
 import { formatarData, MENSAGEM_ETAPA } from '@/lib/rotulos';
@@ -48,8 +51,8 @@ export default function Hoje() {
   const { relatos, pendentes, carregado } = useDiario();
   const { semana } = useSemana();
   const { conversa } = useConversa();
-  useAtualizarAoFocar();
-  useFocusEffect(useCallback(() => atualizarSeMudouODia(), []));
+  const { erro: erroAtualizacao } = useCarregamento();
+  useFocusEffect(useCallback(() => { void atualizarDados(); }, []));
 
   const avisoRecente = avisoDasUltimas24h(feed);
   // O que é para hoje e o que ainda ninguém assumiu (quem mora longe assume daqui).
@@ -78,7 +81,8 @@ export default function Hoje() {
   );
 
   return (
-    <Screen aoAtualizar={atualizarRelatos}>
+    <Screen aoAtualizar={atualizarDados}>
+      <StatusDados />
       <Stack.Screen options={{ title: meuNome() ? `${saudacao()}, ${meuNome()}` : saudacao() }} />
 
       {avisoRecente && (
@@ -167,11 +171,11 @@ export default function Hoje() {
               </Text>
             </Card>
           </Pressable>
-        ) : carregado ? (
+        ) : carregado && !erroAtualizacao ? (
           <Card>
             <EmptyState logo titulo="Seu primeiro relato aparece aqui" texto="Toque no microfone e conte como foi o dia. Em segundos a família recebe um resumo." />
           </Card>
-        ) : null}
+        ) : !carregado && !erroAtualizacao ? <Skeleton linhas={3} /> : null}
       </Section>
     </Screen>
   );

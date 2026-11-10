@@ -4,19 +4,19 @@ import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import * as SystemUI from 'expo-system-ui';
 import { useCallback, useEffect, useState } from 'react';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
 import { ToastHost } from '@/components';
 import { Abertura } from '@/components/Abertura';
-import { iniciarDiario } from '@/lib/diario';
+import { sincronizar } from '@/lib/diario';
 import * as Notifications from 'expo-notifications';
 
-import { carregarConversa } from '@/lib/conversa';
-import { carregarFamilia } from '@/lib/familia';
+import * as Network from 'expo-network';
+import { atualizarDados } from '@/lib/carregamento';
+import { CarregamentoSessao } from '@/components/CarregamentoSessao';
 import { carregarIaLocal } from '@/lib/ia-local';
-import { carregarPassaporte } from '@/lib/passaporte';
 import { entrar } from '@/lib/entrar';
-import { useSessao } from '@/lib/sessao';
+import { sessaoAtual, useSessao } from '@/lib/sessao';
 import { useTema } from '@/theme';
 
 // A tela de abertura nativa fica até a animação em JS assumir, sem piscar.
@@ -48,16 +48,30 @@ export default function Raiz() {
 
   useEffect(() => {
     if (!sessao.pronta) return;
-    let cancelado = false;
-    void carregarIaLocal().then(() => {
-      if (cancelado) return;
-      void carregarPassaporte();
-      void carregarConversa();
-      void carregarFamilia();
-      void iniciarDiario();
-    });
-    return () => { cancelado = true; };
+    // A checagem da IA nunca bloqueia os dados da família.
+    void atualizarDados();
+    void carregarIaLocal().then(sincronizar).catch(() => undefined);
   }, [sessao.pronta, sessao.usuario]);
+
+  useEffect(() => {
+    const atualizar = () => {
+      const atual = sessaoAtual();
+      if (atual.pronta) void atualizarDados();
+      else if (atual.token) void entrar();
+    };
+    let anterior = AppState.currentState;
+    const app = AppState.addEventListener('change', (atual) => {
+      if (atual === 'active' && anterior !== 'active') atualizar();
+      anterior = atual;
+    });
+    let estavaOnline: boolean | null = null;
+    const rede = Network.addNetworkStateListener((atual) => {
+      const online = atual.isInternetReachable ?? atual.isConnected ?? false;
+      if (online && estavaOnline !== true) atualizar();
+      estavaOnline = online;
+    });
+    return () => { app.remove(); rede.remove(); };
+  }, []);
 
   const [abrindo, setAbrindo] = useState(true);
   const terminarAbertura = useCallback(() => setAbrindo(false), []);
@@ -84,7 +98,7 @@ export default function Raiz() {
   return (
     <ThemeProvider value={tema}>
       <StatusBar style={escuro ? 'light' : 'dark'} />
-      {sessao.restaurada && <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: cores.background } }}>
+      {(!sessao.restaurada || (sessao.token && !sessao.pronta)) ? <CarregamentoSessao /> : <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: cores.background } }}>
         <Stack.Protected guard={!sessao.pronta}>
           <Stack.Screen name="entrar" />
         </Stack.Protected>
