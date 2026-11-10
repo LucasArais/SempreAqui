@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { View } from 'react-native';
 
 import { api, type Relato } from '@/lib/api';
+import { audioNoAparelho } from '@/lib/diario';
 import { ligarEmergencia } from '@/lib/abrir';
 import { linhasDoRegistro } from '@/lib/rotulos';
 import { espaco, useTema } from '@/theme';
@@ -23,6 +24,8 @@ export function RelatoView({ relato }: { relato: Relato }) {
   const registro = relato.registro;
   if (!registro) return null;
   const linhas = linhasDoRegistro(registro);
+  const audioLocal = relato.tem_audio ? undefined : audioNoAparelho(relato.id);
+  const fonteAudio = relato.tem_audio ? api.fonteAudio(relato.id) : audioLocal ? { uri: audioLocal } : undefined;
   const tambem = [
     ...registro.episodios.map((e) => ({ titulo: e.descricao, icone: 'atencao' as const, cor: 'attention' as const })),
     ...registro.o_que_ajudou.map((t) => ({ titulo: `Ajudou: ${t}`, icone: 'calma' as const, cor: 'success' as const })),
@@ -48,8 +51,17 @@ export function RelatoView({ relato }: { relato: Relato }) {
         titulo="O que vai para a família"
         texto={relato.resumo ?? ''}
         original={relato.transcricao ?? undefined}
-        audio={relato.tem_audio ? <AudioPlayer fonte={api.fonteAudio(relato.id)} /> : undefined}
+        audio={fonteAudio ? <AudioPlayer fonte={fonteAudio} /> : undefined}
       />
+
+      {relato.no_aparelho && (
+        <View style={{ flexDirection: 'row', gap: espaco.s1, alignItems: 'center', paddingHorizontal: espaco.s1 }}>
+          <Icon nome="cadeado" cor={cores.success} />
+          <Text variante="footnote" cor="secondaryLabel" style={{ flex: 1 }}>
+            Organizado aqui no seu celular. O áudio não saiu dele.
+          </Text>
+        </View>
+      )}
 
       <View style={{ gap: espaco.s1 }}>
         <Text variante="title2" accessibilityRole="header">

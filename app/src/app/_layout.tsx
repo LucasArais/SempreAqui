@@ -9,6 +9,7 @@ import { Platform } from 'react-native';
 import { ToastHost } from '@/components';
 import { Abertura } from '@/components/Abertura';
 import { iniciarDiario } from '@/lib/diario';
+import { carregarIaLocal } from '@/lib/ia-local';
 import { entrar } from '@/lib/entrar';
 import { useTema } from '@/theme';
 
@@ -30,7 +31,10 @@ export default function Raiz() {
   }, [cores.background]);
 
   useEffect(() => {
-    void entrar().then(iniciarDiario);
+    // A IA do celular carrega antes da fila: relatos que ficaram no meio são organizados aqui.
+    void entrar()
+      .then(carregarIaLocal)
+      .then(iniciarDiario);
   }, []);
 
   const [abrindo, setAbrindo] = useState(true);

@@ -83,6 +83,21 @@ def _prompt_resumo(registro: RegistroDiario, transcricao: str, violacoes: list[s
     return prompt
 
 
+def alertas_do_relato(registro: RegistroDiario, transcricao: str) -> list[str]:
+    """O que a IA marcou como alerta, mais a checagem por palavras-chave quando ela não marcou nada."""
+    alertas = list(registro.sinais_de_alerta)
+    if not alertas:
+        palavras = guardrails.detectar_risco(transcricao)
+        if palavras:
+            alertas.append(f"relato menciona '{palavras[0]}', vale verificar")
+    return alertas
+
+
+def violacoes_do_resumo(resumo: str, alertas: list[str]) -> list[str]:
+    """Regras que o resumo para a família precisa cumprir, venha da nuvem ou do celular."""
+    return _violacoes(resumo, alertas)
+
+
 def _violacoes(resumo: str, alertas: list[str]) -> list[str]:
     violacoes = [f"{v.regra} ({v.trecho})" for v in guardrails.verificar_texto_familia(resumo)]
     if alertas and not guardrails.menciona_192(resumo):
@@ -149,12 +164,7 @@ def construir_grafo(provedor: ProvedorIA, correcoes: str = ""):
         return {"registro": provedor.gerar_estruturado(prompt, sistema, RegistroDiario)}
 
     def avaliar_risco(estado: EstadoDiario) -> EstadoDiario:
-        alertas = list(estado["registro"].sinais_de_alerta)
-        if not alertas:
-            palavras = guardrails.detectar_risco(estado["transcricao"])
-            if palavras:
-                alertas.append(f"relato menciona '{palavras[0]}', vale verificar")
-        return {"alertas": alertas}
+        return {"alertas": alertas_do_relato(estado["registro"], estado["transcricao"])}
 
     def resumir(estado: EstadoDiario) -> EstadoDiario:
         prompt = _prompt_resumo(

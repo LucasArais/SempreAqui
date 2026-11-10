@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { File, Paths } from 'expo-file-system';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Switch } from 'react-native';
 
 import { Coluna, ListGroup, ListRow, mostrarToast, PrimaryButton, Screen, SecondaryButton, Section, Text } from '@/components';
 import { api, cabecalhos } from '@/lib/api';
@@ -10,12 +10,15 @@ import { CHAVE_ONBOARDING } from '@/lib/chaves';
 import { compartilharArquivo } from '@/lib/compartilhar';
 import { limparTudoLocal } from '@/lib/diario';
 import { haptic } from '@/lib/haptics';
+import { definirIaLocalAtiva, motivoEmPalavras, useIaLocal } from '@/lib/ia-local';
 import { sair } from '@/lib/sessao';
 
 /** Privacidade e dados (LGPD, art. 18): ver o que guardamos, baixar uma cópia e apagar tudo. */
 export default function Privacidade() {
   const [baixando, setBaixando] = useState(false);
   const [apagando, setApagando] = useState(false);
+  const ia = useIaLocal();
+  const disponivel = Boolean(ia.disponibilidade?.transcricao && ia.disponibilidade?.modelo);
 
   async function baixarCopia() {
     setBaixando(true);
@@ -66,9 +69,32 @@ export default function Privacidade() {
         Os dados da família são de vocês. Aqui você vê o que guardamos, baixa uma cópia de tudo ou apaga tudo quando quiser.
       </Text>
 
+      <Section titulo="IA no seu celular">
+        <ListGroup rodape={disponivel ? (ia.ativa ? 'Seus áudios ficam só neste celular. Para a família, vai apenas o relato organizado. Sem custo de IA.' : 'Desligada: os relatos são organizados na nuvem, por provedores que não guardam dados.') : motivoEmPalavras(ia.disponibilidade?.motivo)}>
+          <ListRow
+            icone="cadeado"
+            titulo="Organizar os relatos aqui no celular"
+            subtitulo={disponivel ? 'Funciona sem internet' : 'Indisponível neste celular'}
+            navega={false}
+            direita={
+              <Switch
+                value={disponivel && ia.ativa}
+                disabled={!disponivel}
+                onValueChange={(v) => void definirIaLocalAtiva(v)}
+                accessibilityLabel="Organizar os relatos aqui no celular"
+              />
+            }
+          />
+        </ListGroup>
+      </Section>
+
       <Section titulo="O que guardamos">
         <ListGroup rodape="Números anônimos de uso, sem nenhum conteúdo, continuam existindo para medir se o app ajuda.">
-          <ListRow icone="gravar" titulo="Áudios e transcrições" subtitulo="O que você contou em cada relato" />
+          <ListRow
+            icone="gravar"
+            titulo="Áudios e transcrições"
+            subtitulo={disponivel && ia.ativa ? 'Áudios ficam só no celular; guardamos a transcrição' : 'O que você contou em cada relato'}
+          />
           <ListRow icone="consulta" titulo="Registros e resumos" subtitulo="Organizados pela IA e corrigidos por vocês" />
           <ListRow icone="documento" titulo="Termo de uso dos dados" onPress={() => router.push('/termo')} />
         </ListGroup>

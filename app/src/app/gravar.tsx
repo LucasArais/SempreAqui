@@ -30,12 +30,15 @@ import {
   descartarArquivo,
   estadoAtual,
   guardarGravacao,
+  marcarParaEnviar,
+  organizarNoAparelho,
   sincronizar,
   substituirRelato,
   useDiario,
 } from '@/lib/diario';
 import { haptic } from '@/lib/haptics';
-import { MENSAGEM_ETAPA } from '@/lib/rotulos';
+import { iaLocalPronta } from '@/lib/ia-local';
+import { MENSAGEM_ETAPA, MENSAGEM_ETAPA_APARELHO } from '@/lib/rotulos';
 import { espaco, useTema } from '@/theme';
 
 type Fase =
@@ -100,10 +103,22 @@ export default function Gravar() {
 
   async function enviar(uri: string, duracao: number) {
     haptic.sucesso();
-    const id = await guardarGravacao(uri, duracao);
+    const noAparelho = iaLocalPronta();
+    const id = await guardarGravacao(uri, duracao, { noAparelho });
     idAtual.current = id;
     setEtapa(MENSAGEM_ETAPA.recebido);
     setFase('organizando');
+    if (noAparelho) {
+      // IA do próprio celular: resultado na hora, com ou sem internet. Se falhar, segue pela nuvem.
+      const local = await organizarNoAparelho(id, (e) => setEtapa(MENSAGEM_ETAPA_APARELHO[e]));
+      if (local) {
+        setRelato(local);
+        haptic.sucesso();
+        setFase('resultado');
+        return;
+      }
+      setEtapa(MENSAGEM_ETAPA.recebido);
+    }
     await sincronizar();
     // Se o relato ainda está na fila, não houve conexão: fica guardado no celular.
     if (estadoAtual().pendentes.some((p) => p.id === id)) {
@@ -161,6 +176,15 @@ export default function Gravar() {
 
   async function enviarParaFamilia() {
     if (!relato) return;
+    // Organizado no celular e ainda sem internet: envia sozinho quando sincronizar.
+    await sincronizar();
+    if (estadoAtual().pendentes.some((p) => p.id === relato.id)) {
+      await marcarParaEnviar(relato.id);
+      haptic.sucesso();
+      router.back();
+      mostrarToast('Guardado no celular. Envio para a família quando a internet voltar.');
+      return;
+    }
     try {
       substituirRelato(await api.enviarParaFamilia(relato.id));
       haptic.sucesso();

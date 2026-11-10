@@ -50,7 +50,8 @@ Dados de saúde são dados pessoais sensíveis (LGPD, art. 5º, II, e art. 11).
 - **Mínimo necessário.** O Passaporte compartilhado é somente leitura, pode ser desligado a qualquer momento e não inclui o Diário.
 - **Nada de dado real em logs.** Logs registram rotas, tempos, contagens e erros. Nunca transcrições, nomes, áudios ou conteúdo de prompts.
 - **Exportar e apagar tudo.** A família pode baixar todos os seus dados em formato aberto e apagar o grupo inteiro, o que remove tudo em cascata (LGPD, art. 18).
-- **Provedor de IA.** Usamos modelos pelo OpenRouter com a opção `data_collection: deny` em toda chamada: o pedido só vai para provedores que não guardam os dados nem os usam para treinar modelos. Se nenhum provedor do modelo atender, a chamada falha em vez de cair num provedor que guarda dados. Isso é informado à família no termo de consentimento.
+- **IA no próprio celular.** No iPhone com Apple Intelligence, o áudio é transcrito e organizado no aparelho e nunca é enviado. Para o backend vai só a transcrição e o registro organizado, que a família precisa compartilhar. Correções nesses relatos também são processadas no aparelho. Os guardrails rodam no celular e de novo no backend. A família pode desligar isso em Privacidade e dados.
+- **Provedor de IA.** Quando o celular não tem suporte, usamos modelos pelo OpenRouter com a opção `data_collection: deny` em toda chamada: o pedido só vai para provedores que não guardam os dados nem os usam para treinar modelos. Se nenhum provedor do modelo atender, a chamada falha em vez de cair num provedor que guarda dados. Isso é informado à família no termo de consentimento.
 - **Chaves e segredos.** Ficam só no `.env`, ignorado pelo git. Um hook de pre-commit e o gitleaks no CI bloqueiam qualquer commit com algo parecido com uma chave. O app nunca recebe chave secreta.
 - **Correções da família.** Quando alguém corrige um campo, a correção fica guardada no grupo da própria família e só é usada para melhorar os próximos relatos dessa mesma família.
 - **Desenvolvimento sem dado real.** Testes, exemplos e avaliações usam somente relatos fictícios. Segredos ficam apenas em `.env`.
@@ -63,4 +64,5 @@ Ela não é a usuária do app, mas é a razão dele. Sempre que possível, a fam
 
 - A transcrição pode errar nomes próprios e falas muito rápidas. Por isso a tela mostra a transcrição e permite corrigir.
 - O conjunto de avaliação ainda é pequeno e foi escrito pela própria equipe. Ampliar com casos cegos e com revisão de profissionais de saúde é prioridade da aceleração.
+- O modelo do celular é menor que o da nuvem e ainda não foi medido com o conjunto de avaliação do Diário. O risco continua coberto pela checagem por palavras-chave no celular e no backend, que não depende do modelo.
 - O detector de risco por palavras-chave gera falsos positivos de propósito. Preferimos um alerta a mais do que um a menos.

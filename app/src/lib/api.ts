@@ -60,6 +60,22 @@ export type Relato = {
   enviado_familia: boolean;
   tem_audio: boolean;
   corrigidos: string[];
+  /** Transcrito e organizado pela IA do próprio celular: o áudio não saiu dele. */
+  no_aparelho?: boolean;
+};
+
+/** Resultado da IA do celular, enviado sem o áudio. */
+export type RelatoDoAparelho = {
+  id: string;
+  duracao_s: number;
+  gravado_em: string;
+  enviado_offline: boolean;
+  segundos_desde_instalacao?: number;
+  transcricao: string;
+  registro: Registro;
+  resumo: string;
+  modelo: string;
+  versao_prompt: string;
 };
 
 export type CampoEditavel = { campo: string; rotulo: string; opcoes: string[] | null };
@@ -133,6 +149,19 @@ export const api = {
     chamar<Relato>(`/diario/relatos/${id}/correcoes/${correcaoId}`, { method: 'DELETE' }),
   tentarDeNovo: (id: string) => chamar<Relato>(`/diario/relatos/${id}/tentar-de-novo`, { method: 'POST' }),
   enviarParaFamilia: (id: string) => chamar<Relato>(`/diario/relatos/${id}/enviar`, { method: 'POST' }),
+  relatoDoAparelho: (relato: RelatoDoAparelho) =>
+    chamar<Relato>('/diario/relatos/do-aparelho', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(relato),
+    }),
+  resumoDoAparelho: (id: string, resumo: string) =>
+    chamar<Relato>(`/diario/relatos/${id}/resumo`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resumo }),
+    }),
+  correcoes: () => chamar<{ texto: string }>('/diario/correcoes'),
   apagar: (id: string) => chamar<void>(`/diario/relatos/${id}`, { method: 'DELETE' }),
   evento: (tipo: string, valor?: number, rotulo?: string) =>
     chamar<void>('/eventos', {

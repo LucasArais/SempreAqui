@@ -48,6 +48,13 @@ export const MENSAGEM_ETAPA: Record<Etapa, string> = {
   erro: 'Não consegui organizar agora',
 };
 
+/** Progresso quando a IA roda no próprio celular. */
+export const MENSAGEM_ETAPA_APARELHO = {
+  transcrevendo: 'Ouvindo o que você contou, aqui no seu celular...',
+  organizando: 'Organizando aqui no celular...',
+  resumindo: 'Escrevendo o resumo para a família...',
+} as const;
+
 export type LinhaCampo = {
   campo: string;
   rotulo: string;

@@ -13,7 +13,8 @@
         "NSLocalNetworkUsageDescription": "O SempreAqui conversa com o servidor da família na sua rede para organizar os relatos.",
         "NSAppTransportSecurity": {
           "NSAllowsLocalNetworking": true
-        }
+        },
+        "NSSpeechRecognitionUsageDescription": "O SempreAqui transcreve seus relatos aqui no celular, sem enviar o áudio para fora dele."
       },
       "bundleIdentifier": "com.lucasarais.sempreaqui"
     },

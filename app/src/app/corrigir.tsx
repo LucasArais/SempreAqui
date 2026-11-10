@@ -6,6 +6,7 @@ import { Icon, ListGroup, ListRow, mostrarToast, Skeleton, Text } from '@/compon
 import { api, type CampoEditavel, ErroApi } from '@/lib/api';
 import { substituirRelato, useRelato } from '@/lib/diario';
 import { haptic } from '@/lib/haptics';
+import { atualizarCorrecoes, iaLocalPronta, reescreverResumoNoAparelho } from '@/lib/ia-local';
 import { rotuloValor } from '@/lib/rotulos';
 import { espaco, useTema } from '@/theme';
 
@@ -43,6 +44,13 @@ export default function Corrigir() {
     try {
       const { relato: novo, correcao_id } = await api.corrigir(relato.id, campo, valor);
       substituirRelato(novo);
+      void atualizarCorrecoes();
+      // Relato organizado no celular: o resumo é reescrito aqui, sem mandar o texto para a nuvem.
+      if (novo.no_aparelho && iaLocalPronta()) {
+        void reescreverResumoNoAparelho(novo)
+          .then((r) => r && substituirRelato(r))
+          .catch(() => undefined);
+      }
       haptic.sucesso();
       router.back();
       mostrarToast(`${definicao?.rotulo ?? 'Campo'} corrigido para ${rotuloValor(valor).toLowerCase()}.`, {

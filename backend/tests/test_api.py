@@ -311,3 +311,75 @@ def test_metricas_sao_anonimas_e_calculam_taxa_de_correcao(ambiente):
     assert painel["sessoes_reminiscencia"] == [{"reacao": "sorriu", "sessoes": 1}]
     texto = str(painel)
     assert "familia-teste" not in texto and "dormiu" not in texto
+
+
+# IA no próprio celular -----------------------------------------------------
+
+
+def enviar_do_aparelho(cliente, relato_id="relato-aparelho-1", **extra):
+    corpo = {
+        "id": relato_id,
+        "duracao_s": 30,
+        "transcricao": "Hoje foi um dia bom. A mãe dormiu bem.",
+        "registro": REGISTRO_TRANQUILO,
+        "resumo": "A Dona Isabel teve um dia bom e dormiu bem.",
+        **extra,
+    }
+    return cliente.post("/diario/relatos/do-aparelho", json=corpo, headers=FAMILIA)
+
+
+def test_relato_do_aparelho_fica_pronto_sem_audio_e_sem_nuvem(ambiente):
+    cliente, _repo, provedor, _ = ambiente
+    resposta = enviar_do_aparelho(cliente)
+    assert resposta.status_code == 201
+    relato = resposta.json()
+    assert relato["etapa"] == "pronto"
+    assert relato["no_aparelho"] is True
+    assert relato["tem_audio"] is False
+    assert relato["resumo"].startswith("A Dona Isabel")
+    assert provedor.chamadas == []
+    # Reenvio da fila não duplica.
+    assert enviar_do_aparelho(cliente).status_code == 201
+    assert len(cliente.get("/diario/relatos", headers=FAMILIA).json()) == 1
+
+
+def test_relato_do_aparelho_passa_pelos_guardrails_do_servidor(ambiente):
+    cliente, *_ = ambiente
+    relato = enviar_do_aparelho(
+        cliente,
+        transcricao="Ela caiu no banheiro de manhã.",
+        resumo="O paciente teve um dia tranquilo.",
+    ).json()
+    assert relato["alertas"], "palavra de queda no relato sempre vira alerta"
+    assert relato["resumo_seguro"] is True
+    assert "paciente" not in relato["resumo"].lower()
+    assert "192" in relato["resumo"]
+
+
+def test_correcao_de_relato_do_aparelho_nao_usa_a_nuvem(ambiente):
+    cliente, _repo, provedor, _ = ambiente
+    enviar_do_aparelho(cliente)
+    resposta = cliente.patch(
+        "/diario/relatos/relato-aparelho-1/campos",
+        json={"campo": "sono.qualidade", "valor": "ruim"},
+        headers=FAMILIA,
+    )
+    assert resposta.status_code == 200
+    assert provedor.chamadas == []
+    novo = cliente.put(
+        "/diario/relatos/relato-aparelho-1/resumo",
+        json={"resumo": "A noite foi difícil, mas o dia foi calmo."},
+        headers=FAMILIA,
+    ).json()
+    assert novo["resumo"] == "A noite foi difícil, mas o dia foi calmo."
+    texto = cliente.get("/diario/correcoes", headers=FAMILIA).json()["texto"]
+    assert "sono.qualidade" in texto
+
+
+def test_resumo_do_aparelho_so_para_relatos_do_aparelho(ambiente):
+    cliente, *_ = ambiente
+    enviar(cliente)
+    resposta = cliente.put(
+        "/diario/relatos/relato-0001/resumo", json={"resumo": "Outro texto."}, headers=FAMILIA
+    )
+    assert resposta.status_code == 409

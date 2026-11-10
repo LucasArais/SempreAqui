@@ -62,3 +62,5 @@ jobs:
       - run: npx expo lint
       - name: Contraste WCAG AA das cores
         run: node scripts/contraste.ts
+      - name: Guardrails do celular iguais aos do backend
+        run: node scripts/guardrails.ts

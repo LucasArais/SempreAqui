@@ -79,6 +79,8 @@ Código: [`backend/agents/diario.py`](../backend/agents/diario.py).
 
 **O áudio é guardado antes de qualquer IA.** O celular grava, salva o arquivo na pasta do app e só então tenta enviar. O backend guarda o áudio primeiro e processa em segundo plano. Se a IA cair ou ficar sem saldo, nada se perde: o relato fica com uma mensagem humana e um "Tentar de novo".
 
+**IA no próprio celular.** No iPhone com Apple Intelligence, o módulo nativo `app/modules/ia-local` transcreve com o SpeechAnalyzer do iOS 26 e organiza com o modelo local da Apple (Foundation Models), usando geração guiada por um espelho do `RegistroDiario`. O app normaliza o JSON, calcula o risco e escreve o resumo com os guardrails em TypeScript (`src/lib/guardrails.ts`). Só o resultado entra na fila e vai para `POST /diario/relatos/do-aparelho`, onde o backend valida com Pydantic, recalcula o risco e reaplica os guardrails. O áudio fica no celular. Se a IA local falhar ou o aparelho não tiver suporte, o relato segue pelo caminho da nuvem.
+
 **Fila offline idempotente.** O id do relato nasce no celular. Reenviar o mesmo relato (porque a conexão caiu no meio) nunca duplica nada.
 
 **Progresso real, não um cronômetro.** O grafo do Diário avisa cada etapa concluída (`transcrevendo`, `organizando`, `resumindo`) e o app mostra essa etapa em linguagem humana.

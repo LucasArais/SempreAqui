@@ -81,14 +81,18 @@ Personas que guiam cada decisão: **Cláudia**, 52 anos, cuida da mãe e abre o 
 - [ ] Deploy do backend e build instalável do app
 - [ ] Roteiro de demo de 3 a 5 minutos e slide com os números das evals e dos testes com usuários
 
-## IA no próprio celular (em estudo)
+## IA no próprio celular (construído no iPhone)
 
 **Pronto quando:** um relato é transcrito e organizado no iPhone, sem internet, passando nas mesmas avaliações do Diário (risco 3/3, zero violações).
 
-- [ ] Teste de um dia no iPhone: transcrição da Apple e modelo local, medindo qualidade, tempo e bateria
-- [ ] Guardrails determinísticos também no app
+- [x] Transcrição no aparelho com o reconhecimento de fala do iOS 26
+- [x] Registro organizado pelo modelo local da Apple, com saída presa ao schema
+- [x] Guardrails determinísticos também no app, iguais aos do backend nos 53 casos adversariais
+- [x] Sincroniza só o resultado; o áudio fica no celular; o backend confere de novo
+- [x] Nuvem como reserva para aparelhos sem suporte ou se a IA local falhar
+- [x] Chave para ligar e desligar em Privacidade e dados
+- [ ] Medir no aparelho com o conjunto de avaliação do Diário: qualidade, tempo e bateria
 - [ ] Android com Whisper e modelo aberto pequeno, baixado pelo Wi-Fi
-- [ ] Nuvem como reserva para aparelhos sem suporte
 
 ## Em paralelo, o tempo todo
 

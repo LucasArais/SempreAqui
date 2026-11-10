@@ -30,13 +30,15 @@ from pydantic import BaseModel
 
 from agents.diario import (
     VERSOES,
+    alertas_do_relato,
     formatar_correcoes,
     processar_relato,
     refazer_resumo,
     resumo_seguro,
+    violacoes_do_resumo,
 )
 from agents.semana import resumir_semana
-from core import campos
+from core import campos, guardrails
 from core.auth import TokenInvalido, usuario_do_token
 from core.config import config
 from core.llm import ErroProvedorIA, ProvedorIA, provedor_padrao
@@ -153,6 +155,15 @@ class Relato(BaseModel):
     enviado_familia: bool = False
     tem_audio: bool = False
     corrigidos: list[str] = []
+    no_aparelho: bool = False
+
+
+# Relatos organizados pela IA do próprio celular chegam com este prefixo no campo "modelo".
+PREFIXO_APARELHO = "aparelho:"
+
+
+def _no_aparelho(dados: dict) -> bool:
+    return str(dados.get("modelo") or "").startswith(PREFIXO_APARELHO)
 
 
 class Correcao(BaseModel):
@@ -185,10 +196,11 @@ def _para_resposta(
         **{
             k: dados[k]
             for k in Relato.model_fields
-            if k in dados and k not in {"tem_audio", "corrigidos"}
+            if k in dados and k not in {"tem_audio", "corrigidos", "no_aparelho"}
         },
         tem_audio=repo.tem_audio(dados),
         corrigidos=corrigidos,
+        no_aparelho=_no_aparelho(dados),
     )
 
 
@@ -461,6 +473,98 @@ async def criar_relato(
     return _para_resposta(repo, familia_id, dados)
 
 
+# IA no próprio celular -----------------------------------------------------
+
+
+class RelatoDoAparelho(BaseModel):
+    """Relato transcrito e organizado no celular. O áudio não vem: ele nunca sai do aparelho."""
+
+    id: str
+    duracao_s: float | None = None
+    gravado_em: str | None = None
+    segundos_desde_instalacao: float | None = None
+    enviado_offline: bool = False
+    transcricao: str
+    registro: RegistroDiario
+    resumo: str
+    modelo: str = "apple-foundation-models"
+    versao_prompt: str = "extracao.aparelho.v1"
+
+
+def _resumo_aprovado(registro: RegistroDiario, resumo: str, alertas: list[str]) -> tuple[str, bool]:
+    """O backend confere de novo o que o celular escreveu: os guardrails daqui são a palavra final."""
+    texto = guardrails.remover_travessoes(resumo)
+    if violacoes_do_resumo(texto, alertas):
+        return resumo_seguro(registro, alertas), True
+    return texto, False
+
+
+@app.post("/diario/relatos/do-aparelho", response_model=Relato, status_code=201)
+def criar_relato_do_aparelho(
+    relato: RelatoDoAparelho,
+    familia_id: str = Depends(obter_familia),
+    repo: Repositorio = Depends(obter_repositorio),
+) -> Relato:
+    if not re.fullmatch(r"[A-Za-z0-9-]{8,64}", relato.id):
+        raise HTTPException(400, "Identificador do relato inválido.")
+    if not relato.transcricao.strip():
+        raise HTTPException(422, "O relato chegou sem texto.")
+    dados, novo = repo.criar_relato(
+        familia_id, relato.id, None, "audio/mp4", relato.duracao_s, relato.gravado_em
+    )
+    if not novo:
+        return _para_resposta(repo, familia_id, dados)
+    # O risco é recalculado aqui também: palavra de queda no relato sempre vira alerta.
+    alertas = alertas_do_relato(relato.registro, relato.transcricao)
+    resumo, seguro = _resumo_aprovado(relato.registro, relato.resumo, alertas)
+    repo.salvar_resultado(
+        relato.id,
+        transcricao=relato.transcricao,
+        registro=relato.registro.model_dump(),
+        alertas=alertas,
+        resumo=resumo,
+        resumo_seguro=seguro,
+        versao_prompt=relato.versao_prompt[:60],
+        modelo=PREFIXO_APARELHO + re.sub(r"[^A-Za-z0-9._-]", "", relato.modelo)[:60],
+    )
+    repo.registrar_evento("diario_gravado", familia_id, valor=relato.duracao_s, rotulo="aparelho")
+    if relato.segundos_desde_instalacao is not None and not repo.listar(familia_id, limite=2)[1:]:
+        repo.registrar_evento("primeiro_diario", familia_id, valor=relato.segundos_desde_instalacao)
+    if relato.enviado_offline:
+        repo.registrar_evento("relato_enviado_offline", familia_id)
+    log.info("diario.do_aparelho relato=%s alertas=%d seguro=%s", relato.id, len(alertas), seguro)
+    return _para_resposta(repo, familia_id, repo.obter(familia_id, relato.id))
+
+
+class NovoResumo(BaseModel):
+    resumo: str
+
+
+@app.put("/diario/relatos/{relato_id}/resumo", response_model=Relato)
+def atualizar_resumo_do_aparelho(
+    relato_id: str,
+    pedido: NovoResumo,
+    familia_id: str = Depends(obter_familia),
+    repo: Repositorio = Depends(obter_repositorio),
+) -> Relato:
+    """Depois de uma correção, o celular reescreve o resumo com a IA dele e manda só o texto."""
+    dados = _obter_ou_404(repo, familia_id, relato_id)
+    if not _no_aparelho(dados) or not dados["registro"]:
+        raise HTTPException(409, "Esse relato é organizado pelo servidor.")
+    registro = RegistroDiario.model_validate(dados["registro"])
+    resumo, _ = _resumo_aprovado(registro, pedido.resumo, dados["alertas"])
+    repo.atualizar_registro(relato_id, dados["registro"], resumo)
+    return _para_resposta(repo, familia_id, repo.obter(familia_id, relato_id))
+
+
+@app.get("/diario/correcoes")
+def correcoes_da_familia(
+    familia_id: str = Depends(obter_familia), repo: Repositorio = Depends(obter_repositorio)
+) -> dict:
+    """Correções recentes já no formato do prompt, para a IA do celular aprender com a família."""
+    return {"texto": formatar_correcoes(repo.correcoes_recentes(familia_id))}
+
+
 @app.get("/diario/relatos", response_model=list[Relato])
 def listar_relatos(
     familia_id: str = Depends(obter_familia), repo: Repositorio = Depends(obter_repositorio)
@@ -513,15 +617,22 @@ def corrigir_campo(
         raise HTTPException(422, str(erro)) from erro
 
     registro = RegistroDiario.model_validate(novo_registro)
-    try:
-        resumo, _ = refazer_resumo(
-            fabrica(), registro, dados["transcricao"] or "", dados["alertas"]
-        )
-    except Exception as erro:  # noqa: BLE001 - sem IA, o resumo seguro reflete a correção
-        log.warning(
-            "diario.resumo_apos_correcao_falhou relato=%s erro=%s", relato_id, type(erro).__name__
-        )
+    if _no_aparelho(dados):
+        # O relato foi organizado no celular e o texto dele não vai para a nuvem. O resumo seguro
+        # reflete a correção na hora; o app reescreve o resumo com a IA do aparelho em seguida.
         resumo = resumo_seguro(registro, dados["alertas"])
+    else:
+        try:
+            resumo, _ = refazer_resumo(
+                fabrica(), registro, dados["transcricao"] or "", dados["alertas"]
+            )
+        except Exception as erro:  # noqa: BLE001 - sem IA, o resumo seguro reflete a correção
+            log.warning(
+                "diario.resumo_apos_correcao_falhou relato=%s erro=%s",
+                relato_id,
+                type(erro).__name__,
+            )
+            resumo = resumo_seguro(registro, dados["alertas"])
 
     correcao_id = repo.registrar_correcao(
         familia_id, relato_id, correcao.campo, anterior, correcao.valor, dados["resumo"]

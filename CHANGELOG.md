@@ -2,6 +2,20 @@
 
 O que mudou em cada ciclo, do mais recente para o mais antigo.
 
+## IA no próprio celular (novembro de 2026)
+
+**Para a família**
+- No iPhone com Apple Intelligence, o relato é transcrito e organizado no próprio celular. O áudio não sai do aparelho e o resultado aparece mesmo sem internet.
+- O relato mostra "Organizado aqui no seu celular. O áudio não saiu dele."
+- Chave para ligar ou desligar em Privacidade e dados, com a explicação quando o celular não tem suporte.
+- Relato organizado sem internet pode ser enviado à família depois: vai sozinho quando a conexão volta.
+
+**Bastidores**
+- Módulo nativo `ia-local` (Swift): SpeechAnalyzer para a fala e Foundation Models com geração guiada pelo schema do Diário.
+- Guardrails em TypeScript, espelho dos do backend, checados contra os mesmos 53 casos no CI.
+- Rotas `POST /diario/relatos/do-aparelho`, `PUT /diario/relatos/{id}/resumo` e `GET /diario/correcoes`. O backend reaplica os guardrails e recalcula o risco.
+- Correção num relato do celular não chama a IA da nuvem.
+
 ## Ciclo 2: Resumo da semana, login e LGPD (novembro de 2026)
 
 **Para a família**
