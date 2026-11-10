@@ -888,6 +888,10 @@ def criar_link(
     repo: Repositorio = Depends(obter_repositorio),
 ) -> dict:
     """Cria (ou troca) o link somente leitura. Só o passaporte, nunca o Diário."""
+    if repo.obter_passaporte(familia_id) is None:
+        # Guarda o passaporte que a família vê hoje (na demonstração, o da Dona Isabel)
+        # antes de ligar o link. Nunca um passaporte vazio por cima.
+        repo.salvar_passaporte(familia_id, _passaporte(repo, familia_id))
     token = secrets.token_urlsafe(24)
     repo.definir_link(familia_id, token)
     return {"ativo": True, "url": _url_link(request, token)}

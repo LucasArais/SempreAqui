@@ -363,9 +363,8 @@ class RepositorioSupabase:
         return resposta.content if resposta.status_code == 200 else None
 
     def definir_link(self, familia_id: str, token: str | None) -> None:
+        # O passaporte precisa existir antes (a API garante isso com os dados atuais da família).
         grupo = self.grupo(familia_id)
-        if not self._sql("select 1 from passaportes where grupo_id = %s", (grupo,)):
-            self.salvar_passaporte(familia_id, {})
         self._sql(
             "update passaportes set token_compartilhamento = %s where grupo_id = %s", (token, grupo)
         )

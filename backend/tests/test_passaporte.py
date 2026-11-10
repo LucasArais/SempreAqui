@@ -82,3 +82,12 @@ def test_organizar_sugere_e_filtra_linguagem(ambiente):  # noqa: F811
         cliente.post("/passaporte/organizar", data={"texto": " "}, headers=FAMILIA).status_code
         == 422
     )
+
+
+def test_criar_link_na_demo_nao_apaga_o_passaporte_da_dona_isabel(ambiente):  # noqa: F811
+    cliente, *_ = ambiente
+    demo = {"X-Familia": "familia-demo"}
+    cliente.post("/passaporte/link", headers=demo)
+    passaporte = cliente.get("/passaporte", headers=demo).json()
+    assert passaporte["como_gosta_de_ser_chamada"] == "Dona Isabel"
+    assert len(passaporte["lembrancas"]) == 5
