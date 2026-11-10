@@ -37,6 +37,8 @@ from fastapi import (
     Request,
     UploadFile,
 )
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from pydantic import BaseModel, Field
 
@@ -52,6 +54,7 @@ from agents.diario import (
 from agents.semana import resumir_semana
 from core import apoio, assistente, campos, guardrails, prompts, reminiscencia
 from core.auth import TokenInvalido, usuario_do_token
+from core.cadastro import router as router_cadastro
 from core.config import config
 from core.llm import ErroProvedorIA, ProvedorIA, provedor_padrao
 from core.passaporte_html import renderizar as renderizar_passaporte
@@ -75,6 +78,16 @@ app = FastAPI(
     description="IA que aproxima famílias em torno do cuidado de quem vive com Alzheimer.",
     version="0.2.0",
 )
+
+app.include_router(router_cadastro)
+
+
+@app.exception_handler(RequestValidationError)
+async def validacao_sem_senha(request: Request, erro: RequestValidationError):
+    if request.url.path == "/auth/cadastro":
+        return JSONResponse(status_code=422, content={"detail": "Confira seu nome, e-mail, senha e aceite dos termos."})
+    return await request_validation_exception_handler(request, erro)
+
 
 TIPOS_AUDIO = {
     "audio/mpeg",
