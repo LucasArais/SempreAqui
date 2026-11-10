@@ -43,18 +43,21 @@ Personas que guiam cada decisão: **Cláudia**, 52 anos, cuida da mãe e abre o 
 
 **Pronto quando:** a família monta um passaporte útil em 15 minutos só falando.
 
-- [ ] Memórias por áudio, foto ou texto, em qualquer ordem
+- [x] Passaporte editável por seção: adicionar, editar e apagar com Desfazer
+- [x] PDF de uma página para cuidador ou hospital, com o que a família preencheu
+- [ ] Memórias por áudio e foto, além de texto
 - [ ] IA organiza nas seções e mostra o que falta, com perguntas sugeridas
-- [ ] Link somente leitura e PDF para cuidador ou hospital
+- [ ] Link somente leitura
 
 ## Ciclo 4: Conversas de Reminiscência
 
 **Pronto quando:** uma sessão de 5 minutos roda do início ao fim sem a cuidadora precisar pensar no que dizer.
 
-- [ ] Sessões geradas a partir do Passaporte: foto, pergunta gentil, música opcional
+- [x] Conversa do dia a partir do Passaporte: tema, foto, perguntas gentis e música, mudando todo dia
+- [x] Reação e anotação guardadas, pesando na escolha dos próximos temas
+- [ ] Perguntas personalizadas pela IA do celular, a partir dos roteiros revisados
 - [ ] Modo de exibição para a pessoa: tela cheia, fonte enorme, um elemento por vez
-- [ ] Reação marcada depois (sorriu, conversou, indiferente, agitada) e usada para escolher as próximas
-- [ ] Regras de prompt e evals: nunca "você lembra?"
+- [x] Teste automático: nenhum roteiro testa a memória nem viola os guardrails
 
 ## Ciclo 5: Apoio na Hora Difícil
 
@@ -92,7 +95,12 @@ Personas que guiam cada decisão: **Cláudia**, 52 anos, cuida da mãe e abre o 
 - [x] Nuvem como reserva para aparelhos sem suporte ou se a IA local falhar
 - [x] Chave para ligar e desligar em Privacidade e dados
 - [ ] Medir no aparelho com o conjunto de avaliação do Diário: qualidade, tempo e bateria
-- [ ] Android com Whisper e modelo aberto pequeno, baixado pelo Wi-Fi
+- [x] Regra fixa para o campo de remédios quando o relato não fala de remédio
+- [ ] Android, passo 1: transcrição com o SpeechRecognizer no aparelho
+- [ ] Android, passo 2: Gemini Nano pelo ML Kit nos aparelhos com suporte
+- [ ] Android, passo 3: modelo aberto pequeno via llama.cpp com gramática JSON, baixado pelo Wi-Fi com consentimento
+
+Detalhes em [ia-no-aparelho.md](ia-no-aparelho.md).
 
 ## Em paralelo, o tempo todo
 

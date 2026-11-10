@@ -2,7 +2,7 @@ import { Asset } from 'expo-asset';
 import { readAsStringAsync } from 'expo-file-system/legacy';
 import * as Print from 'expo-print';
 
-import { fotos, pessoa } from '@/data/familia';
+import { fotoDaChave, type Passaporte } from '@/lib/passaporte';
 import { claro } from '@/theme/colors';
 
 /**
@@ -24,24 +24,45 @@ async function imagemBase64(modulo: number, tipo = 'image/jpeg') {
 const escapar = (texto: string) =>
   texto.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-function lista(itens: { titulo: string; detalhe?: string }[]) {
+function lista(itens: { titulo: string; detalhe?: string | null }[]) {
+  if (!itens.length) return '<p class="sub">Ainda não preenchido.</p>';
   return `<ul>${itens
     .map((i) => `<li><strong>${escapar(i.titulo)}</strong>${i.detalhe ? `<span>${escapar(i.detalhe)}</span>` : ''}</li>`)
     .join('')}</ul>`;
 }
 
-export async function gerarPassaportePdf(): Promise<string> {
+export async function gerarPassaportePdf(p: Passaporte): Promise<string> {
+  const retratoFonte = fotoDaChave(p.foto);
   const [retrato, logo, ...rostos] = await Promise.all([
-    imagemBase64(fotos.donaIsabel as number),
+    retratoFonte ? imagemBase64(retratoFonte as number) : Promise.resolve(null),
     imagemBase64(require('../../assets/simbolo.png'), 'image/png'),
-    ...pessoa.pessoasImportantes.map((p) => (p.foto ? imagemBase64(p.foto as number) : Promise.resolve(null))),
+    ...p.pessoas_importantes.map((x) => {
+      const f = fotoDaChave(x.foto);
+      return f ? imagemBase64(f as number) : Promise.resolve(null);
+    }),
   ]);
   const c = claro;
+  const chamada = p.como_gosta_de_ser_chamada || p.nome;
+  const pessoa = {
+    comoGostaDeSerChamada: chamada,
+    nome: p.nome,
+    idade: p.idade,
+    quemEla: p.quem_ela,
+    comoSeComunica: p.como_se_comunica,
+    acalma: p.acalma,
+    agita: p.agita,
+    rotina: p.rotina,
+    musicasEComidas: [
+      ...p.musicas.map((m) => ({ titulo: m.titulo, detalhe: m.artista })),
+      ...p.comidas,
+    ],
+    pessoasImportantes: p.pessoas_importantes.map((x) => ({ nome: x.nome, relacao: x.relacao ?? '' })),
+  };
   const pessoas = pessoa.pessoasImportantes
     .map(
-      (p, i) => `<div class="pessoa">
-        ${rostos[i] ? `<img src="${rostos[i]}" />` : `<div class="inicial">${escapar(p.nome.replace('O ', '').replace('A ', '').charAt(0))}</div>`}
-        <div><strong>${escapar(p.nome)}</strong><span>${escapar(p.relacao)}</span></div>
+      (x, i) => `<div class="pessoa">
+        ${rostos[i] ? `<img src="${rostos[i]}" />` : `<div class="inicial">${escapar(x.nome.replace('O ', '').replace('A ', '').charAt(0))}</div>`}
+        <div><strong>${escapar(x.nome)}</strong><span>${escapar(x.relacao)}</span></div>
       </div>`,
     )
     .join('');
@@ -80,7 +101,7 @@ export async function gerarPassaportePdf(): Promise<string> {
       <div>
         <div class="rotulo">Passaporte de Memória</div>
         <h1>${escapar(pessoa.comoGostaDeSerChamada)}</h1>
-        <div class="sub">${escapar(pessoa.nome)}, ${pessoa.idade} anos</div>
+        <div class="sub">${escapar([pessoa.nome, pessoa.idade ? `${pessoa.idade} anos` : ''].filter(Boolean).join(', '))}</div>
         <div class="chamar">Gosta de ser chamada de <strong>${escapar(pessoa.comoGostaDeSerChamada)}</strong>.</div>
       </div>
     </div>

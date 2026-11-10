@@ -16,7 +16,9 @@ import {
   SummaryCard,
   Text,
 } from '@/components';
-import { quemUsa, sessao, tarefas as tarefasIniciais } from '@/data/familia';
+import { quemUsa, tarefas as tarefasIniciais } from '@/data/familia';
+import { useConversa } from '@/lib/conversa';
+import { fotoDaChave } from '@/lib/passaporte';
 import { useSemana } from '@/lib/semana';
 import { useSessao } from '@/lib/sessao';
 import { atualizarRelatos, useAtualizarAoFocar, useDiario } from '@/lib/diario';
@@ -38,6 +40,7 @@ export default function Hoje() {
   useAtualizarAoFocar();
   const ultimo = relatos[0];
   const { semana } = useSemana();
+  const roteiro = useConversa().conversa?.roteiro;
   // Quem mora longe (Rafael) quer saber como a mãe está: a semana vem primeiro.
   const quemCuida = (useSessao().papel ?? 'quem_cuida') === 'quem_cuida';
 
@@ -138,21 +141,23 @@ export default function Hoje() {
         </ListGroup>
       </Section>
 
-      <Section titulo="Uma conversa para hoje">
-        <MemoryCard
-          legenda={sessao.tema}
-          detalhe={`${sessao.duracao}, com foto e música`}
-          tom={sessao.foto.tom}
-          icone={sessao.foto.icone}
-          fonte={sessao.foto.fonte}
-          proporcao={16 / 9}
-          onPress={() => router.push('/sessao')}
-        />
-        <SecondaryButton titulo="Começar a conversa" icone="tocar" alinhamento="inicio" onPress={() => router.push('/sessao')} />
-        <Text variante="footnote" cor="secondaryLabel">
-          Sugerida a partir do Passaporte de Memória
-        </Text>
-      </Section>
+      {roteiro && (
+        <Section titulo="Uma conversa para hoje">
+          <MemoryCard
+            legenda={roteiro.tema}
+            detalhe={`${roteiro.tipo_rotulo}. De 5 a 10 minutos${roteiro.musica ? ', com música' : ''}`}
+            tom={roteiro.conjunto % 5}
+            icone={roteiro.foto ? 'foto' : 'coracao'}
+            fonte={fotoDaChave(roteiro.foto)}
+            proporcao={16 / 9}
+            onPress={() => router.push('/sessao')}
+          />
+          <SecondaryButton titulo="Começar a conversa" icone="tocar" alinhamento="inicio" onPress={() => router.push('/sessao')} />
+          <Text variante="footnote" cor="secondaryLabel">
+            Muda todo dia, a partir do Passaporte de Memória
+          </Text>
+        </Section>
+      )}
     </Screen>
   );
 }

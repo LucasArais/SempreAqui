@@ -162,6 +162,23 @@ export const api = {
       body: JSON.stringify({ resumo }),
     }),
   correcoes: () => chamar<{ texto: string }>('/diario/correcoes'),
+  passaporte: () => chamar<import('./passaporte').Passaporte>('/passaporte'),
+  salvarPassaporte: (p: import('./passaporte').Passaporte) =>
+    chamar<import('./passaporte').Passaporte>('/passaporte', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(p),
+    }),
+  conversaHoje: (pular: string[] = []) =>
+    chamar<import('./conversa').ConversaHoje>(
+      `/conversa/hoje${pular.length ? `?${pular.map((c) => `pular=${encodeURIComponent(c)}`).join('&')}` : ''}`,
+    ),
+  registrarConversa: (sessao: import('./conversa').SessaoFeita) =>
+    chamar<{ id: string }>('/conversas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(sessao),
+    }),
   apagar: (id: string) => chamar<void>(`/diario/relatos/${id}`, { method: 'DELETE' }),
   evento: (tipo: string, valor?: number, rotulo?: string) =>
     chamar<void>('/eventos', {

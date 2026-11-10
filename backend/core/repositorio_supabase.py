@@ -26,6 +26,7 @@ from core.repositorio import (
     FamiliaDesconhecida,
     _hash_familia,
     _semana,
+    _sessao,
     extensao_audio,
 )
 
@@ -258,6 +259,8 @@ class RepositorioSupabase:
             "correcoes": correcoes,
             "membros": membros,
             "consentimentos": consentimentos,
+            "passaporte": self.obter_passaporte(familia_id),
+            "sessoes": self.sessoes_recentes(familia_id, limite=100000),
         }
 
     def apagar_familia(self, familia_id: str) -> int:
@@ -275,6 +278,62 @@ class RepositorioSupabase:
         self._sql("delete from grupos_familiares where codigo = %s", (familia_id,))
         self._grupos.pop(familia_id, None)
         return len(relatos)
+
+    # Passaporte e conversas ------------------------------------------------
+
+    def obter_passaporte(self, familia_id: str) -> dict | None:
+        linhas = self._sql(
+            "select dados from passaportes where grupo_id = %s order by atualizado_em desc limit 1",
+            (self.grupo(familia_id),),
+        )
+        return linhas[0]["dados"] if linhas else None
+
+    def salvar_passaporte(self, familia_id: str, dados: dict) -> None:
+        grupo = self.grupo(familia_id)
+        chamada = dados.get("como_gosta_de_ser_chamada") or dados.get("nome") or "Sem nome"
+        existente = self._sql(
+            "select pessoa_id from passaportes where grupo_id = %s limit 1", (grupo,)
+        )
+        if existente:
+            pessoa = existente[0]["pessoa_id"]
+            self._sql(
+                "update pessoas set como_gosta_de_ser_chamada = %s where id = %s and grupo_id = %s",
+                (chamada, pessoa, grupo),
+            )
+            self._sql(
+                "update passaportes set dados = %s, atualizado_em = now() where pessoa_id = %s and grupo_id = %s",
+                (Jsonb(dados), pessoa, grupo),
+            )
+            return
+        pessoa = self._sql(
+            "insert into pessoas (grupo_id, como_gosta_de_ser_chamada) values (%s, %s) returning id",
+            (grupo, chamada),
+        )[0]["id"]
+        self._sql(
+            "insert into passaportes (pessoa_id, grupo_id, dados) values (%s, %s, %s)",
+            (pessoa, grupo, Jsonb(dados)),
+        )
+
+    def registrar_sessao(
+        self, familia_id: str, roteiro: dict, reacao: str, nota: str | None
+    ) -> str:
+        linhas = self._sql(
+            "insert into sessoes_reminiscencia (grupo_id, roteiro, reacao, realizada_em) "
+            "values (%s, %s, %s, now()) returning id",
+            (self.grupo(familia_id), Jsonb({**roteiro, "nota": nota}), reacao),
+        )
+        return str(linhas[0]["id"])
+
+    def sessoes_recentes(self, familia_id: str, limite: int = 60) -> list[dict]:
+        linhas = self._sql(
+            "select id, roteiro, reacao, realizada_em from sessoes_reminiscencia where grupo_id = %s "
+            "order by realizada_em desc limit %s",
+            (self.grupo(familia_id), limite),
+        )
+        return [
+            _sessao(x["roteiro"], x["id"], x["reacao"], x["roteiro"].get("nota"), x["realizada_em"])
+            for x in linhas
+        ]
 
     # Correções -------------------------------------------------------------
 

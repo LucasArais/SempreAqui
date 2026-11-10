@@ -24,9 +24,18 @@ from functools import lru_cache
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from fastapi import BackgroundTasks, Depends, FastAPI, Form, Header, HTTPException, UploadFile
+from fastapi import (
+    BackgroundTasks,
+    Depends,
+    FastAPI,
+    Form,
+    Header,
+    HTTPException,
+    Query,
+    UploadFile,
+)
 from fastapi.responses import JSONResponse, Response
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from agents.diario import (
     VERSOES,
@@ -38,7 +47,7 @@ from agents.diario import (
     violacoes_do_resumo,
 )
 from agents.semana import resumir_semana
-from core import campos, guardrails
+from core import campos, guardrails, reminiscencia
 from core.auth import TokenInvalido, usuario_do_token
 from core.config import config
 from core.llm import ErroProvedorIA, ProvedorIA, provedor_padrao
@@ -50,7 +59,9 @@ from core.repositorio import (
     repositorio_padrao,
 )
 from core.schemas.diario import RegistroDiario
+from core.schemas.passaporte import Passaporte
 from core.semana import montar_semana
+from demo.passaporte import PASSAPORTE_DEMO
 
 logging.basicConfig(level=config().log_level.upper())
 log = logging.getLogger("sempreaqui.api")
@@ -696,6 +707,113 @@ def ouvir_audio(
     if not audio:
         raise HTTPException(404, "O áudio desse relato não está mais guardado.")
     return Response(audio, media_type=dados["mime"] or "audio/mp4")
+
+
+# Passaporte de Memória -----------------------------------------------------
+
+FAMILIA_DEMO = "familia-demo"
+
+
+def _passaporte(repo: Repositorio, familia_id: str) -> dict:
+    salvo = repo.obter_passaporte(familia_id)
+    if salvo is not None:
+        return Passaporte.model_validate(salvo).model_dump()
+    # A família de demonstração começa com o passaporte da Dona Isabel; as outras, vazias.
+    inicial = PASSAPORTE_DEMO if familia_id == FAMILIA_DEMO else {}
+    return Passaporte.model_validate(inicial).model_dump()
+
+
+@app.get("/passaporte", response_model=Passaporte)
+def obter_passaporte(
+    familia_id: str = Depends(obter_familia), repo: Repositorio = Depends(obter_repositorio)
+) -> dict:
+    return _passaporte(repo, familia_id)
+
+
+@app.put("/passaporte", response_model=Passaporte)
+def salvar_passaporte(
+    passaporte: Passaporte,
+    familia_id: str = Depends(obter_familia),
+    repo: Repositorio = Depends(obter_repositorio),
+) -> dict:
+    """Salva o passaporte inteiro. O app edita item por item e manda tudo: simples e sem conflito."""
+    for texto in _textos_do_passaporte(passaporte):
+        if guardrails.verificar_texto_familia(texto):
+            raise HTTPException(
+                422,
+                "Esse texto tem uma palavra que evitamos no SempreAqui. Pode escrever de outro jeito?",
+            )
+    dados = passaporte.model_dump()
+    repo.salvar_passaporte(familia_id, dados)
+    return dados
+
+
+def _textos_do_passaporte(p: Passaporte) -> list[str]:
+    textos = [p.quem_ela, p.como_se_comunica]
+    for lista in (p.rotina, p.acalma, p.agita, p.comidas, p.lembrancas):
+        textos += [f"{i.titulo} {i.detalhe or ''}" for i in lista]
+    textos += [f"{x.nome} {x.relacao or ''}" for x in p.pessoas_importantes]
+    return [t for t in textos if t.strip()]
+
+
+# Conversa de hoje (reminiscência) -----------------------------------------
+
+
+def _hoje() -> date:
+    return datetime.now(ZoneInfo(config().fuso)).date()
+
+
+@app.get("/conversa/hoje")
+def conversa_de_hoje(
+    pular: list[str] = Query(default=[]),
+    familia_id: str = Depends(obter_familia),
+    repo: Repositorio = Depends(obter_repositorio),
+) -> dict:
+    """Roteiro de hoje. "pular" troca o tema quando a família quer outra conversa."""
+    hoje = _hoje()
+    historico = repo.sessoes_recentes(familia_id)
+    roteiro = reminiscencia.conversa_do_dia(
+        _passaporte(repo, familia_id), historico, hoje, familia_id, pular[:20]
+    )
+    feitas = [s for s in historico if s["data"] == hoje.isoformat()]
+    return {
+        "roteiro": roteiro,
+        "feitas_hoje": len(feitas),
+        "ultima_reacao": feitas[0]["reacao"] if feitas else None,
+    }
+
+
+class SessaoFeita(BaseModel):
+    data: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
+    tema_chave: str = Field(max_length=120)
+    tipo: str = Field(max_length=20)
+    tema: str = Field(max_length=200)
+    conjunto: int | None = None
+    perguntas: list[str] = Field(default_factory=list, max_length=8)
+    reacao: str
+    nota: str | None = Field(default=None, max_length=500)
+
+
+@app.post("/conversas", status_code=201)
+def registrar_conversa(
+    sessao: SessaoFeita,
+    familia_id: str = Depends(obter_familia),
+    repo: Repositorio = Depends(obter_repositorio),
+) -> dict:
+    """Guarda como foi a conversa. A reação pesa na escolha dos próximos temas."""
+    if sessao.reacao not in reminiscencia.REACOES:
+        raise HTTPException(422, "Reação desconhecida.")
+    roteiro = sessao.model_dump(exclude={"reacao", "nota"})
+    sessao_id = repo.registrar_sessao(familia_id, roteiro, sessao.reacao, sessao.nota)
+    repo.registrar_evento("sessao_concluida", familia_id, rotulo=sessao.reacao)
+    return {"id": sessao_id}
+
+
+@app.get("/conversas")
+def listar_conversas(
+    familia_id: str = Depends(obter_familia), repo: Repositorio = Depends(obter_repositorio)
+) -> list[dict]:
+    return repo.sessoes_recentes(familia_id, limite=30)
 
 
 @app.post("/eventos", status_code=204)

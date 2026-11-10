@@ -2,6 +2,21 @@
 
 O que mudou em cada ciclo, do mais recente para o mais antigo.
 
+## Passaporte editável e Conversa de hoje (novembro de 2026)
+
+**Para a família**
+- Passaporte de Memória editável: quem ela é, como se comunica, pessoas importantes, rotina, o que acalma, o que agita, músicas (com link do YouTube), comidas e lembranças. Adicionar, editar e apagar com um toque, com Desfazer.
+- O PDF do passaporte sai com o que a família preencheu.
+- Conversa de hoje muda todo dia: o tema vem do Passaporte e as perguntas, de roteiros revisados que nunca testam a memória.
+- "Outro tema hoje" troca a conversa na hora.
+- No fim, a reação e uma anotação opcional ficam guardadas. "Gostou muito" traz o tema de volta mais vezes; "ficou desconfortável" tira o tema da roda por 3 semanas. Sem internet, a reação espera e vai depois.
+
+**Bastidores**
+- Rotas `GET/PUT /passaporte`, `GET /conversa/hoje`, `POST /conversas` e `GET /conversas`, no SQLite e no Supabase. O passaporte passa pelos guardrails de linguagem.
+- `core/reminiscencia.py`: escolha de tema e de roteiro determinística por dia e família, sem IA e sem custo, com testes.
+- IA do celular: regra fixa para o campo de remédios quando o relato não fala de remédio.
+- Documentação da IA no aparelho para iOS e Android em `docs/ia-no-aparelho.md`.
+
 ## IA no próprio celular (novembro de 2026)
 
 **Para a família**

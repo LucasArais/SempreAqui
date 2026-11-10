@@ -73,6 +73,23 @@ create table if not exists consentimentos (
   aceito_em text not null
 );
 
+create table if not exists passaportes (
+  familia_id text primary key,
+  dados text not null,
+  atualizado_em text not null
+);
+
+create table if not exists sessoes (
+  id text primary key,
+  familia_id text not null,
+  data text not null,
+  roteiro text not null,
+  reacao text,
+  nota text,
+  realizada_em text not null
+);
+create index if not exists sessoes_familia_data on sessoes (familia_id, data desc);
+
 create table if not exists eventos (
   id integer primary key autoincrement,
   tipo text not null,
@@ -337,6 +354,8 @@ class Repositorio:
             "correcoes": correcoes,
             "membros": membros,
             "consentimentos": consentimentos,
+            "passaporte": self.obter_passaporte(familia_id),
+            "sessoes": self.sessoes_recentes(familia_id, limite=100000),
         }
 
     def apagar_familia(self, familia_id: str) -> int:
@@ -344,9 +363,59 @@ class Repositorio:
         for relato in relatos:
             self.apagar(familia_id, relato["id"])
         with self._conexao() as c:
-            for tabela in ("correcoes", "membros", "consentimentos"):
+            for tabela in ("correcoes", "membros", "consentimentos", "passaportes", "sessoes"):
                 c.execute(f"delete from {tabela} where familia_id = ?", (familia_id,))
         return len(relatos)
+
+    # Passaporte e conversas ------------------------------------------------
+
+    def obter_passaporte(self, familia_id: str) -> dict | None:
+        with self._conexao() as c:
+            linha = c.execute(
+                "select dados from passaportes where familia_id = ?", (familia_id,)
+            ).fetchone()
+        return json.loads(linha["dados"]) if linha else None
+
+    def salvar_passaporte(self, familia_id: str, dados: dict) -> None:
+        with self._conexao() as c:
+            c.execute(
+                "insert into passaportes (familia_id, dados, atualizado_em) values (?, ?, ?) "
+                "on conflict (familia_id) do update set dados = excluded.dados, "
+                "atualizado_em = excluded.atualizado_em",
+                (familia_id, json.dumps(dados, ensure_ascii=False), agora()),
+            )
+
+    def registrar_sessao(
+        self, familia_id: str, roteiro: dict, reacao: str, nota: str | None
+    ) -> str:
+        sessao_id = str(uuid.uuid4())
+        with self._conexao() as c:
+            c.execute(
+                "insert into sessoes (id, familia_id, data, roteiro, reacao, nota, realizada_em) "
+                "values (?, ?, ?, ?, ?, ?, ?)",
+                (
+                    sessao_id,
+                    familia_id,
+                    roteiro["data"],
+                    json.dumps(roteiro, ensure_ascii=False),
+                    reacao,
+                    nota,
+                    agora(),
+                ),
+            )
+        return sessao_id
+
+    def sessoes_recentes(self, familia_id: str, limite: int = 60) -> list[dict]:
+        with self._conexao() as c:
+            linhas = c.execute(
+                "select * from sessoes where familia_id = ? order by data desc, realizada_em desc "
+                "limit ?",
+                (familia_id, limite),
+            ).fetchall()
+        return [
+            _sessao(json.loads(x["roteiro"]), x["id"], x["reacao"], x["nota"], x["realizada_em"])
+            for x in linhas
+        ]
 
     # Correções -------------------------------------------------------------
 
@@ -496,3 +565,21 @@ def repositorio_padrao():
             cfg.supabase_database_url, cfg.supabase_url, cfg.supabase_secret_key
         )
     return Repositorio(cfg.dados_dir)
+
+
+def _sessao(
+    roteiro: dict, sessao_id: str, reacao: str | None, nota: str | None, quando: Any
+) -> dict:
+    """Formato comum das sessões, igual no SQLite e no Supabase."""
+    return {
+        "id": str(sessao_id),
+        "data": roteiro.get("data"),
+        "tema_chave": roteiro.get("tema_chave"),
+        "tema": roteiro.get("tema"),
+        "tipo": roteiro.get("tipo"),
+        "conjunto": roteiro.get("conjunto"),
+        "perguntas": roteiro.get("perguntas", []),
+        "reacao": reacao,
+        "nota": nota,
+        "realizada_em": quando if isinstance(quando, str) else quando.isoformat(),
+    }

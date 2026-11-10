@@ -78,33 +78,44 @@ Os ganhos:
 - **Custo de IA zero.** O que mais custa é mandar áudio para um modelo na nuvem. Rodando no aparelho, isso some, e o app pode continuar gratuito para as famílias.
 - **Funciona sem internet de verdade.** O resultado aparece na hora, mesmo no interior, no hospital ou com o plano de dados acabado. Quando a conexão volta, o relato sincroniza sozinho.
 
-Como funciona:
+Como funciona em cada plataforma:
 
-| Etapa | iPhone com Apple Intelligence | Outros aparelhos |
-|---|---|---|
-| Transcrição | Reconhecimento de fala do iOS 26, no aparelho | Modelo na nuvem via OpenRouter |
-| Organizar o relato | Modelo local da Apple, com saída presa ao formato do registro | Modelo na nuvem via OpenRouter |
-| Guardrails | Regras determinísticas no app e de novo no backend | Regras determinísticas no backend |
+| Etapa | iPhone (construído) | Android (planejado) | Reserva |
+|---|---|---|---|
+| Transcrição | SpeechAnalyzer do iOS 26, no aparelho | SpeechRecognizer no aparelho (Android 13+) ou Whisper via whisper.cpp | Gemini 3 Flash via OpenRouter |
+| Organizar o relato | Apple Foundation Models, com saída presa ao schema do registro | Gemini Nano pelo ML Kit nos aparelhos com suporte; modelo aberto pequeno (Gemma ou Qwen) via llama.cpp com gramática JSON nos demais | Gemini 3 Flash via OpenRouter |
+| Guardrails | No app e de novo no backend | No app e de novo no backend | No backend |
+| O que sai do celular | Só a transcrição e o registro | Só a transcrição e o registro | O áudio |
 
-- O módulo nativo fica em [app/modules/ia-local](app/modules/ia-local), e a orquestração em [app/src/lib/ia-local.ts](app/src/lib/ia-local.ts).
+Os dois lados usam a mesma interface do módulo nativo (`disponibilidade`, `transcrever`, `gerarRegistro`, `gerarTexto`). Por isso o Android entra sem mudar uma linha do app em TypeScript nem do backend.
+
 - Os guardrails do celular são um espelho dos do backend e passam nos mesmos 53 casos adversariais (`node scripts/guardrails.ts`, no CI).
 - Quando o relato sincroniza, o backend confere o resumo de novo e recalcula o risco: a palavra final é sempre do servidor.
+- Regras fixas protegem contra o modelo menor: se o relato não fala de remédio, o campo fica "não foi falado", diga o modelo o que disser.
 - Correções num relato do celular também não vão para a nuvem: o resumo é reescrito no próprio aparelho.
 - Quem cuida pode desligar a IA do celular em Família, Privacidade e dados.
 
-Ainda falta medir a qualidade do modelo do celular com o mesmo conjunto de avaliação do Diário, e levar a IA local para o Android (Whisper e um modelo aberto pequeno).
+Arquitetura, requisitos, contrato de sincronização, plano do Android e como avaliamos: [docs/ia-no-aparelho.md](docs/ia-no-aparelho.md).
 
 ## Arquitetura
 
+O SempreAqui tem dois caminhos de IA. No celular que aguenta, tudo acontece no aparelho e só o resultado organizado sobe. Nos outros, o áudio vai para o backend, que usa modelos na nuvem. Nos dois caminhos, os mesmos guardrails e o mesmo formato de registro.
+
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph Celular["App (React Native + Expo)"]
         V[Voz, fotos, texto]
+        subgraph Local["IA no aparelho"]
+            ST[Fala para texto<br/>iOS: SpeechAnalyzer<br/>Android: SpeechRecognizer ou Whisper]
+            LM[Modelo local<br/>iOS: Apple Foundation Models<br/>Android: Gemini Nano ou modelo aberto]
+            GL{{Guardrails no app}}
+        end
+        Q[(Fila offline<br/>áudio fica aqui)]
         T[Telas da família]
     end
 
     subgraph API["Backend (FastAPI)"]
-        G{{Guardrails}}
+        G{{Guardrails do servidor<br/>palavra final}}
         subgraph Agentes["Agentes LangGraph"]
             P[Passaporte]
             D[Diário]
@@ -114,33 +125,43 @@ flowchart LR
         L[Camada de provedores de IA]
     end
 
-    subgraph Dados["Postgres + pgvector"]
+    subgraph Dados["Supabase: Postgres + pgvector"]
         F[(Dados da família<br/>RLS por grupo)]
         E[(Fontes oficiais<br/>com URL)]
     end
 
-    M[Modelos via OpenRouter<br/>Gemini 3 Flash]
+    M[Modelos via OpenRouter<br/>Gemini 3 Flash<br/>só como reserva]
 
-    V --> API
+    V --> ST --> LM --> GL --> Q
+    GL --> T
+    Q -- "só o registro organizado" --> G
+    V -. "aparelho sem suporte: áudio" .-> D
     P & D & R & A --> L --> M
     A -- RAG --> E
+    G --> F
     Agentes --> F
-    Agentes --> G --> T
+    F --> T
 ```
 
-Cada função é um grafo LangGraph com etapas pequenas e verificáveis. O do Diário já funciona: transcreve, extrai um JSON validado com Pydantic, avalia risco, resume e revisa com guardrails. Decisões e detalhes em [docs/arquitetura.md](docs/arquitetura.md).
+- **Caminho no aparelho (iPhone com Apple Intelligence, construído):** transcrição, extração estruturada e resumo rodam no celular. Para o backend vai só a transcrição e o registro, e ele reaplica os guardrails e recalcula o risco antes de salvar. Detalhes, requisitos e o plano para Android em [docs/ia-no-aparelho.md](docs/ia-no-aparelho.md).
+- **Caminho na nuvem (reserva):** cada função é um grafo LangGraph com etapas pequenas e verificáveis. O do Diário transcreve, extrai um JSON validado com Pydantic, avalia risco, resume e revisa com guardrails.
+- **Conversa de hoje:** montada sem IA, a partir do Passaporte, com roteiros revisados que mudam todo dia e aprendem com a reação registrada pela família.
+
+Decisões e detalhes em [docs/arquitetura.md](docs/arquitetura.md).
 
 ## Stack
 
 | Camada | Tecnologia |
 |---|---|
-| App | React Native com Expo (TypeScript) e Expo Router. Roda no celular pelo Expo Go |
+| App | React Native com Expo (TypeScript), Expo Router e build nativo instalável |
+| IA no aparelho, iOS | Módulo nativo em Swift: SpeechAnalyzer (iOS 26) e Apple Foundation Models com geração guiada pelo schema |
+| IA no aparelho, Android | Planejado: SpeechRecognizer no aparelho ou Whisper, e Gemini Nano (ML Kit) ou modelo aberto pequeno via llama.cpp |
 | Backend | Python, FastAPI |
 | Orquestração de IA | LangGraph, um grafo por função |
-| Modelos | Gemini 3 Flash via OpenRouter (escolhido por benchmark próprio de transcrição), atrás de uma camada de provedores trocável por configuração. Só provedores que não guardam dados |
+| Modelos na nuvem | Gemini 3 Flash via OpenRouter (escolhido por benchmark próprio de transcrição), só como reserva e só com provedores que não guardam dados |
 | RAG | Embeddings e pgvector, com fonte e URL em cada trecho |
-| Banco | Postgres com Row Level Security por grupo familiar (local via Docker ou Supabase) |
-| Qualidade | pytest, ruff, avaliações próprias e CI no GitHub Actions |
+| Banco | Supabase (Postgres) com Row Level Security por grupo familiar, ou SQLite local |
+| Qualidade | pytest, ruff, guardrails iguais no app e no backend checados no CI, avaliações próprias |
 
 ## Experimente
 
@@ -204,8 +225,8 @@ Trabalhamos em ciclos curtos, cada um entregando uma funcionalidade de ponta a p
 | Fase 0 | Documentação, PoC, guardrails com avaliação, app navegável | concluído |
 | 1 | Diário redondo: gravação real, offline, correção com um toque, histórico | concluído |
 | 2 | Resumo da semana, mudanças de padrão, lista para a consulta em PDF | construído |
-| 3 | Passaporte de Memória montado só falando | próximo |
-| 4 | Conversas de Reminiscência geradas a partir do Passaporte | |
+| 3 | Passaporte de Memória editável e em PDF; montado por voz em seguida | em andamento |
+| 4 | Conversa do dia a partir do Passaporte, que muda todo dia e aprende com a reação | em andamento |
 | 5 | Apoio na Hora Difícil com fontes oficiais e 192 | |
 | 6 | Rede da Família: convite, tarefas e "obrigado" | |
 | 7 | Polimento, acessibilidade, deploy e roteiro do Demo Day | |

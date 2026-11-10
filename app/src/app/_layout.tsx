@@ -9,7 +9,9 @@ import { Platform } from 'react-native';
 import { ToastHost } from '@/components';
 import { Abertura } from '@/components/Abertura';
 import { iniciarDiario } from '@/lib/diario';
+import { carregarConversa } from '@/lib/conversa';
 import { carregarIaLocal } from '@/lib/ia-local';
+import { carregarPassaporte } from '@/lib/passaporte';
 import { entrar } from '@/lib/entrar';
 import { useTema } from '@/theme';
 
@@ -34,7 +36,11 @@ export default function Raiz() {
     // A IA do celular carrega antes da fila: relatos que ficaram no meio são organizados aqui.
     void entrar()
       .then(carregarIaLocal)
-      .then(iniciarDiario);
+      .then(() => {
+        void carregarPassaporte();
+        void carregarConversa();
+        return iniciarDiario();
+      });
   }, []);
 
   const [abrindo, setAbrindo] = useState(true);
@@ -80,6 +86,15 @@ export default function Raiz() {
             presentation: 'formSheet',
             sheetGrabberVisible: true,
             sheetAllowedDetents: 'fitToContents',
+            sheetCornerRadius: 24,
+          }}
+        />
+        <Stack.Screen
+          name="editar-memoria"
+          options={{
+            presentation: 'formSheet',
+            sheetGrabberVisible: true,
+            sheetAllowedDetents: [0.6, 1],
             sheetCornerRadius: 24,
           }}
         />

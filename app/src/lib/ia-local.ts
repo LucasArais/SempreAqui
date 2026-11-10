@@ -4,7 +4,7 @@ import { useSyncExternalStore } from 'react';
 import IaLocal, { type Disponibilidade } from '../../modules/ia-local';
 import { promptExtracao, promptResumo, SISTEMA } from '../../prompts/diario-aparelho';
 import { api, type Registro, type Relato } from './api';
-import { alertasDoRelato, removerTravessoes, resumoSeguro, violacoesDoResumo } from './guardrails';
+import { alertasDoRelato, normalizar, removerTravessoes, resumoSeguro, violacoesDoResumo } from './guardrails';
 
 /**
  * IA no próprio celular.
@@ -144,8 +144,23 @@ function numero(v: unknown, max: number, inteiro = false) {
   return inteiro ? Math.round(v) : v;
 }
 
-/** Garante o formato exato do RegistroDiario, mesmo se o modelo pular um campo. */
-export function normalizarRegistro(bruto: Bruto): Registro {
+// Palavras que precisam aparecer no relato para o campo de remédios valer alguma coisa.
+const FALA_DE_REMEDIO = /\b(remedi|medica|comprimid|capsul|dose|pilul|gotas?\b|insulina)/;
+
+/**
+ * Garante o formato exato do RegistroDiario, mesmo se o modelo pular um campo.
+ * Regra fixa: o modelo pequeno às vezes chuta o campo de remédios. Se o relato não fala de
+ * remédio, o campo é "nao_informado", não importa o que o modelo disse.
+ */
+export function normalizarRegistro(bruto: Bruto, transcricao = ''): Registro {
+  const registro = montarRegistro(bruto);
+  if (transcricao && !FALA_DE_REMEDIO.test(normalizar(transcricao))) {
+    registro.medicacao = { tomou: 'nao_informado', observacao: null };
+  }
+  return registro;
+}
+
+function montarRegistro(bruto: Bruto): Registro {
   const o = (k: string) => (bruto[k] && !Array.isArray(bruto[k]) ? (bruto[k] as Record<string, unknown>) : {});
   const episodios = Array.isArray(bruto.episodios) ? (bruto.episodios as Record<string, unknown>[]) : [];
   return {
@@ -205,7 +220,7 @@ export async function processarNoAparelho(uri: string, aoMudarEtapa: (etapa: Eta
   if (!transcricao) throw new Error('Transcrição vazia');
   aoMudarEtapa('organizando');
   const json = await IaLocal.gerarRegistro(SISTEMA, promptExtracao(transcricao, await correcoesGuardadas()));
-  const registro = normalizarRegistro(JSON.parse(json) as Bruto);
+  const registro = normalizarRegistro(JSON.parse(json) as Bruto, transcricao);
   const alertas = alertasDoRelato(registro, transcricao);
   aoMudarEtapa('resumindo');
   const { resumo, resumo_seguro } = await escreverResumo(registro, transcricao, alertas);
