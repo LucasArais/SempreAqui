@@ -119,3 +119,13 @@ Detalhes em [ia-no-aparelho.md](ia-no-aparelho.md).
 
 - Testes com cuidadores conduzidos pelo Laércio ([roteiro](testes-usuarios/roteiro.md)), virando melhorias priorizadas a cada rodada.
 - Métricas anônimas de uso ([metricas.md](metricas.md)).
+
+## Autenticação: primeira etapa
+
+- [x] Login com e-mail e senha pelo Supabase existente
+- [x] Sessão no SecureStore, proteção de telas e saída pelos Ajustes
+- [x] Separação das cópias e filas locais por conta
+- [x] Testes de lógica do login, restauração e saída
+- [ ] Validar entrada real, preenchimento automático e persistência em iOS e Android
+- [ ] Cadastro, recuperação de senha e migração de contas anônimas
+- [ ] Pessoas cuidadas, múltiplos círculos e permissões do escopo ampliado

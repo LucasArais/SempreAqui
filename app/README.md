@@ -53,3 +53,13 @@ src/
 
 - **iOS:** fonte do sistema (SF Pro), SF Symbols, tab bar e cabeçalhos nativos com o material translúcido do sistema.
 - **Android:** fonte Inter (carregada com expo-font) e ícones Lucide, com traço equivalente.
+
+## Login com e-mail e senha
+
+Configure `EXPO_PUBLIC_SUPABASE_URL` e `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` no `app/.env` e mantenha o backend configurado para o mesmo projeto Supabase. Em Authentication → Providers, habilite Email. Para esta etapa, crie uma conta de teste em Authentication → Users → Add user, com e-mail confirmado e senha. O app usa contas existentes; cadastro e recuperação ficam para a próxima etapa.
+
+Ao abrir, a tela Entrar pede e-mail e senha. Depois da autenticação, `POST /sessao` mantém a entrada/criação da família já existente; o primeiro acesso segue o onboarding. As próximas aberturas restauram a sessão. Ajustes → Conta → Sair da conta pede confirmação.
+
+Tokens ficam no `expo-secure-store` no celular, com renovação do Supabase. Na web, a sessão fica somente em memória. O app não cria mais usuários anônimos nem usa o cabeçalho de demonstração sem login. Contas anônimas antigas não são convertidas automaticamente; seus dados continuam no backend. Cópias e filas locais novas ficam separadas por conta.
+
+Verificação automatizada: `npm run test:login`, `npm run typecheck` e `npm run lint`. Os testes de login usam serviços simulados; a entrada real depende de uma conta e do backend acessível.

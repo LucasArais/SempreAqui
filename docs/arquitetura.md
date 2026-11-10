@@ -110,3 +110,11 @@ poc/          prova de conceito da Fase 0
 docs/         documentação
 design/       logo e assets
 ```
+
+## Autenticação básica
+
+O app autentica e-mail e senha no Supabase Auth (`signInWithPassword`). O backend continua validando o JWT pelo JWKS e usando `POST /sessao` para localizar ou criar a família. Não há novas tabelas ou endpoints nesta etapa. Não são criadas novas contas anônimas pelo app.
+
+A sessão nativa usa `expo-secure-store`, com renovação automática do cliente Supabase enquanto o app está ativo. O Expo Router protege todas as telas internas até a autenticação e a família estarem prontas. A saída usa escopo local, encerrando a sessão deste dispositivo. Na web a sessão fica em memória.
+
+As cópias offline, filas e o estado de onboarding são identificados por usuário; ao mudar de conta, os estados em memória são reiniciados. Áudios novos têm pasta por conta. Dados locais do fluxo anônimo anterior não são associados automaticamente a outra conta. A implantação deve manter `ACEITAR_X_FAMILIA=0`; `FAMILIA_DEMO_PARA_NOVOS` serve exclusivamente para demonstrações fictícias.

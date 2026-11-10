@@ -2,6 +2,13 @@
 
 O que mudou em cada ciclo, do mais recente para o mais antigo.
 
+## Login básico por e-mail e senha (10 de novembro de 2026)
+
+- Tela Entrar no estilo atual, com validação, mostrar/ocultar senha, preenchimento automático e haptics.
+- Autenticação pelo Supabase existente; rotas internas protegidas e saída com confirmação nos Ajustes.
+- Sessão no SecureStore no celular, caches e filas separados por conta. Cadastro e recuperação continuam pendentes.
+- Testes automatizados de restauração, credenciais e saída.
+
 ## Tarefas mais claras (novembro de 2026)
 
 - A tarefa assumida fica ligada à conta de quem assumiu, não só ao nome: aparece "Com você" e continua sua se você mudar de nome.
