@@ -97,10 +97,10 @@ Os ganhos:
 
 Como funciona em cada plataforma:
 
-| Etapa | iPhone (construído) | Android (planejado) | Reserva |
+| Etapa | iPhone (construído) | Android (construído) | Reserva |
 |---|---|---|---|
-| Transcrição | SpeechAnalyzer do iOS 26, no aparelho | SpeechRecognizer no aparelho (Android 13+) ou Whisper via whisper.cpp | Gemini 3 Flash via OpenRouter |
-| Organizar o relato | Apple Foundation Models, com saída presa ao schema do registro | Gemini Nano pelo ML Kit nos aparelhos com suporte; modelo aberto pequeno (Gemma ou Qwen) via llama.cpp com gramática JSON nos demais | Gemini 3 Flash via OpenRouter |
+| Transcrição | SpeechAnalyzer do iOS 26, no aparelho | Whisper `small` via whisper.cpp, com o áudio convertido por um módulo nativo em Kotlin | Gemini 3 Flash via OpenRouter |
+| Organizar o relato | Apple Foundation Models, com saída presa ao schema do registro | Qwen2.5 1.5B via llama.cpp, com saída presa a um JSON Schema; modelos baixados uma vez, com consentimento (1,2 GB) | Gemini 3 Flash via OpenRouter |
 | Guardrails | No app e de novo no backend | No app e de novo no backend | No backend |
 | O que sai do celular | Só a transcrição e o registro | Só a transcrição e o registro | O áudio |
 
@@ -219,7 +219,7 @@ Decisões e detalhes em [docs/arquitetura.md](docs/arquitetura.md).
 |---|---|
 | App | React Native com Expo (TypeScript), Expo Router, abas nativas do iOS, notificações locais para lembretes e build nativo instalável |
 | IA no aparelho, iOS | Módulo nativo em Swift: SpeechAnalyzer (iOS 26) e Apple Foundation Models com geração guiada pelo schema |
-| IA no aparelho, Android | Planejado: SpeechRecognizer no aparelho ou Whisper, e Gemini Nano (ML Kit) ou modelo aberto pequeno via llama.cpp |
+| IA no aparelho, Android | Whisper (whisper.rn) e Qwen2.5 1.5B (llama.rn), com conversor de áudio nativo em Kotlin |
 | Backend | Python, FastAPI |
 | Orquestração de IA | LangGraph, um grafo por função |
 | Modelos na nuvem | Gemini 3 Flash via OpenRouter (escolhido por benchmark próprio de transcrição), só como reserva e só com provedores que não guardam dados |

@@ -109,9 +109,10 @@ Personas que guiam cada decisão: **Cláudia**, 52 anos, cuida da mãe e abre o 
 - [x] Chave para ligar e desligar em Privacidade e dados
 - [ ] Medir no aparelho com o conjunto de avaliação do Diário: qualidade, tempo e bateria
 - [x] Regra fixa para o campo de remédios quando o relato não fala de remédio
-- [ ] Android, passo 1: transcrição com o SpeechRecognizer no aparelho
+- [x] Android: transcrição com Whisper no aparelho, com conversor de áudio nativo
 - [ ] Android, passo 2: Gemini Nano pelo ML Kit nos aparelhos com suporte
-- [ ] Android, passo 3: modelo aberto pequeno via llama.cpp com gramática JSON, baixado pelo Wi-Fi com consentimento
+- [x] Android: modelo aberto pequeno via llama.cpp com JSON Schema, baixado com consentimento
+- [ ] Android: medir em celulares reais de faixas diferentes
 
 Detalhes em [ia-no-aparelho.md](ia-no-aparelho.md).
 

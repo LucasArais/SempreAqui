@@ -4,6 +4,15 @@ O que mudou em cada ciclo, do mais recente para o mais antigo.
 
 
 
+
+## IA no próprio celular também no Android (novembro de 2026)
+
+- O relato é transcrito e organizado no Android, sem a nuvem: Whisper `small` para a fala e Qwen2.5 1.5B para organizar, com saída presa ao formato do registro.
+- Os modelos (1,2 GB) são baixados uma vez em Privacidade e dados, com consentimento, progresso e retomada; versão fixa e tamanho conferido. Dá para apagar.
+- "Testar a IA do celular": roda um relato de exemplo pelo caminho inteiro, sem internet, e mostra o resultado e o tempo. Também no iPhone.
+- Proteções novas contra erros de modelos pequenos, no app e no backend: alerta negado ("Não há sinais de alerta") não vira alerta; resumo que copia o relato é refeito; abertura "Aqui está um resumo" é removida; sem nada concreto registrado, entra o resumo seguro.
+- Corrigido: o simulador do iOS não abria (o pacote do Android puxava o módulo `buffer` do Node). Agora o código do Android só é empacotado no Android.
+
 ## Servidor público pelo Cloudflare Tunnel (novembro de 2026)
 
 - O app passa a falar com o backend por HTTPS, de qualquer rede, através de um Cloudflare Tunnel. Detalhes e próximos passos em `docs/deploy.md`.

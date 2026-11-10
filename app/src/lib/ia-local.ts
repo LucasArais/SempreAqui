@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSyncExternalStore } from 'react';
+import { Platform } from 'react-native';
 
 import IaLocal, { type Disponibilidade } from '../../modules/ia-local';
 import { promptExtracao, promptResumo, SISTEMA } from '../../prompts/diario-aparelho';
@@ -85,10 +86,15 @@ export async function definirIaLocalAtiva(ativa: boolean) {
 /** Explica em palavras de gente por que a IA do celular não está ligada. */
 export function motivoEmPalavras(motivo: string | undefined) {
   switch (motivo) {
+    case 'baixar_modelos':
+      return 'Baixe a IA uma vez (de preferência no Wi-Fi) e os relatos passam a ser organizados aqui no celular, sem internet e sem enviar o áudio.';
     case 'aparelho':
+      return Platform.OS === 'android'
+        ? 'Este celular tem pouca memória para a IA local. Os relatos são organizados na nuvem, por provedores que não guardam dados.'
+        : 'Este celular não roda a IA da Apple. Os relatos são organizados na nuvem, por provedores que não guardam dados.';
     case 'ios_antigo':
     case 'sem_modulo':
-      return 'Este celular não roda a IA da Apple. Os relatos são organizados na nuvem, por provedores que não guardam dados.';
+      return 'Este celular não roda a IA local. Os relatos são organizados na nuvem, por provedores que não guardam dados.';
     case 'apple_intelligence_desligada':
       return 'Ligue a Apple Intelligence nos Ajustes do iPhone para o relato ser organizado aqui no celular.';
     case 'baixando':
@@ -156,6 +162,7 @@ function numero(v: unknown, max: number, inteiro = false) {
 }
 
 // Palavras que precisam aparecer no relato para o campo de remédios valer alguma coisa.
+const NEGA_ALERTA = /^(nao|nenhum|nenhuma|sem|nada)\b|nao (ha|houve|teve)\b/;
 const FALA_DE_REMEDIO = /\b(remedi|medica|comprimid|capsul|dose|pilul|gotas?\b|insulina)/;
 
 /**
@@ -203,17 +210,32 @@ function montarRegistro(bruto: Bruto): Registro {
     momentos_bons: lista(bruto.momentos_bons),
     quem_cuida: { cansaco: escolha('quem_cuida.cansaco', o('quem_cuida').cansaco), observacao: texto(o('quem_cuida').observacao) },
     observacoes: lista(bruto.observacoes),
-    sinais_de_alerta: lista(bruto.sinais_de_alerta),
+    // Modelos pequenos às vezes escrevem "Não há sinais de alerta" dentro da lista: isso não é alerta.
+    sinais_de_alerta: lista(bruto.sinais_de_alerta).filter((s) => !NEGA_ALERTA.test(normalizar(s))),
   };
 }
 
 /** Resumo para a família com a IA do celular: até duas tentativas, depois o resumo seguro. */
+/** Nada de concreto foi registrado: o modelo pequeno não tem o que resumir e tende a inventar. */
+function registroVazio(r: Registro) {
+  const basicos = [r.sono.qualidade, r.alimentacao.qualidade, r.humor.predominante, r.medicacao.tomou, r.quem_cuida.cansaco];
+  return basicos.every((v) => v === 'nao_informado') && !r.episodios.length && !r.o_que_ajudou.length && !r.momentos_bons.length;
+}
+
+/** Tira aberturas como "Aqui está um resumo curto do dia para a família:" que alguns modelos colocam. */
+function semAbertura(texto: string) {
+  return texto.replace(/^\s*(aqui est[aá]|segue|resumo)[^:\n]{0,80}:\s*/i, '').trim();
+}
+
 export async function escreverResumo(registro: Registro, transcricao: string, alertas: string[]) {
+  if (registroVazio(registro)) return { resumo: resumoSeguro(registro, alertas), resumo_seguro: true };
   let violacoes: string[] = [];
   for (let i = 0; i < MAX_TENTATIVAS_RESUMO; i++) {
     try {
-      const texto = removerTravessoes((await IaLocal!.gerarTexto(SISTEMA, promptResumo(registro, transcricao, violacoes))).trim());
+      const texto = semAbertura(removerTravessoes((await IaLocal!.gerarTexto(SISTEMA, promptResumo(registro, transcricao, violacoes))).trim()));
       violacoes = violacoesDoResumo(texto, alertas);
+      // Modelos pequenos às vezes devolvem o relato inteiro em vez de resumir.
+      if (texto.length > 500) violacoes.push('resumo longo demais: no máximo 4 frases curtas');
       if (!violacoes.length) return { resumo: texto, resumo_seguro: false };
     } catch {
       // O modelo da Apple tem filtros próprios e pode recusar relatos de violência ou queda.
@@ -329,4 +351,17 @@ Pergunta: ${pergunta}`;
   } catch {
     return null;
   }
+}
+
+/**
+ * Teste da IA do celular com um relato fictício já gravado (assets/exemplos): transcreve,
+ * organiza e escreve o resumo aqui mesmo, sem internet, e mede o tempo. Nada é salvo.
+ */
+export async function testarIaLocal() {
+  const { Asset } = await import('expo-asset');
+  const audio = Asset.fromModule(require('../../assets/exemplos/relato-exemplo.mp3'));
+  await audio.downloadAsync();
+  const inicio = Date.now();
+  const resultado = await processarNoAparelho(audio.localUri ?? audio.uri, () => undefined);
+  return { ...resultado, segundos: Math.round((Date.now() - inicio) / 100) / 10 };
 }

@@ -4,7 +4,7 @@ O relato de quem cuida é o dado mais sensível do SempreAqui: a voz de uma pess
 
 Estado hoje:
 - **iPhone:** construído e testado num iPhone 17 Pro Max.
-- **Android:** desenhado, com a mesma interface, ainda não construído.
+- **Android:** construído e testado no emulador, com Whisper e um modelo aberto pequeno.
 - **Nuvem:** continua como reserva para qualquer aparelho sem suporte.
 
 ## Por que isso importa
@@ -100,28 +100,37 @@ O JSON gerado tem os mesmos nomes de campo do schema Pydantic, e o backend valid
 
 O alerta de risco não depende do modelo: a checagem por palavras-chave roda no app e no backend.
 
-## Android (planejado)
+## Android (construído)
 
-Mesma interface do módulo, mesma lógica em TypeScript. O que muda é o motor por baixo. O mercado de Android no Brasil é muito variado, então o plano tem degraus.
+Mesma interface do módulo e mesma lógica em TypeScript (prompts, normalização, regras fixas, guardrails, fila). O que muda é o motor:
 
-| Etapa | Aparelhos com Gemini Nano | Intermediários (6 GB de RAM ou mais) | Aparelhos de entrada |
-|---|---|---|---|
-| Transcrição | `SpeechRecognizer` no aparelho (`createOnDeviceSpeechRecognizer`, Android 13+), pacote de idioma pt-BR | Whisper pequeno quantizado via whisper.cpp (`whisper.rn`), baixado pelo Wi-Fi | Nuvem |
-| Extração e resumo | Gemini Nano pelas APIs de IA generativa do ML Kit, no AICore | Modelo aberto pequeno (Gemma ou Qwen, quantizado) via llama.cpp (`llama.rn`), com gramática JSON gerada do schema | Nuvem |
-| Guardrails | No app e no backend | No app e no backend | No backend |
+| Etapa | Tecnologia | Onde |
+|---|---|---|
+| Converter o áudio | O app grava em m4a; o Whisper só lê WAV de 16 kHz. Um módulo nativo em Kotlin decodifica com o MediaCodec do Android, junta os canais e reamostra para 16 kHz | [app/modules/ia-local/android](../app/modules/ia-local/android) |
+| Transcrição | Whisper `small` quantizado (whisper.cpp via whisper.rn), 190 MB | [app/modules/ia-local/adaptador.android.ts](../app/modules/ia-local/adaptador.android.ts) |
+| Extração, memória e perguntas | Qwen2.5 1.5B Instruct quantizado (llama.cpp via llama.rn), 1,1 GB, com a saída presa a um JSON Schema que espelha o `RegistroDiario`: o equivalente da geração guiada da Apple | mesmo arquivo |
+| Resumo | O mesmo modelo, texto livre, conferido pelos guardrails | mesmo arquivo |
 
-**Decisões do desenho:**
-- **Gramática JSON no llama.cpp:** é o equivalente da geração guiada da Apple. O modelo só consegue emitir tokens que formam um `RegistroDiario` válido.
-- **Download só com consentimento e pelo Wi-Fi.** Modelos abertos têm centenas de MB a alguns GB. O app pergunta antes, mostra o tamanho e baixa em segundo plano. Até terminar, usa a nuvem.
-- **`disponibilidade()` decide o degrau sozinho:** verifica a versão do Android, a RAM, se o Gemini Nano existe e se o modelo aberto já foi baixado.
-- **Sem mudança no backend.** O Android usa a mesma rota `POST /diario/relatos/do-aparelho`. O campo `modelo` registra qual motor organizou o relato (por exemplo `aparelho:gemini-nano` ou `aparelho:qwen-1.5b-q4`), para medir a qualidade por motor.
+**Download com consentimento.** Os modelos (1,2 GB no total) são baixados uma vez, em Família → Privacidade e dados, de preferência no Wi-Fi, com progresso na tela e retomada se a conexão cair. A versão é fixa (commit do Hugging Face) e o tamanho de cada arquivo é conferido. Dá para apagar a qualquer momento, e os relatos voltam para a nuvem. Até baixar, o app usa a nuvem.
 
-**Ordem de construção:**
-1. Transcrição com `SpeechRecognizer`, que é grátis e sem download.
-2. Gemini Nano nos aparelhos com suporte.
-3. llama.cpp para os intermediários.
+**Quem tem.** Aparelhos com pelo menos 3,5 GB de RAM. Nos demais, a nuvem, com os mesmos guardrails.
 
-Cada passo só entra se passar nas avaliações abaixo.
+**Testar a IA do celular.** Um botão em Privacidade roda um relato fictício já gravado pelo caminho inteiro, sem internet, e mostra a transcrição, o registro, o resumo e o tempo. Serve para conferir o aparelho e para a demonstração.
+
+**O iPhone não carrega nada disso.** O Metro escolhe `adaptador.android.ts` só no Android, e `react-native.config.js` tira o llama.rn e o whisper.rn do build do iOS.
+
+**Primeiros números (emulador Android 16 num Mac com Apple Silicon, só CPU):**
+- Relato de 45 segundos com voz natural: transcrição quase perfeita.
+- Caminho inteiro, da transcrição ao resumo: cerca de 50 segundos. Num celular intermediário deve ser mais lento.
+- Voz muito robótica (a voz "Eddy" do macOS) derruba o Whisper pequeno: a transcrição sai pelo som, ilegível. O Whisper `large-v3-turbo` acerta, mas tem 574 MB e é três vezes mais lento.
+
+**O que o modelo pequeno ainda erra, e como o app se protege:**
+- Deixa campos como "não foi falado" mesmo quando o relato fala deles (remédios, cansaço). A família corrige com um toque, e a correção entra no prompt seguinte.
+- Às vezes escreve "Não há sinais de alerta" dentro da lista de alertas. O app e o backend descartam frases que negam o alerta.
+- Às vezes devolve o relato inteiro no lugar do resumo, ou abre com "Aqui está um resumo". Resumo acima de 500 caracteres é reprovado e refeito; aberturas são removidas; se nada concreto foi registrado, entra o resumo seguro montado sem IA.
+- O risco não depende do modelo: a checagem por palavras-chave roda no app e no backend.
+
+**Próximos passos:** Gemini Nano (ML Kit) nos aparelhos que têm, testar um modelo de 3B parâmetros nos celulares com mais memória e medir em celulares reais de faixas diferentes.
 
 ## Além do Diário: Passaporte e Conversa de hoje
 
@@ -182,4 +191,4 @@ Próximo passo: rodar o conjunto de avaliação do Diário no próprio aparelho 
 - **Modelo menor:** o modelo do celular é menor que o da nuvem e erra mais em relatos longos e confusos. A tela mostra a transcrição e cada campo é corrigível com um toque.
 - **Contexto curto:** a janela de contexto é pequena, por isso os prompts do aparelho são compactos e só as 6 correções mais recentes entram.
 - **Áudio não sincroniza:** o áudio de um relato organizado no celular fica só naquele celular. Outros membros da família veem a transcrição e o registro, não ouvem o áudio. É a escolha certa para privacidade, e a família sabe disso pelo aviso no relato.
-- **Android ainda não tem IA local:** até lá, usa a nuvem com provedores que não guardam dados.
+- **Android:** o modelo aberto pequeno erra mais que o da Apple em campos do registro; veja a seção do Android.

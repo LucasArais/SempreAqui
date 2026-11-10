@@ -1,16 +1,24 @@
 import { requireOptionalNativeModule } from 'expo';
+import { Platform } from 'react-native';
 
-/** Motivo de a IA no aparelho não estar disponível, vazio quando está. */
-export type Disponibilidade = { transcricao: boolean; modelo: boolean; motivo: string };
+import adaptador from './adaptador';
+import type { IaLocalNativo, ModelosAndroid } from './tipos';
 
-type IaLocalNativo = {
-  disponibilidade(): Promise<Disponibilidade>;
-  transcrever(uri: string): Promise<string>;
-  gerarRegistro(instrucoes: string, prompt: string): Promise<string>;
-  gerarTexto(instrucoes: string, prompt: string): Promise<string>;
-  gerarMemoria(instrucoes: string, prompt: string): Promise<string>;
-  gerarPerguntas(instrucoes: string, prompt: string): Promise<string[]>;
-};
+export type { Disponibilidade, IaLocalNativo, ModelosAndroid } from './tipos';
 
-/** null no Android, no simulador sem o módulo e em builds antigos: o app usa a nuvem. */
-export default requireOptionalNativeModule<IaLocalNativo>('IaLocal');
+/**
+ * IA no próprio aparelho, com a mesma interface nas duas plataformas:
+ * - iPhone: módulo nativo em Swift (SpeechAnalyzer e Apple Foundation Models).
+ * - Android: Whisper e um modelo aberto pequeno via llama.cpp (adaptador.android.ts), com o
+ *   conversor de áudio nativo em Kotlin.
+ * null quando não há módulo (Expo Go, web, builds antigos): o app usa a nuvem.
+ */
+const ia: IaLocalNativo | null =
+  Platform.OS === 'ios'
+    ? requireOptionalNativeModule<IaLocalNativo>('IaLocal')
+    : requireOptionalNativeModule('IaLocal')
+      ? adaptador.ia
+      : null;
+
+export const modelosAndroid: ModelosAndroid | null = ia ? adaptador.modelos : null;
+export default ia;

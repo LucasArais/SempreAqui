@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Callable
 from typing import TypedDict
 
@@ -83,9 +84,15 @@ def _prompt_resumo(registro: RegistroDiario, transcricao: str, violacoes: list[s
     return prompt
 
 
+_NEGA_ALERTA = re.compile(r"^(nao|nenhum|nenhuma|sem|nada)\b|nao (ha|houve|teve)\b")
+
+
 def alertas_do_relato(registro: RegistroDiario, transcricao: str) -> list[str]:
     """O que a IA marcou como alerta, mais a checagem por palavras-chave quando ela não marcou nada."""
-    alertas = list(registro.sinais_de_alerta)
+    # Modelos pequenos às vezes escrevem "Não há sinais de alerta" dentro da lista: isso não é alerta.
+    alertas = [
+        a for a in registro.sinais_de_alerta if not _NEGA_ALERTA.search(guardrails.normalizar(a))
+    ]
     if not alertas:
         palavras = guardrails.detectar_risco(transcricao)
         if palavras:

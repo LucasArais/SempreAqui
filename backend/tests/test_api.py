@@ -383,3 +383,17 @@ def test_resumo_do_aparelho_so_para_relatos_do_aparelho(ambiente):
         "/diario/relatos/relato-0001/resumo", json={"resumo": "Outro texto."}, headers=FAMILIA
     )
     assert resposta.status_code == 409
+
+
+def test_alerta_negado_pelo_modelo_nao_vira_alerta():
+    from agents.diario import alertas_do_relato
+    from core.schemas.diario import RegistroDiario
+
+    registro = RegistroDiario.model_validate(
+        {**REGISTRO_TRANQUILO, "sinais_de_alerta": ["Não há sinais de alerta"]}
+    )
+    assert alertas_do_relato(registro, "Hoje foi um dia bom.") == []
+    queda = RegistroDiario.model_validate(
+        {**REGISTRO_TRANQUILO, "sinais_de_alerta": ["Queda no banheiro"]}
+    )
+    assert alertas_do_relato(queda, "Ela caiu.") == ["Queda no banheiro"]
