@@ -225,12 +225,18 @@ def _pesos(temas: list[Tema], historico: list[dict], hoje: date) -> dict[str, fl
     return pesos
 
 
+def _tem_nome_proprio(titulo: str) -> bool:
+    """Alguma palavra além da primeira começa com maiúscula (nome de pessoa, lugar, música)."""
+    return any(p[:1].isupper() for p in titulo.split()[1:])
+
+
 def _preencher(pergunta: str, tema: Tema) -> str:
     t, de_t = _sem_artigo(tema.titulo)
     if tema.tipo == "musica":
         t = f'"{tema.titulo}"'
         de_t = f'de "{tema.titulo}"'
-    elif tema.tipo in ("comida", "gosto"):
+    elif tema.tipo in ("comida", "gosto") and not _tem_nome_proprio(tema.titulo):
+        # "Retalhos de tecido" vira "retalhos de tecido"; "Roberto Carlos" fica como está.
         t = tema.titulo[0].lower() + tema.titulo[1:]
     texto = pergunta.replace("{de_t}", de_t).replace("{T}", t[0].upper() + t[1:]).replace("{t}", t)
     return texto

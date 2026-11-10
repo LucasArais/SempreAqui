@@ -2,6 +2,12 @@
 
 O que mudou em cada ciclo, do mais recente para o mais antigo.
 
+## README com as telas atuais (novembro de 2026)
+
+- 20 prints novos das telas como estão hoje, no README em destaque e numa galeria "O app, tela por tela". Saíram as capturas antigas e as do modo escuro, que o app não usa mais.
+- README atualizado: funções, princípios, arquitetura com os agentes atuais (Diário, Passaporte, Conversa do dia, Ajudante e Apoio, Rede da Família), stack, como rodar a IA no aparelho e a avaliação do Apoio.
+- Corrigido: na conversa do dia, nomes próprios não viram mais minúscula ("Roberto Carlos").
+
 ## Tela Hoje reorganizada (novembro de 2026)
 
 - Resumo da semana no Hoje fechado em duas linhas, com quantas mudanças houve; abre ali mesmo com um toque.

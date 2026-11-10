@@ -35,21 +35,36 @@ O SempreAqui é um app de celular, pensado para ser usado por voz, que faz três
 
 | Função | O que faz | Onde a IA entra |
 |---|---|---|
-| **Passaporte de Memória** | A família manda áudios, fotos e textos sobre a pessoa. Sai um perfil com como ela gosta de ser chamada, história, pessoas importantes, rotina, músicas, comidas, o que acalma, o que agita e como se comunica. Gera link somente leitura e PDF de uma página para cuidadores, centro-dia ou hospital. | IA multimodal transcreve e extrai de áudios, fotos e textos soltos um perfil estruturado |
-| **Conversas de Reminiscência** | Sessões de 5 a 10 minutos com uma foto, música ou lembrança e perguntas abertas e gentis para a família conduzir. Nunca "você lembra?". Registra como a pessoa reagiu. | Gera roteiros personalizados a partir do Passaporte e aprende com as reações |
-| **Diário Inteligente** | Quem cuida grava um áudio contando o dia. Sai um registro de sono, alimentação, humor, agitação, episódios e medicação, um resumo semanal para a família e uma lista objetiva "Para levar na consulta". | Transcreve, extrai campos estruturados e compara com o habitual da própria pessoa |
-| **Apoio na Hora Difícil** | Quem cuida descreve a situação ("ela está agitada e quer ir embora") e recebe o que costuma funcionar para aquela pessoa. Dúvidas gerais são respondidas com fontes oficiais e link. Em risco, orienta ligar 192 e avisa a família. | Agente determinístico cruza Passaporte e Diário; busca em trechos oficiais literais, com link para a página |
-| **Rede da Família** | Grupo com papéis, divisão de tarefas (consultas, visitas, cobrir a folga de quem cuida), lembretes e um feed com os resumos. | Os resumos da IA viram o feed que mantém todos por perto |
-| **Ajudante** | Um chat para a família perguntar como ela está, como foi a semana, o que falta fazer ou o que fazer numa hora difícil. Cada resposta diz de onde veio. | Responde com os dados registrados; na hora difícil, usa o Apoio; no iPhone, a IA do aparelho cobre o que as regras não reconhecem, validada pelos guardrails |
+| **Diário Inteligente** | Quem cuida grava um áudio contando o dia. Sai um registro de sono, alimentação, humor, agitação, episódios e remédios, cada campo corrigível com um toque, um resumo para a família, a semana com o que mudou em relação ao habitual e uma lista "Para levar na consulta" em PDF. Funciona sem internet. | Transcreve e extrai campos estruturados, no próprio iPhone quando dá; aprende com as correções da família |
+| **Passaporte de Memória** | Quem ela é, como se comunica, pessoas importantes, rotina, o que acalma, o que agita, músicas, comidas e lembranças com foto. A família conta falando ou escrevendo e confere antes de salvar; o app mostra o que falta. Sai em PDF de uma página e em link somente leitura para cuidador, centro-dia ou hospital. | Separa nas seções o que a família contou; a família marca o que entra |
+| **Conversa do dia** | Uma conversa de 5 a 10 minutos, em tela cheia e letra grande, com foto, música no YouTube e perguntas gentis. Muda todo dia, nunca pergunta "você lembra?" e guarda como ela reagiu para escolher as próximas. | Roteiros revisados escolhidos por regras; no iPhone, a IA reescreve as perguntas para ela, com validação |
+| **Ajudante** | Um chat para a família: "como ela está?", "como foi a semana?", "o que falta fazer?", "ela está agitada, o que eu faço?". Cada resposta diz de onde veio. Na hora difícil, traz o que costuma funcionar com ela e o que dizem as fontes oficiais; em risco, 192 e aviso à família. Remédio e diagnóstico recebem recusa gentil. | Responde com os dados registrados e trechos oficiais literais; no iPhone, a IA cobre o que as regras não reconhecem, validada pelos guardrails |
+| **Rede da Família** | Convite pelo WhatsApp, papéis, tarefas da semana com "Eu assumo" em um toque e lembrete no celular, feed do que aconteceu com "Obrigado" e avisos urgentes. Cada pessoa com nome e foto. | Os resumos do Diário e as conversas viram o feed que mantém todos por perto |
 
 <p align="center">
-  <img src="design/screens/01-hoje-claro.png" alt="Hoje: botão de gravar o dia e último relato" width="190">
-  <img src="design/screens/04-relato-claro.png" alt="Relato organizado pela IA, cada campo corrigível com um toque" width="190">
-  <img src="design/screens/05-corrigir-claro.png" alt="Corrigir um campo com um toque" width="190">
-  <img src="design/screens/07-relato-risco-escuro.png" alt="Relato com situação de risco e botão de 192, em modo escuro" width="190">
+  <img src="design/screens/01-hoje-claro.png" alt="Hoje: contar o dia, pedir ajuda, 192 e o que há para hoje" width="200">
+  <img src="design/screens/04-relato-claro.png" alt="Relato organizado pela IA, cada campo corrigível com um toque" width="200">
+  <img src="design/screens/16-ajudante-apoio-claro.png" alt="Ajudante na hora difícil: o que costuma funcionar e trechos oficiais com link" width="200">
+  <img src="design/screens/13-familia-claro.png" alt="Família: tarefas com Eu assumo e o que aconteceu" width="200">
 </p>
 
-<p align="center"><sub>Telas rodando no iPhone (iOS 26). Família fictícia, retratos gerados por IA. Todas as telas, em modo claro e escuro, estão em <a href="design/screens">design/screens</a>.</sub></p>
+<p align="center"><sub>Telas rodando no iPhone (iOS 26). Família fictícia, retratos gerados por IA. Todas as telas estão na <a href="#o-app-tela-por-tela">galeria abaixo</a>.</sub></p>
+
+## O app, tela por tela
+
+Cinco abas: **Hoje**, **Memórias**, **Família**, **Ajudante** e **Ajustes**. Cada tela tem uma ação principal clara; o resto fica em listas e em links no título das seções.
+
+| Hoje | Contar o dia | Relato organizado | Corrigir com um toque |
+|---|---|---|---|
+| <img src="design/screens/01-hoje-claro.png" alt="Hoje" width="170"> | <img src="design/screens/03-gravar-claro.png" alt="Contar o dia" width="170"> | <img src="design/screens/04-relato-claro.png" alt="Relato organizado" width="170"> | <img src="design/screens/05-corrigir-claro.png" alt="Corrigir com um toque" width="170"> |
+| **Situação de risco** | **Diário** | **Semana e consulta** | **Passaporte de Memória** |
+| <img src="design/screens/07-relato-risco-claro.png" alt="Situação de risco" width="170"> | <img src="design/screens/06-diario-claro.png" alt="Diário" width="170"> | <img src="design/screens/02-semana-claro.png" alt="Semana e consulta" width="170"> | <img src="design/screens/08-memorias-claro.png" alt="Passaporte de Memória" width="170"> |
+| **Contar uma memória** | **Lembrança com foto** | **Conversa do dia** | **Como foi a conversa** |
+| <img src="design/screens/09-contar-memoria-claro.png" alt="Contar uma memória" width="170"> | <img src="design/screens/10-editar-memoria-claro.png" alt="Lembrança com foto" width="170"> | <img src="design/screens/11-sessao-claro.png" alt="Conversa do dia" width="170"> | <img src="design/screens/12-sessao-reacao-claro.png" alt="Como foi a conversa" width="170"> |
+| **Família** | **Pedir ajuda com uma tarefa** | **Ajudante** | **Ajudante na hora difícil** |
+| <img src="design/screens/13-familia-claro.png" alt="Família" width="170"> | <img src="design/screens/14-nova-tarefa-claro.png" alt="Pedir ajuda com uma tarefa" width="170"> | <img src="design/screens/15-ajudante-claro.png" alt="Ajudante" width="170"> | <img src="design/screens/16-ajudante-apoio-claro.png" alt="Ajudante na hora difícil" width="170"> |
+| **Ajustes** | **Privacidade e dados** | **Primeira abertura** | **Termo em linguagem simples** |
+| <img src="design/screens/17-ajustes-claro.png" alt="Ajustes" width="170"> | <img src="design/screens/18-privacidade-claro.png" alt="Privacidade e dados" width="170"> | <img src="design/screens/19-onboarding-claro.png" alt="Primeira abertura" width="170"> | <img src="design/screens/20-termo-claro.png" alt="Termo em linguagem simples" width="170"> |
 
 ## Por que IA
 
@@ -60,11 +75,11 @@ Sem IA, o SempreAqui seria mais um app de anotações que ninguém atualiza. Com
 ## Princípios
 
 - **A IA não diagnostica e não dá orientação médica.** Ela organiza, resume, aponta mudanças em relação ao habitual da própria pessoa e encaminha. Nunca sugere remédios ou doses, nunca diz que algo é "sinal de piora".
-- **Fontes oficiais, sempre com link.** Toda informação geral de saúde vem de materiais do Ministério da Saúde, ABRAz e outras fontes públicas reconhecidas.
+- **Fontes oficiais, sempre com link.** Toda orientação geral é trecho literal de fonte oficial (hoje, o Guia Prático do Cuidador, do Ministério da Saúde), com link para a página. Nada é escrito pela IA.
 - **Guardrails testados, não só pedidos no prompt.** Todo texto voltado à família passa por uma verificação automática. Se a IA errar duas vezes, a família recebe um resumo montado sem IA. Risco sempre gera orientação de ligar 192.
 - **LGPD de verdade.** Consentimento explícito por finalidade, dados isolados por grupo familiar no próprio banco (Row Level Security), nada de dado real em logs, exportar e apagar tudo com um toque.
 - **Linguagem respeitosa.** "Pessoa que vive com Alzheimer", "quem cuida", "família". Nunca "paciente", "fardo" ou "peso".
-- **Acessível para quem está cansada.** Voz como entrada principal, fontes grandes, alto contraste, botões grandes.
+- **Acessível para quem está cansada.** Voz como entrada principal, fontes grandes, alto contraste, botões grandes, e cada tela com uma ação principal clara.
 
 Tudo isso está detalhado em [docs/etica-e-seguranca.md](docs/etica-e-seguranca.md).
 
@@ -94,7 +109,7 @@ Os dois lados usam a mesma interface do módulo nativo (`disponibilidade`, `tran
 - Quando o relato sincroniza, o backend confere o resumo de novo e recalcula o risco: a palavra final é sempre do servidor.
 - Regras fixas protegem contra o modelo menor: se o relato não fala de remédio, o campo fica "não foi falado", diga o modelo o que disser.
 - Correções num relato do celular também não vão para a nuvem: o resumo é reescrito no próprio aparelho.
-- Quem cuida pode desligar a IA do celular em Família, Privacidade e dados.
+- Quem cuida pode desligar a IA do celular em Ajustes, Privacidade.
 
 Arquitetura, requisitos, contrato de sincronização, plano do Android e como avaliamos: [docs/ia-no-aparelho.md](docs/ia-no-aparelho.md).
 
@@ -117,18 +132,19 @@ flowchart TB
 
     subgraph API["Backend (FastAPI)"]
         G{{Guardrails do servidor<br/>palavra final}}
-        subgraph Agentes["Agentes LangGraph"]
+        subgraph Agentes["Agentes"]
+            D[Diário<br/>LangGraph]
             P[Passaporte]
-            D[Diário]
-            R[Reminiscência]
-            A[Apoio]
+            R[Conversa do dia<br/>regras]
+            A[Ajudante e Apoio<br/>regras + fontes]
+            RF[Rede da Família]
         end
         L[Camada de provedores de IA]
     end
 
-    subgraph Dados["Supabase: Postgres + pgvector"]
+    subgraph Dados["Supabase: Postgres, Storage e RLS"]
         F[(Dados da família<br/>RLS por grupo)]
-        E[(Fontes oficiais<br/>com URL)]
+        E[(Trechos oficiais<br/>com página e link)]
     end
 
     M[Modelos via OpenRouter<br/>Gemini 3 Flash<br/>só como reserva]
@@ -138,7 +154,7 @@ flowchart TB
     Q -- "só o registro organizado" --> G
     V -. "aparelho sem suporte: áudio" .-> D
     P & D & R & A --> L --> M
-    A -- RAG --> E
+    A -- busca --> E
     G --> F
     Agentes --> F
     F --> T
@@ -146,7 +162,9 @@ flowchart TB
 
 - **Caminho no aparelho (iPhone com Apple Intelligence, construído):** transcrição, extração estruturada e resumo rodam no celular. Para o backend vai só a transcrição e o registro, e ele reaplica os guardrails e recalcula o risco antes de salvar. Detalhes, requisitos e o plano para Android em [docs/ia-no-aparelho.md](docs/ia-no-aparelho.md).
 - **Caminho na nuvem (reserva):** cada função é um grafo LangGraph com etapas pequenas e verificáveis. O do Diário transcreve, extrai um JSON validado com Pydantic, avalia risco, resume e revisa com guardrails.
-- **Conversa de hoje:** montada sem IA, a partir do Passaporte, com roteiros revisados que mudam todo dia e aprendem com a reação registrada pela família.
+- **Conversa do dia:** montada sem IA, a partir do Passaporte, com roteiros revisados que mudam todo dia e aprendem com a reação registrada pela família. No iPhone, a IA do aparelho reescreve as perguntas e uma validação barra "lembra", "recorda" e "esqueceu".
+- **Ajudante e Apoio:** determinísticos de propósito. Reconhecem a pergunta, respondem com os dados da família e dizem de onde veio; na hora difícil, cruzam Passaporte e Diário e citam trechos oficiais literais. As avaliações medem 100% de recusa médica e de fonte (veja [docs/avaliacao.md](docs/avaliacao.md)).
+- **Rede da Família:** convites por código, tarefas, feed e avisos, com o mesmo isolamento por família no banco.
 
 Decisões e detalhes em [docs/arquitetura.md](docs/arquitetura.md).
 
@@ -154,7 +172,7 @@ Decisões e detalhes em [docs/arquitetura.md](docs/arquitetura.md).
 
 | Camada | Tecnologia |
 |---|---|
-| App | React Native com Expo (TypeScript), Expo Router e build nativo instalável |
+| App | React Native com Expo (TypeScript), Expo Router, abas nativas do iOS, notificações locais para lembretes e build nativo instalável |
 | IA no aparelho, iOS | Módulo nativo em Swift: SpeechAnalyzer (iOS 26) e Apple Foundation Models com geração guiada pelo schema |
 | IA no aparelho, Android | Planejado: SpeechRecognizer no aparelho ou Whisper, e Gemini Nano (ML Kit) ou modelo aberto pequeno via llama.cpp |
 | Backend | Python, FastAPI |
@@ -179,7 +197,7 @@ uv run python -m demo.seed         # Dona Isabel, Cláudia e Rafael, com relatos
 uv run uvicorn api.main:app --host 0.0.0.0 --port 8000
 ```
 
-**App** (instale o Expo Go no celular, na mesma rede Wi-Fi do computador):
+**App** (no Expo Go, na mesma rede Wi-Fi do computador):
 
 ```bash
 cd app
@@ -187,7 +205,7 @@ npm install
 npx expo start          # escaneie o QR code com o Expo Go
 ```
 
-O app encontra o backend sozinho, pelo mesmo IP do Metro. Grave um relato, veja a IA organizar, corrija um campo e ouça o áudio original.
+O app encontra o backend sozinho, pelo mesmo IP do Metro. No Expo Go tudo funciona, com a IA na nuvem. Para a **IA no próprio celular**, instale o build nativo num iPhone com Apple Intelligence: `npx expo run:ios --device` (com `APPLE_TEAM_ID` no `app/.env`).
 
 **Prova de conceito pela linha de comando:**
 
@@ -206,6 +224,7 @@ cd backend
 uv run pytest
 uv run python -m evals.avaliar_guardrails
 uv run python -m evals.avaliar_diario
+uv run python -m evals.avaliar_apoio      # recusa médica, risco, fontes
 uv run python -m evals.comparar_transcricao google/gemini-3-flash-preview
 ```
 
@@ -230,7 +249,7 @@ Trabalhamos em ciclos curtos, cada um entregando uma funcionalidade de ponta a p
 | 4 | Conversa do dia que muda todo dia, personalizada no celular e que aprende com a reação | construído |
 | 5 | Apoio na Hora Difícil com fontes oficiais, 192 e recusa médica medida em 100% | construído |
 | 6 | Rede da Família: convite no WhatsApp, "Eu assumo", lembretes e "obrigado" | construído |
-| 7 | Polimento, acessibilidade, deploy e roteiro do Demo Day | |
+| 7 | Polimento, acessibilidade, deploy e roteiro do Demo Day | em andamento: navegação e visual feitos |
 | Em paralelo | IA no próprio celular: transcrição e organização do relato sem sair do aparelho | construído no iPhone |
 
 O que mudou em cada ciclo está no [CHANGELOG](CHANGELOG.md).

@@ -116,3 +116,10 @@ def test_demo_comeca_com_o_passaporte_da_dona_isabel(ambiente):  # noqa: F811
     demo = cliente.get("/passaporte", headers={"X-Familia": "familia-demo"}).json()
     assert demo["como_gosta_de_ser_chamada"] == "Dona Isabel"
     assert len(demo["lembrancas"]) == 5
+
+
+def test_nome_proprio_nao_vira_minuscula():
+    tema = reminiscencia.Tema("gosto:x", "gosto", "Roberto Carlos")
+    assert "Roberto Carlos" in reminiscencia._preencher("A senhora gosta de {t}, né?", tema)
+    tema2 = reminiscencia.Tema("gosto:y", "gosto", "Retalhos de tecido")
+    assert "de retalhos de tecido" in reminiscencia._preencher("A senhora gosta de {t}, né?", tema2)

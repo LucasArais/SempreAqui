@@ -8,7 +8,7 @@ Três palavras guiam tudo: **calmo, claro, acolhedor**.
 
 - `logo.png`: logo completa. Duas pessoas formam um coração em volta de uma casa, com uma mão que acolhe.
 - `simbolo.png`: só o símbolo, usado como ícone do app.
-- `screens/`: capturas de todas as telas no iPhone 17 Pro (iOS 26), em modo claro e escuro.
+- `screens/`: capturas de todas as telas no iPhone 17 Pro (iOS 26). O app usa sempre o modo claro.
 
 ## Princípios
 
