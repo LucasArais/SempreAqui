@@ -56,6 +56,8 @@ class Passaporte(BaseModel):
     como_se_comunica: str = Field(default="", max_length=1000)
     # Chave da foto de rosto já guardada no app (família de demonstração).
     foto: str | None = Field(default=None, max_length=40)
+    # Foto da família reunida, mostrada na aba Família. Trocada em Ajustes.
+    foto_familia: str | None = Field(default=None, max_length=40)
     pessoas_importantes: list[PessoaImportante] = Field(default_factory=list, max_length=30)
     rotina: list[Item] = Field(default_factory=list, max_length=30)
     acalma: list[Item] = Field(default_factory=list, max_length=30)

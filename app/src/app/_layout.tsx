@@ -146,6 +146,7 @@ export default function Raiz() {
         <Stack.Screen name="sessao" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="onboarding" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
         <Stack.Screen name="termo" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="ajustes" options={{ presentation: 'modal', headerShown: true, title: 'Ajustes', headerLargeTitleEnabled: false }} />
         <Stack.Screen name="convite/index" options={{ presentation: 'modal', title: 'Convite' }} />
         <Stack.Screen name="convite/[codigo]" options={{ presentation: 'modal', title: 'Convite' }} />
       </Stack>

@@ -146,6 +146,7 @@ EVENTOS_PERMITIDOS = {
     "sessao_concluida",
     "relato_enviado_offline",
     "apoio_pedido",
+    "assistente_pergunta",
 }
 
 _SAL = "sempreaqui-metricas-v1"

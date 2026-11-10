@@ -7,7 +7,7 @@ export default function AjudaLayout() {
   const { cores } = useTema();
   return (
     <Stack screenOptions={opcoesDeCabecalho(cores)}>
-      <Stack.Screen name="index" options={{ title: 'Ajuda' }} />
+      <Stack.Screen name="index" options={{ title: 'Ajudante', headerLargeTitleEnabled: false }} />
     </Stack>
   );
 }

@@ -162,6 +162,12 @@ export const api = {
       body: JSON.stringify({ resumo }),
     }),
   correcoes: () => chamar<{ texto: string }>('/diario/correcoes'),
+  assistente: (texto: string) =>
+    chamar<import('./ajudante').RespostaAjudante>('/assistente', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texto }),
+    }),
   apoio: (texto: string) =>
     chamar<import('./apoio').RespostaApoio>('/apoio', {
       method: 'POST',

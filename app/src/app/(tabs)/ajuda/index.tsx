@@ -1,237 +1,279 @@
 import { AudioModule, RecordingPresets, setAudioModeAsync, useAudioRecorder } from 'expo-audio';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Share, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import { type ComponentRef, useEffect, useRef, useState } from 'react';
+import { Pressable, ScrollView, Share, TextInput, View } from 'react-native';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 
-import {
-  Card,
-  Coluna,
-  EmergencyButton,
-  EmptyState,
-  Icon,
-  mostrarToast,
-  PrimaryButton,
-  Screen,
-  SecondaryButton,
-  Section,
-  Skeleton,
-  Text,
-} from '@/components';
-import { TextField } from '@/components/TextField';
+import { EmergencyButton, Icon, Logo, mostrarToast, SecondaryButton, Text } from '@/components';
 import { apoio as exemploApoio } from '@/data/familia';
 import { abrirLink, ligarEmergencia } from '@/lib/abrir';
-import { ErroApi, api } from '@/lib/api';
-import { type RespostaApoio, transcreverPedido } from '@/lib/apoio';
+import { apagarConversa, carregarAjudante, type Mensagem, perguntar, type RespostaAjudante, useAjudante } from '@/lib/ajudante';
+import { transcreverPedido, type RespostaApoio } from '@/lib/apoio';
 import { avisarFamilia } from '@/lib/familia';
 import { haptic } from '@/lib/haptics';
 import { passaporteAtual } from '@/lib/passaporte';
-import { espaco, useTema } from '@/theme';
+import { espaco, raio, tamanho, tipografia, useTema } from '@/theme';
 
-type Estado = 'vazio' | 'gravando' | 'ouvindo' | 'pensando' | 'resposta' | 'erro';
+const INICIAIS = ['Como ela está hoje?', 'Como foi a semana?', 'Ela está agitada, o que eu faço?', 'O que falta fazer esta semana?'];
 
-export default function Ajuda() {
-  const { exemplo } = useLocalSearchParams<{ exemplo?: string }>();
-  // O link de demonstração (?exemplo=1) pode chegar com a aba já montada: a key recomeça a tela.
-  return <ConteudoAjuda key={exemplo ?? 'normal'} exemplo={!!exemplo} />;
+const ACOES: Record<NonNullable<RespostaAjudante['acao']>, { titulo: string; ir: () => void }> = {
+  ver_semana: { titulo: 'Ver a semana', ir: () => router.push('/hoje/semana') },
+  ver_tarefas: { titulo: 'Ver as tarefas', ir: () => router.push('/familia') },
+  nova_tarefa: { titulo: 'Pedir ajuda com uma tarefa', ir: () => router.push('/nova-tarefa') },
+  ver_passaporte: { titulo: 'Abrir o Passaporte', ir: () => router.push('/memorias') },
+  abrir_conversa: { titulo: 'Começar a conversa', ir: () => router.push('/sessao') },
+};
+
+function Chips({ itens, onEscolher }: { itens: string[]; onEscolher: (t: string) => void }) {
+  const { cores } = useTema();
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espaco.s1 }}>
+      {itens.map((t) => (
+        <Pressable
+          key={t}
+          onPress={() => {
+            haptic.selecao();
+            onEscolher(t);
+          }}
+          accessibilityRole="button"
+          style={{ minHeight: tamanho.toqueMinimo, paddingHorizontal: espaco.s2, borderRadius: raio.botao, borderWidth: 1.5, borderColor: cores.accentStrong, justifyContent: 'center' }}
+        >
+          <Text variante="callout" style={{ color: cores.accentStrong }}>
+            {t}
+          </Text>
+        </Pressable>
+      ))}
+    </View>
+  );
 }
 
-function ConteudoAjuda({ exemplo }: { exemplo: boolean }) {
+/** A resposta do Apoio dentro do chat: risco, recusa médica, sugestões com origem e fontes. */
+function BlocoApoio({ r, pedido }: { r: RespostaApoio; pedido: string }) {
   const { cores } = useTema();
-  const gravador = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
-  const [texto, setTexto] = useState(exemplo ? exemploApoio.exemplo : '');
-  const [estado, setEstado] = useState<Estado>('vazio');
-  const [resposta, setResposta] = useState<RespostaApoio | null>(null);
-  const [erro, setErro] = useState<string | null>(null);
   const [avisado, setAvisado] = useState(false);
+  return (
+    <View style={{ gap: espaco.s2 }}>
+      {r.aviso && (
+        <View style={{ flexDirection: 'row', gap: espaco.s1, alignItems: 'flex-start' }}>
+          <Icon nome={r.tipo === 'risco' ? 'atencao' : 'remedio'} cor={r.tipo === 'risco' ? cores.emergency : cores.accentStrong} />
+          <Text variante={r.tipo === 'risco' ? 'headline' : 'body'} style={{ flex: 1 }}>
+            {r.aviso}
+          </Text>
+        </View>
+      )}
+      {r.tipo === 'risco' && (
+        <>
+          <EmergencyButton onPress={ligarEmergencia} />
+          <SecondaryButton
+            titulo={avisado ? 'Família avisada' : 'Avisar a família agora'}
+            icone="familia"
+            desativado={avisado}
+            onPress={async () => {
+              try {
+                await avisarFamilia(pedido);
+                setAvisado(true);
+                haptic.sucesso();
+                await Share.share({ message: `Aviso sobre a ${r.chamada}: ${pedido}` });
+              } catch {
+                mostrarToast('Não consegui avisar pelo app. Mande uma mensagem direto para a família.');
+              }
+            }}
+          />
+        </>
+      )}
+      {r.sugestoes.length > 0 && (
+        <View style={{ gap: espaco.s1 }}>
+          <Text variante="headline">O que costuma funcionar com a {r.chamada}</Text>
+          {r.sugestoes.map((s) => (
+            <View key={s.titulo} style={{ gap: 2 }}>
+              <Text variante="body">
+                <Text variante="body" style={{ fontWeight: '600' }}>
+                  {s.titulo}.
+                </Text>{' '}
+                {s.texto}
+              </Text>
+              <Text variante="footnote" cor="secondaryLabel">
+                {s.origem}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
+      {r.acoes.includes('pedir_ajuda_familia') && (
+        <SecondaryButton titulo="Pedir uma folga à família" icone="familia" alinhamento="inicio" onPress={() => router.push({ pathname: '/nova-tarefa', params: { tipo: 'cobrir_folga' } })} />
+      )}
+      {r.fontes.map((f) => (
+        <View key={f.id} style={{ gap: espaco.meio, borderLeftWidth: 3, borderLeftColor: cores.accentStrong, paddingLeft: espaco.s1 + 2 }}>
+          <Text variante="callout">“{f.texto}”</Text>
+          <Pressable onPress={() => abrirLink(f.url)} accessibilityRole="link" hitSlop={8}>
+            <Text variante="footnote" style={{ color: cores.accentStrong }}>
+              {f.fonte}. Abrir a fonte
+            </Text>
+          </Pressable>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function Balao({ m, pedido, onPerguntar }: { m: Mensagem; pedido: string; onPerguntar: (t: string) => void }) {
+  const { cores } = useTema();
+  if (m.de === 'eu') {
+    return (
+      <View style={{ alignSelf: 'flex-end', maxWidth: '85%', backgroundColor: cores.accent, borderRadius: 20, borderBottomRightRadius: 6, paddingHorizontal: espaco.s2, paddingVertical: espaco.s1 + 2 }}>
+        <Text variante="body" style={{ color: cores.onAccent }}>
+          {m.texto}
+        </Text>
+      </View>
+    );
+  }
+  const r = m.resposta;
+  const acao = r?.acao ? ACOES[r.acao] : null;
+  return (
+    <View style={{ flexDirection: 'row', gap: espaco.s1, alignItems: 'flex-start', maxWidth: '100%' }}>
+      <Logo tamanho={28} decorativa />
+      <View style={{ flex: 1, gap: espaco.s1, backgroundColor: cores.secondaryBackground, borderRadius: 20, borderTopLeftRadius: 6, padding: espaco.s2 }}>
+        {m.texto && <Text variante="body">{m.texto}</Text>}
+        {r?.tipo === 'apoio' && r.apoio ? (
+          <BlocoApoio r={r.apoio} pedido={pedido} />
+        ) : r ? (
+          <>
+            {r.texto && <Text variante="body">{r.texto}</Text>}
+            {r.origem && (
+              <Text variante="footnote" cor="secondaryLabel">
+                {r.origem}
+              </Text>
+            )}
+            {acao && <SecondaryButton titulo={acao.titulo} alinhamento="inicio" onPress={acao.ir} />}
+            {r.relato_id && (
+              <SecondaryButton titulo="Ver o relato" alinhamento="inicio" onPress={() => router.push({ pathname: '/hoje/diario/[id]', params: { id: r.relato_id! } })} />
+            )}
+            {r.sugestoes && <Chips itens={r.sugestoes} onEscolher={onPerguntar} />}
+          </>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
+/**
+ * Ajudante: o chat da família sobre o cuidado. Responde com o que está registrado e diz de onde
+ * veio; na hora difícil, vira o Apoio, com 192, fontes oficiais e o que costuma funcionar.
+ */
+export default function Ajudante() {
+  const { exemplo } = useLocalSearchParams<{ exemplo?: string }>();
+  const { cores, margem } = useTema();
+  const { mensagens, pensando } = useAjudante();
+  const [texto, setTexto] = useState('');
+  const [gravando, setGravando] = useState(false);
+  const rolagem = useRef<ComponentRef<typeof ScrollView>>(null);
+  const gravador = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const chamada = passaporteAtual().como_gosta_de_ser_chamada || 'ela';
 
   useEffect(() => {
-    if (exemplo) void pedirAjuda(exemploApoio.exemplo);
-    // Só ao abrir pelo link de demonstração.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    void carregarAjudante().then(() => {
+      if (exemplo) void perguntar(exemploApoio.exemplo);
+    });
+  }, [exemplo]);
 
-  async function pedirAjuda(pedido = texto) {
-    if (!pedido.trim()) return;
-    setEstado('pensando');
-    setErro(null);
-    setAvisado(false);
-    try {
-      const r = await api.apoio(pedido.trim());
-      setResposta(r);
-      if (r.tipo === 'risco') haptic.aviso();
-      else haptic.sucesso();
-      setEstado('resposta');
-    } catch (e) {
-      setErro(e instanceof ErroApi ? e.message : 'Não consegui buscar agora. Se for urgente, ligue 192.');
-      setEstado('erro');
-    }
+  function enviar(t = texto) {
+    if (!t.trim()) return;
+    setTexto('');
+    haptic.toque();
+    void perguntar(t);
   }
 
   async function voz() {
-    if (estado === 'gravando') {
+    if (gravando) {
+      setGravando(false);
       await gravador.stop();
-      setEstado('ouvindo');
       try {
         const falado = gravador.uri ? await transcreverPedido(gravador.uri) : '';
-        setTexto(falado);
-        if (falado) await pedirAjuda(falado);
-        else setEstado('vazio');
+        if (falado) enviar(falado);
       } catch {
-        setErro('Não consegui ouvir agora. Pode escrever?');
-        setEstado('erro');
+        mostrarToast('Não consegui ouvir agora. Pode escrever?');
       }
       return;
     }
     const permissao = await AudioModule.requestRecordingPermissionsAsync();
     if (!permissao.granted) {
-      setErro('Sem permissão para o microfone. Você pode escrever.');
-      setEstado('erro');
+      mostrarToast('Sem permissão para o microfone. Você pode escrever.');
       return;
     }
     await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
     await gravador.prepareToRecordAsync();
     gravador.record();
     haptic.toque();
-    setEstado('gravando');
-  }
-
-  async function avisar() {
-    try {
-      await avisarFamilia(texto.trim());
-      setAvisado(true);
-      haptic.sucesso();
-      mostrarToast('A família foi avisada no app.');
-      await Share.share({ message: `Aviso sobre a ${chamada}: ${texto.trim()}` });
-    } catch {
-      mostrarToast('Não consegui avisar pelo app. Mande uma mensagem direto para a família.');
-    }
+    setGravando(true);
   }
 
   return (
-    <Screen>
+    <ScrollView
+      ref={rolagem}
+      contentInsetAdjustmentBehavior="automatic"
+      automaticallyAdjustKeyboardInsets
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="interactive"
+      onContentSizeChange={() => rolagem.current?.scrollToEnd({ animated: true })}
+      style={{ backgroundColor: cores.background }}
+      contentContainerStyle={{ padding: margem, paddingBottom: espaco.s3, gap: espaco.s2 }}
+    >
       <EmergencyButton onPress={ligarEmergencia} />
 
-      <Section titulo="O que está acontecendo?">
-        <TextField
-          valor={texto}
-          onChange={(t) => {
-            setTexto(t);
-            if (estado === 'resposta') setEstado('vazio');
-          }}
-          placeholder={`Por exemplo: ${exemploApoio.exemplo}`}
-          rotulo="Descreva a situação"
-          onVoz={voz}
-        />
-        {estado === 'gravando' ? (
-          <PrimaryButton titulo="Parar e usar o que eu falei" icone="parar" onPress={voz} />
-        ) : (
-          <PrimaryButton
-            titulo={estado === 'ouvindo' ? 'Ouvindo...' : 'Pedir ajuda'}
-            desativado={!texto.trim() || estado === 'pensando' || estado === 'ouvindo'}
-            dica={`Procura o que já funcionou com a ${chamada}`}
-            onPress={() => pedirAjuda()}
-          />
-        )}
-      </Section>
+      <View style={{ flexDirection: 'row', gap: espaco.s1, alignItems: 'flex-start' }}>
+        <Logo tamanho={28} decorativa />
+        <View style={{ flex: 1, gap: espaco.s1, backgroundColor: cores.secondaryBackground, borderRadius: 20, borderTopLeftRadius: 6, padding: espaco.s2 }}>
+          <Text variante="body">
+            Oi! Eu sou o Ajudante. Respondo com o que a família registrou sobre a {chamada} e, na hora difícil, digo o que costuma funcionar com ela. Não dou diagnóstico nem indico remédio.
+          </Text>
+          {mensagens.length === 0 && <Chips itens={INICIAIS} onEscolher={enviar} />}
+        </View>
+      </View>
 
-      {estado === 'vazio' && (
-        <EmptyState
-          logo
-          titulo="Você não está só nisso"
-          texto={`Conte o que está acontecendo, falando ou escrevendo. Eu procuro o que já funcionou com a ${chamada} e o que dizem as fontes oficiais.`}
-        />
-      )}
-
-      {estado === 'pensando' && (
-        <Coluna gap="s2">
-          <Skeleton linhas={2} />
-          <Skeleton linhas={2} />
-        </Coluna>
-      )}
-
-      {estado === 'erro' && erro && (
-        <Text variante="callout" cor="emergency" accessibilityLiveRegion="polite">
-          {erro}
-        </Text>
-      )}
-
-      {estado === 'resposta' && resposta && (
-        <Animated.View entering={FadeInDown.springify().damping(18).duration(300)} style={{ gap: espaco.secao }}>
-          {resposta.tipo === 'risco' && (
-            <Card>
-              <View style={{ flexDirection: 'row', gap: espaco.s1, alignItems: 'flex-start' }}>
-                <Icon nome="atencao" cor={cores.emergency} />
-                <Text variante="headline" style={{ flex: 1 }}>
-                  {resposta.aviso}
-                </Text>
-              </View>
-              <EmergencyButton onPress={ligarEmergencia} />
-              <SecondaryButton
-                titulo={avisado ? 'Família avisada' : 'Avisar a família agora'}
-                icone="familia"
-                desativado={avisado}
-                dica="Aparece no topo do app para todos e abre o WhatsApp para mandar a mensagem"
-                onPress={avisar}
-              />
-            </Card>
-          )}
-
-          {resposta.tipo === 'medica' && (
-            <Card>
-              <View style={{ flexDirection: 'row', gap: espaco.s1, alignItems: 'flex-start' }}>
-                <Icon nome="remedio" cor={cores.accentStrong} />
-                <Text variante="body" style={{ flex: 1 }}>
-                  {resposta.aviso}
-                </Text>
-              </View>
-            </Card>
-          )}
-
-          {resposta.sugestoes.length > 0 && (
-            <Section titulo={`O que costuma funcionar com a ${resposta.chamada}`}>
-              {resposta.sugestoes.map((s) => (
-                <Card key={s.titulo}>
-                  <Text variante="headline">{s.titulo}</Text>
-                  <Text variante="body">{s.texto}</Text>
-                  <Text variante="footnote" cor="secondaryLabel">
-                    {s.origem}
-                  </Text>
-                </Card>
-              ))}
-            </Section>
-          )}
-
-          {resposta.acoes.includes('pedir_ajuda_familia') && (
-            <Card>
-              <Text variante="headline">Você não precisa dar conta de tudo</Text>
-              <Text variante="body">Peça para alguém da família assumir uma folga. Leva um toque para eles aceitarem.</Text>
-              <SecondaryButton
-                titulo="Pedir uma folga à família"
-                icone="familia"
-                alinhamento="inicio"
-                onPress={() => router.push({ pathname: '/nova-tarefa', params: { tipo: 'cobrir_folga' } })}
-              />
-            </Card>
-          )}
-
-          <Section titulo="O que dizem as fontes oficiais">
-            {resposta.fontes.map((f) => (
-              <Card key={f.id}>
-                <Text variante="body">“{f.texto}”</Text>
-                <Text variante="footnote" cor="secondaryLabel">
-                  {f.fonte}
-                </Text>
-                <SecondaryButton titulo="Abrir a fonte" icone="link" alinhamento="inicio" dica="Abre o guia oficial na página citada" onPress={() => abrirLink(f.url)} />
-              </Card>
-            ))}
-            <Text variante="footnote" cor="secondaryLabel">
-              Organizado a partir do Passaporte, do Diário e de fontes oficiais. Não substitui a equipe de saúde. Se houver risco, ligue 192.
-            </Text>
-          </Section>
+      {mensagens.map((m, i) => (
+        <Animated.View key={m.id} entering={FadeInUp.duration(250)}>
+          <Balao m={m} pedido={mensagens[i - 1]?.texto ?? ''} onPerguntar={enviar} />
         </Animated.View>
+      ))}
+
+      {pensando && (
+        <View style={{ flexDirection: 'row', gap: espaco.s1, alignItems: 'center' }}>
+          <Logo tamanho={28} decorativa />
+          <Text variante="callout" cor="secondaryLabel" accessibilityLiveRegion="polite">
+            Procurando no que a família registrou...
+          </Text>
+        </View>
       )}
-    </Screen>
+
+      <View style={{ flexDirection: 'row', gap: espaco.s1, alignItems: 'flex-end', marginTop: espaco.s1 }}>
+        <TextInput
+          value={texto}
+          onChangeText={setTexto}
+          placeholder={gravando ? 'Ouvindo... toque no quadrado para enviar' : 'Pergunte do seu jeito'}
+          placeholderTextColor={cores.tertiaryLabel}
+          multiline
+          accessibilityLabel="Sua pergunta"
+          onSubmitEditing={() => enviar()}
+          style={[tipografia.body, { flex: 1, color: cores.label, backgroundColor: cores.secondaryBackground, borderRadius: 22, paddingHorizontal: espaco.s2, paddingTop: 12, paddingBottom: 12, minHeight: 48, maxHeight: 140 }]}
+        />
+        {texto.trim() ? (
+          <Pressable onPress={() => enviar()} accessibilityRole="button" accessibilityLabel="Enviar" style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: cores.accent, alignItems: 'center', justifyContent: 'center' }}>
+            <Icon nome="seguir" cor={cores.onAccent} />
+          </Pressable>
+        ) : (
+          <Pressable onPress={voz} accessibilityRole="button" accessibilityLabel={gravando ? 'Parar e enviar' : 'Falar a pergunta'} style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: gravando ? cores.emergency : cores.accent, alignItems: 'center', justifyContent: 'center' }}>
+            <Icon nome={gravando ? 'parar' : 'gravar'} cor={cores.onAccent} />
+          </Pressable>
+        )}
+      </View>
+
+      {mensagens.length > 0 && (
+        <Pressable onPress={apagarConversa} accessibilityRole="button" style={{ alignSelf: 'center', minHeight: tamanho.toqueMinimo, justifyContent: 'center' }}>
+          <Text variante="footnote" cor="secondaryLabel">
+            Apagar a conversa deste celular
+          </Text>
+        </Pressable>
+      )}
+    </ScrollView>
   );
 }

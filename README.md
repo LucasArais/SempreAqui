@@ -40,6 +40,7 @@ O SempreAqui é um app de celular, pensado para ser usado por voz, que faz três
 | **Diário Inteligente** | Quem cuida grava um áudio contando o dia. Sai um registro de sono, alimentação, humor, agitação, episódios e medicação, um resumo semanal para a família e uma lista objetiva "Para levar na consulta". | Transcreve, extrai campos estruturados e compara com o habitual da própria pessoa |
 | **Apoio na Hora Difícil** | Quem cuida descreve a situação ("ela está agitada e quer ir embora") e recebe o que costuma funcionar para aquela pessoa. Dúvidas gerais são respondidas com fontes oficiais e link. Em risco, orienta ligar 192 e avisa a família. | Agente determinístico cruza Passaporte e Diário; busca em trechos oficiais literais, com link para a página |
 | **Rede da Família** | Grupo com papéis, divisão de tarefas (consultas, visitas, cobrir a folga de quem cuida), lembretes e um feed com os resumos. | Os resumos da IA viram o feed que mantém todos por perto |
+| **Ajudante** | Um chat para a família perguntar como ela está, como foi a semana, o que falta fazer ou o que fazer numa hora difícil. Cada resposta diz de onde veio. | Responde com os dados registrados; na hora difícil, usa o Apoio; no iPhone, a IA do aparelho cobre o que as regras não reconhecem, validada pelos guardrails |
 
 <p align="center">
   <img src="design/screens/01-hoje-claro.png" alt="Hoje: botão de gravar o dia e último relato" width="190">

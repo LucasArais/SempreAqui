@@ -292,7 +292,7 @@ def _sugestoes(
                 "Do Passaporte: o que acalma",
             )
     if "comidas" in partes:
-        favoritas = ", ".join(c["titulo"].lower() for c in passaporte.get("comidas", [])[:3])
+        favoritas = ", ".join(c["titulo"] for c in passaporte.get("comidas", [])[:3])
         if favoritas:
             incluir(
                 "Ofereça o que ela gosta",

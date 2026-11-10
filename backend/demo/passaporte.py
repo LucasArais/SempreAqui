@@ -8,6 +8,7 @@ PASSAPORTE_DEMO = {
     "como_gosta_de_ser_chamada": "Dona Isabel",
     "idade": 81,
     "foto": "donaIsabel",
+    "foto_familia": "familiaReunida",
     "quem_ela": (
         "Costureira por 40 anos, fez vestidos de noiva para meia cidade. Gosta de casa cheia, "
         "de café passado na hora e de conversar sobre o tempo do ateliê."

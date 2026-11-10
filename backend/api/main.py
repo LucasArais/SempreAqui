@@ -50,7 +50,7 @@ from agents.diario import (
     violacoes_do_resumo,
 )
 from agents.semana import resumir_semana
-from core import apoio, campos, guardrails, prompts, reminiscencia
+from core import apoio, assistente, campos, guardrails, prompts, reminiscencia
 from core.auth import TokenInvalido, usuario_do_token
 from core.config import config
 from core.llm import ErroProvedorIA, ProvedorIA, provedor_padrao
@@ -999,6 +999,47 @@ async def transcrever_apoio(
         log.warning("apoio.transcrever_falhou erro=%s", type(erro).__name__)
         raise HTTPException(503, "Não consegui ouvir agora. Pode escrever?") from erro
     return {"texto": texto.strip()}
+
+
+# Ajudante (chat da família) ------------------------------------------------
+
+
+class Pergunta(BaseModel):
+    texto: str = Field(min_length=1, max_length=1000)
+
+
+@app.post("/assistente")
+def perguntar_ao_ajudante(
+    pergunta: Pergunta,
+    familia_id: str = Depends(obter_familia),
+    repo: Repositorio = Depends(obter_repositorio),
+) -> dict:
+    """Responde com o que está registrado e diz de onde veio. A pergunta não é guardada."""
+    hoje = _hoje()
+    fatos = _fatos_da_semana(repo, familia_id, None)
+    resumo_semana = next(
+        (
+            v["resumo"]
+            for k, v in _cache_semana.items()
+            if k[0] == familia_id and k[1] == fatos["fim"]
+        ),
+        None,
+    )
+    passaporte = _passaporte(repo, familia_id)
+    ctx = {
+        "passaporte": passaporte,
+        "relatos": _relatos_recentes(repo, familia_id, dias=30),
+        "semana": fatos,
+        "resumo_semana": resumo_semana,
+        "tarefas": repo.listar_tarefas(familia_id),
+        "conversa": reminiscencia.conversa_do_dia(
+            passaporte, repo.sessoes_recentes(familia_id), hoje, familia_id
+        ),
+        "hoje": hoje,
+    }
+    resposta = assistente.responder(pergunta.texto, ctx)
+    repo.registrar_evento("assistente_pergunta", familia_id, rotulo=resposta["tipo"])
+    return resposta
 
 
 # Rede da Família -----------------------------------------------------------

@@ -14,7 +14,7 @@ import {
   useFamilia,
 } from '@/lib/familia';
 import { haptic } from '@/lib/haptics';
-import { passaporteAtual } from '@/lib/passaporte';
+import { fotoDaChave, passaporteAtual, usePassaporte } from '@/lib/passaporte';
 import { formatarData } from '@/lib/rotulos';
 import { espaco, tamanho, useTema } from '@/theme';
 
@@ -68,6 +68,7 @@ function ItemDoFeed({ item }: { item: ItemFeed }) {
 
 export default function Familia() {
   const { membros, tarefas, feed, eu } = useFamilia();
+  usePassaporte();
   const [convidando, setConvidando] = useState(false);
   const [feedAberto, setFeedAberto] = useState(false);
   const chamada = passaporteAtual().como_gosta_de_ser_chamada || 'ela';
@@ -91,7 +92,7 @@ export default function Familia() {
 
   return (
     <Screen aoAtualizar={carregarFamilia}>
-      <Photo fonte={fotos.familiaReunida} rotulo={`Quem cuida da ${chamada}`} proporcao={16 / 9} />
+      <Photo fonte={fotoDaChave(passaporteAtual().foto_familia) ?? fotos.familiaReunida} rotulo={`Quem cuida da ${chamada}`} proporcao={16 / 9} />
 
       <Section titulo="Tarefas da semana">
         <ListGroup rodape="Quem assume recebe um lembrete no celular. Quando alguém faz, a família vê e pode agradecer.">

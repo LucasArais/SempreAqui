@@ -306,3 +306,25 @@ export async function personalizarPerguntas(contexto: {
     return null;
   }
 }
+
+/**
+ * Pergunta que o Ajudante do servidor não reconheceu: a IA do celular tenta responder só com o
+ * contexto verdadeiro que o servidor mandou. A resposta passa pelos guardrails; se falhar, nada.
+ */
+export async function responderNoAparelho(pergunta: string, contexto: string): Promise<string | null> {
+  if (!IaLocal || !iaLocalPronta()) return null;
+  try {
+    const prompt = `Responda à pergunta da família usando SOMENTE os fatos abaixo. Se os fatos não respondem, diga exatamente: "Não sei responder isso com o que está registrado." No máximo 3 frases curtas. Não dê diagnóstico, não fale de remédio ou dose, não interprete sintomas.
+
+Fatos registrados:
+${contexto}
+
+Pergunta: ${pergunta}`;
+    const texto = removerTravessoes((await IaLocal.gerarTexto(SISTEMA, prompt)).trim());
+    if (!texto || texto.length > 600 || verificarTextoFamilia(texto).length) return null;
+    if (normalizar(texto).includes('nao sei responder')) return null;
+    return texto;
+  } catch {
+    return null;
+  }
+}

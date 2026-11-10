@@ -2,7 +2,7 @@ import { NativeTabs } from 'expo-router/native-tabs';
 
 import { useTema } from '@/theme';
 
-/** Tab bar nativa e translúcida com 4 abas: Hoje, Memórias, Família, Ajuda. */
+/** Tab bar nativa e translúcida com 4 abas: Hoje, Memórias, Família e o Ajudante (chat). */
 export default function Abas() {
   const { cores } = useTema();
   return (
@@ -20,8 +20,8 @@ export default function Abas() {
         <NativeTabs.Trigger.Label>Família</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="ajuda">
-        <NativeTabs.Trigger.Icon sf="lifepreserver" md="support" />
-        <NativeTabs.Trigger.Label>Ajuda</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: 'bubble.left.and.bubble.right', selected: 'bubble.left.and.bubble.right.fill' }} md="forum" />
+        <NativeTabs.Trigger.Label>Ajudante</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
     </NativeTabs>
   );

@@ -104,7 +104,7 @@ export default function Hoje() {
       <ListGroup>
         <ListRow
           titulo="Precisa de ajuda agora?"
-          subtitulo="Agitação, recusa, noite difícil: o que costuma funcionar com ela"
+          subtitulo="Pergunte ao Ajudante: agitação, recusa, noite difícil"
           icone="ajuda"
           corIcone="accentStrong"
           onPress={() => router.push('/ajuda')}
