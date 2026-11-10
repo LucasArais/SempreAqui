@@ -113,8 +113,14 @@ design/       logo e assets
 
 ## Autenticação básica
 
-O app autentica e-mail e senha no Supabase Auth (`signInWithPassword`). O backend continua validando o JWT pelo JWKS e usando `POST /sessao` para localizar ou criar a família. Não há novas tabelas ou endpoints nesta etapa. Não são criadas novas contas anônimas pelo app.
+O app autentica e-mail e senha no Supabase Auth (`signInWithPassword`). O backend continua validando o JWT pelo JWKS e usando `POST /sessao` para localizar ou criar a família. O login reutiliza as tabelas do Supabase Auth; o endpoint de cadastro é descrito abaixo. Não são criadas novas contas anônimas pelo app.
 
 A sessão nativa usa `expo-secure-store`, com renovação automática do cliente Supabase enquanto o app está ativo. O Expo Router protege todas as telas internas até a autenticação e a família estarem prontas. A saída usa escopo local, encerrando a sessão deste dispositivo. Na web a sessão fica em memória.
 
 As cópias offline, filas e o estado de onboarding são identificados por usuário; ao mudar de conta, os estados em memória são reiniciados. Áudios novos têm pasta por conta. Dados locais do fluxo anônimo anterior não são associados automaticamente a outra conta. A implantação deve manter `ACEITAR_X_FAMILIA=0`; `FAMILIA_DEMO_PARA_NOVOS` serve exclusivamente para demonstrações fictícias.
+
+### Cadastro
+
+O cadastro passa por `POST /auth/cadastro`: o servidor valida os campos e o aceite, cria o usuário no Supabase Auth com `email_confirm: true` e não envia e-mail. O app então usa o login por senha já existente. O nome vai em `user_metadata`; a data do servidor e a versão do aceite ficam em `app_metadata`, que o usuário não pode alterar. Não é necessária migração de tabelas. A autorização para dados de saúde continua no onboarding, por finalidade.
+
+A rota administrativa usa somente segredos do backend e não atualiza contas duplicadas. Respostas de validação nunca ecoam os campos do cadastro. O limite de tentativas atual é local ao processo; ao escalar para várias instâncias, deve usar armazenamento compartilhado.

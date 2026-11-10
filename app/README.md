@@ -56,7 +56,7 @@ src/
 
 ## Login com e-mail e senha
 
-Configure `EXPO_PUBLIC_SUPABASE_URL` e `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` no `app/.env` e mantenha o backend configurado para o mesmo projeto Supabase. Em Authentication → Providers, habilite Email. Para esta etapa, crie uma conta de teste em Authentication → Users → Add user, com e-mail confirmado e senha. O app usa contas existentes; cadastro e recuperação ficam para a próxima etapa.
+Configure `EXPO_PUBLIC_SUPABASE_URL` e `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` no `app/.env` e mantenha o backend configurado para o mesmo projeto Supabase. Em Authentication → Providers, habilite Email. A tela Entrar tem o botão Criar nova conta. O cadastro coleta nome, e-mail, senha e aceite dos termos. O backend cria o usuário pelo endpoint administrativo do Supabase com e-mail confirmado, sem enviar verificação, e o app entra com a senha. A chave administrativa fica somente no servidor. Recuperação de senha continua pendente.
 
 Ao abrir, a tela Entrar pede e-mail e senha. Depois da autenticação, `POST /sessao` mantém a entrada/criação da família já existente; o primeiro acesso segue o onboarding. As próximas aberturas restauram a sessão. Ajustes → Conta → Sair da conta pede confirmação.
 
@@ -69,3 +69,7 @@ Verificação automatizada: `npm run test:login`, `npm run typecheck` e `npm run
 `src/lib/carregamento.ts` coordena as leituras em paralelo e compartilha atualizações simultâneas. A IA local inicializa separadamente. Hoje, Memórias e Família mostram progresso, preservam o conteúdo já disponível e oferecem nova tentativa em caso de falha. Puxar essas telas atualiza os dados; o app também atualiza ao voltar ao primeiro plano e recuperar a rede. A sessão tem uma tela de restauração com recuperação de erro.
 
 Consultas e abertura da sessão têm limite de 20 segundos; envios e operações de IA mantêm até 120 segundos. Execute `npm run test:carregamento` para testar concorrência, recuperação e cancelamento por tempo limite.
+
+### Cadastro sem confirmação de e-mail
+
+`POST /auth/cadastro` valida nome, e-mail, senha (8 a 128 caracteres, uma letra e um número), aceite obrigatório e versão dos termos. O aceite recebe data do servidor e fica em `auth.users.app_metadata`; o nome fica em `user_metadata` e é usado na primeira entrada na família. O consentimento de saúde continua separado no onboarding. A rota usa `SUPABASE_SERVICE_ROLE_KEY` ou `SUPABASE_SECRET_KEY`, nunca expostas ao app, e limita tentativas por IP/e-mail em memória (uma instância local). Usuários existentes não são alterados nem confirmados por essa rota.

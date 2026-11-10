@@ -127,5 +127,6 @@ Detalhes em [ia-no-aparelho.md](ia-no-aparelho.md).
 - [x] Separação das cópias e filas locais por conta
 - [x] Testes de lógica do login, restauração e saída
 - [ ] Validar entrada real, preenchimento automático e persistência em iOS e Android
-- [ ] Cadastro, recuperação de senha e migração de contas anônimas
+- [x] Cadastro com nome, e-mail, senha e aceite, sem confirmação de e-mail
+- [ ] Recuperação de senha e migração de contas anônimas
 - [ ] Pessoas cuidadas, múltiplos círculos e permissões do escopo ampliado
