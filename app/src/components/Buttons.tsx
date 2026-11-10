@@ -12,11 +12,14 @@ type PropsBotao = {
   icone?: NomeIcone;
   dica?: string;
   desativado?: boolean;
+  tom?: 'padrao' | 'azul';
 };
 
 /** A ação principal da tela. Uma por tela. Largura total, coral, altura 52. */
-export function PrimaryButton({ titulo, onPress, icone, dica, desativado }: PropsBotao) {
+export function PrimaryButton({ titulo, onPress, icone, dica, desativado, tom = 'padrao' }: PropsBotao) {
   const { cores } = useTema();
+  const fundo = tom === 'azul' ? cores.actionBlue : cores.accentStrong;
+  const texto = desativado ? cores.secondaryLabel : tom === 'azul' ? cores.onActionBlue : cores.onAccent;
   return (
     <Pressable
       onPress={() => {
@@ -32,7 +35,7 @@ export function PrimaryButton({ titulo, onPress, icone, dica, desativado }: Prop
         minHeight: tamanho.botao,
         borderRadius: raio.botao,
         borderCurve: 'continuous',
-        backgroundColor: desativado ? cores.tertiaryBackground : cores.accentStrong,
+        backgroundColor: desativado ? cores.tertiaryBackground : fundo,
         opacity: pressed ? 0.8 : 1,
         flexDirection: 'row',
         alignItems: 'center',
@@ -42,8 +45,8 @@ export function PrimaryButton({ titulo, onPress, icone, dica, desativado }: Prop
         paddingVertical: espaco.s1 + espaco.meio,
       })}
     >
-      {icone && <Icon nome={icone} cor={desativado ? cores.secondaryLabel : cores.onAccent} tamanho={20} />}
-      <Text variante="botao" cor={desativado ? 'secondaryLabel' : 'onAccent'} centro>
+      {icone && <Icon nome={icone} cor={texto} tamanho={20} />}
+      <Text variante="botao" style={{ color: texto }} centro>
         {titulo}
       </Text>
     </Pressable>
@@ -57,8 +60,10 @@ export function SecondaryButton({
   icone,
   dica,
   alinhamento = 'centro',
+  tom = 'padrao',
 }: PropsBotao & { alinhamento?: 'centro' | 'inicio' }) {
   const { cores } = useTema();
+  const texto = tom === 'azul' ? cores.actionBlue : cores.accentStrong;
   return (
     <Pressable
       onPress={() => {
@@ -79,8 +84,8 @@ export function SecondaryButton({
         gap: espaco.s1 - 2,
       })}
     >
-      {icone && <Icon nome={icone} cor={cores.accentStrong} tamanho={18} />}
-      <Text variante="botao" cor="accentStrong">
+      {icone && <Icon nome={icone} cor={texto} tamanho={18} />}
+      <Text variante="botao" style={{ color: texto }}>
         {titulo}
       </Text>
     </Pressable>

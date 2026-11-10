@@ -2,6 +2,10 @@
 
 O que mudou em cada ciclo, do mais recente para o mais antigo.
 
+## Cadastro com botão azul (10 de novembro de 2026)
+
+- As ações Criar nova conta e Criar conta usam azul, com contraste validado nos temas claro e escuro.
+
 ## Cadastro pelo app (10 de novembro de 2026)
 
 - Botão Criar nova conta na entrada; cadastro com nome, e-mail, senha, requisitos visíveis e aceite dos termos.

@@ -29,6 +29,9 @@ export type Cores = {
   accent: string;
   /** Coral para texto e para o fundo do botão principal. Passa AA */
   accentStrong: string;
+  /** Ações de cadastro, para não sugerir uma saída ou ação destrutiva. */
+  actionBlue: string;
+  onActionBlue: string;
   /** Texto e ícone sobre accent e accentStrong */
   onAccent: string;
   /** Fundo suave de estados ativos */
@@ -56,6 +59,8 @@ export const claro: Cores = {
   tertiaryLabel: '#AEAEB2',
   accent: '#E0664C',
   accentStrong: '#B8462F',
+  actionBlue: '#1767A0',
+  onActionBlue: '#FFFFFF',
   onAccent: '#FFFFFF',
   accentSoft: '#FCEAE5',
   success: '#1F7A35',
@@ -79,6 +84,8 @@ export const escuro: Cores = {
   tertiaryLabel: '#636366',
   accent: '#FF8A70',
   accentStrong: '#FF8A70',
+  actionBlue: '#5AA9E0',
+  onActionBlue: '#1C1C1E',
   onAccent: '#1C1C1E',
   accentSoft: '#3D2620',
   success: '#4CD267',
@@ -94,6 +101,9 @@ export const escuro: Cores = {
 
 /** Pares texto/fundo que precisam passar no AA. Usado pelo script de contraste. */
 export const paresDeContraste: [keyof Cores, keyof Cores][] = [
+  ['actionBlue', 'background'],
+  ['actionBlue', 'secondaryBackground'],
+  ['onActionBlue', 'actionBlue'],
   ['label', 'background'],
   ['label', 'secondaryBackground'],
   ['secondaryLabel', 'background'],

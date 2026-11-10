@@ -63,7 +63,7 @@ export default function Entrar() {
           {!supabase && <Text variante="callout" cor="secondaryLabel">O login ainda não está configurado neste app.</Text>}
           <View style={{ gap: espaco.s1 }}>
             <PrimaryButton titulo={enviando ? 'Entrando…' : 'Entrar'} onPress={() => void enviar()} desativado={!email.trim() || !senha || enviando || !supabase} />
-            {!enviando && <SecondaryButton titulo="Criar nova conta" onPress={() => router.push('/criar-conta')} />}
+            {!enviando && <SecondaryButton tom="azul" titulo="Criar nova conta" onPress={() => router.push('/criar-conta')} />}
             {enviando && <ActivityIndicator color={cores.accentStrong} accessibilityLabel="Entrando na sua conta" />}
           </View>
         </Coluna>

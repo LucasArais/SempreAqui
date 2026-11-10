@@ -94,7 +94,7 @@ export default function CriarConta() {
         {erro && <Text variante="callout" cor="attention" accessibilityLiveRegion="polite">{erro}</Text>}
         {duplicado && <SecondaryButton titulo="Entrar com esse e-mail" onPress={() => router.replace('/entrar')} />}
         {!supabase && <Text cor="secondaryLabel">O cadastro ainda não está configurado neste app.</Text>}
-        <PrimaryButton titulo={enviando ? 'Criando sua conta…' : contaCriada ? 'Entrar na minha conta' : 'Criar conta'} onPress={() => void enviar()} desativado={enviando || !nome.trim() || !email.trim() || !senha || !aceito || !supabase} />
+        <PrimaryButton tom="azul" titulo={enviando ? 'Criando sua conta…' : contaCriada ? 'Entrar na minha conta' : 'Criar conta'} onPress={() => void enviar()} desativado={enviando || !nome.trim() || !email.trim() || !senha || !aceito || !supabase} />
         {enviando && <ActivityIndicator color={cores.accentStrong} accessibilityLabel="Criando sua conta" />}
         {!enviando && <SecondaryButton titulo="Já tenho conta. Entrar" onPress={() => router.replace('/entrar')} />}
       </ScrollView>

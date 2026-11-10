@@ -31,6 +31,8 @@ Todos em [app/src/theme](../app/src/theme).
 
 ### Cores
 
+As ações de criar conta usam azul (`actionBlue`): `#1767A0` no claro e `#5AA9E0` no escuro, com texto contrastante (`onActionBlue`). O coral continua como destaque do cuidado.
+
 | Papel | Claro | Escuro | Uso |
 |---|---|---|---|
 | Destaque | `#E0664C` | `#FF8A70` | Botão de gravar |
