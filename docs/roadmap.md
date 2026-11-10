@@ -90,7 +90,7 @@ Personas que guiam cada decisão: **Cláudia**, 52 anos, cuida da mãe e abre o 
 
 - [x] Navegação mais simples: Hoje em ordem de urgência, atalho para ajuda, listas longas recolhidas
 - [x] Ajudante: chat da família com respostas que dizem de onde vieram, e o Apoio dentro dele
-- [x] Ajustes: perfil de quem usa, foto da família, convite e privacidade num lugar só
+- [x] Ajustes como 5ª aba: perfil de quem usa, foto da família, convite e privacidade num lugar só
 
 - [ ] Revisão completa de acessibilidade (VoiceOver, TalkBack, fonte máxima, contraste)
 - [ ] Nenhuma tela leva mais de 1 segundo para abrir

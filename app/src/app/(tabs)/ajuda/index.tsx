@@ -1,7 +1,8 @@
 import { AudioModule, RecordingPresets, setAudioModeAsync, useAudioRecorder } from 'expo-audio';
 import { router, useLocalSearchParams } from 'expo-router';
 import { type ComponentRef, useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, Share, TextInput, View } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, Share, StyleSheet, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 
 import { EmergencyButton, Icon, Logo, mostrarToast, SecondaryButton, Text } from '@/components';
@@ -166,6 +167,16 @@ export default function Ajudante() {
   const { mensagens, pensando } = useAjudante();
   const [texto, setTexto] = useState('');
   const [gravando, setGravando] = useState(false);
+  const [tecladoAberto, setTecladoAberto] = useState(false);
+
+  useEffect(() => {
+    const abre = Keyboard.addListener('keyboardWillShow', () => setTecladoAberto(true));
+    const fecha = Keyboard.addListener('keyboardWillHide', () => setTecladoAberto(false));
+    return () => {
+      abre.remove();
+      fecha.remove();
+    };
+  }, []);
   const rolagem = useRef<ComponentRef<typeof ScrollView>>(null);
   const gravador = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const chamada = passaporteAtual().como_gosta_de_ser_chamada || 'ela';
@@ -208,72 +219,84 @@ export default function Ajudante() {
   }
 
   return (
-    <ScrollView
-      ref={rolagem}
-      contentInsetAdjustmentBehavior="automatic"
-      automaticallyAdjustKeyboardInsets
-      keyboardShouldPersistTaps="handled"
-      keyboardDismissMode="interactive"
-      onContentSizeChange={() => rolagem.current?.scrollToEnd({ animated: true })}
-      style={{ backgroundColor: cores.background }}
-      contentContainerStyle={{ padding: margem, paddingBottom: espaco.s3, gap: espaco.s2 }}
-    >
-      <EmergencyButton onPress={ligarEmergencia} />
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: cores.background }}>
+      <ScrollView
+        ref={rolagem}
+        contentInsetAdjustmentBehavior="automatic"
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        onContentSizeChange={() => rolagem.current?.scrollToEnd({ animated: true })}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: margem, paddingBottom: espaco.s2, gap: espaco.s2 }}
+      >
+        <EmergencyButton onPress={ligarEmergencia} />
 
-      <View style={{ flexDirection: 'row', gap: espaco.s1, alignItems: 'flex-start' }}>
-        <Logo tamanho={28} decorativa />
-        <View style={{ flex: 1, gap: espaco.s1, backgroundColor: cores.secondaryBackground, borderRadius: 20, borderTopLeftRadius: 6, padding: espaco.s2 }}>
-          <Text variante="body">
-            Oi! Eu sou o Ajudante. Respondo com o que a família registrou sobre a {chamada} e, na hora difícil, digo o que costuma funcionar com ela. Não dou diagnóstico nem indico remédio.
-          </Text>
-          {mensagens.length === 0 && <Chips itens={INICIAIS} onEscolher={enviar} />}
-        </View>
-      </View>
-
-      {mensagens.map((m, i) => (
-        <Animated.View key={m.id} entering={FadeInUp.duration(250)}>
-          <Balao m={m} pedido={mensagens[i - 1]?.texto ?? ''} onPerguntar={enviar} />
-        </Animated.View>
-      ))}
-
-      {pensando && (
-        <View style={{ flexDirection: 'row', gap: espaco.s1, alignItems: 'center' }}>
+        <View style={{ flexDirection: 'row', gap: espaco.s1, alignItems: 'flex-start' }}>
           <Logo tamanho={28} decorativa />
-          <Text variante="callout" cor="secondaryLabel" accessibilityLiveRegion="polite">
-            Procurando no que a família registrou...
-          </Text>
+          <View style={{ flex: 1, gap: espaco.s1, backgroundColor: cores.secondaryBackground, borderRadius: 20, borderTopLeftRadius: 6, padding: espaco.s2 }}>
+            <Text variante="body">
+              Oi! Eu sou o Ajudante. Respondo com o que a família registrou sobre a {chamada} e, na hora difícil, digo o que costuma funcionar com ela. Não dou diagnóstico nem indico remédio.
+            </Text>
+            {mensagens.length === 0 && <Chips itens={INICIAIS} onEscolher={enviar} />}
+          </View>
         </View>
-      )}
 
-      <View style={{ flexDirection: 'row', gap: espaco.s1, alignItems: 'flex-end', marginTop: espaco.s1 }}>
-        <TextInput
-          value={texto}
-          onChangeText={setTexto}
-          placeholder={gravando ? 'Ouvindo... toque no quadrado para enviar' : 'Pergunte do seu jeito'}
-          placeholderTextColor={cores.tertiaryLabel}
-          multiline
-          accessibilityLabel="Sua pergunta"
-          onSubmitEditing={() => enviar()}
-          style={[tipografia.body, { flex: 1, color: cores.label, backgroundColor: cores.secondaryBackground, borderRadius: 22, paddingHorizontal: espaco.s2, paddingTop: 12, paddingBottom: 12, minHeight: 48, maxHeight: 140 }]}
-        />
-        {texto.trim() ? (
-          <Pressable onPress={() => enviar()} accessibilityRole="button" accessibilityLabel="Enviar" style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: cores.accent, alignItems: 'center', justifyContent: 'center' }}>
-            <Icon nome="seguir" cor={cores.onAccent} />
-          </Pressable>
-        ) : (
-          <Pressable onPress={voz} accessibilityRole="button" accessibilityLabel={gravando ? 'Parar e enviar' : 'Falar a pergunta'} style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: gravando ? cores.emergency : cores.accent, alignItems: 'center', justifyContent: 'center' }}>
-            <Icon nome={gravando ? 'parar' : 'gravar'} cor={cores.onAccent} />
+        {mensagens.map((m, i) => (
+          <Animated.View key={m.id} entering={FadeInUp.duration(250)}>
+            <Balao m={m} pedido={mensagens[i - 1]?.texto ?? ''} onPerguntar={enviar} />
+          </Animated.View>
+        ))}
+
+        {pensando && (
+          <View style={{ flexDirection: 'row', gap: espaco.s1, alignItems: 'center' }}>
+            <Logo tamanho={28} decorativa />
+            <Text variante="callout" cor="secondaryLabel" accessibilityLiveRegion="polite">
+              Procurando no que a família registrou...
+            </Text>
+          </View>
+        )}
+
+        {mensagens.length > 0 && !pensando && (
+          <Pressable onPress={apagarConversa} accessibilityRole="button" style={{ alignSelf: 'center', minHeight: tamanho.toqueMinimo, justifyContent: 'center' }}>
+            <Text variante="footnote" cor="secondaryLabel">
+              Apagar a conversa deste celular
+            </Text>
           </Pressable>
         )}
-      </View>
+      </ScrollView>
 
-      {mensagens.length > 0 && (
-        <Pressable onPress={apagarConversa} accessibilityRole="button" style={{ alignSelf: 'center', minHeight: tamanho.toqueMinimo, justifyContent: 'center' }}>
-          <Text variante="footnote" cor="secondaryLabel">
-            Apagar a conversa deste celular
-          </Text>
-        </Pressable>
-      )}
-    </ScrollView>
+      {/* Campo fixo embaixo, como num app de mensagens. Teclado fechado: acima das abas (área
+          segura nativa). Teclado aberto: sobe junto com o teclado. */}
+      <SafeAreaView
+        edges={tecladoAberto ? [] : ['bottom']}
+        style={{ backgroundColor: cores.background, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: cores.separator }}
+      >
+        <View style={{ flexDirection: 'row', gap: espaco.s1, alignItems: 'flex-end', paddingHorizontal: margem, paddingVertical: espaco.s1 }}>
+          <TextInput
+            value={texto}
+            onChangeText={setTexto}
+            placeholder={gravando ? 'Ouvindo... toque no quadrado para enviar' : 'Pergunte ao Ajudante'}
+            placeholderTextColor={cores.tertiaryLabel}
+            multiline
+            accessibilityLabel="Sua pergunta"
+            style={[tipografia.body, { flex: 1, color: cores.label, backgroundColor: cores.secondaryBackground, borderRadius: 22, paddingHorizontal: espaco.s2, paddingTop: 12, paddingBottom: 12, minHeight: 46, maxHeight: 120 }]}
+          />
+          {texto.trim() ? (
+            <Pressable onPress={() => enviar()} accessibilityRole="button" accessibilityLabel="Enviar" style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: cores.accent, alignItems: 'center', justifyContent: 'center' }}>
+              <Icon nome="seguir" cor={cores.onAccent} />
+            </Pressable>
+          ) : (
+            <Pressable
+              onPress={voz}
+              accessibilityRole="button"
+              accessibilityLabel={gravando ? 'Parar e enviar' : 'Falar a pergunta'}
+              style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: gravando ? cores.emergency : cores.accent, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Icon nome={gravando ? 'parar' : 'gravar'} cor={cores.onAccent} />
+            </Pressable>
+          )}
+        </View>
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }

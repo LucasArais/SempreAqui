@@ -16,10 +16,8 @@ import { enviarFoto, fotoDaChave, passaporteAtual, salvarPassaporte, usePassapor
 const FONTE_OFICIAL = 'https://bvsms.saude.gov.br/bvs/publicacoes/guia_pratico_cuidador.pdf';
 const CODIGO_ABERTO = 'https://github.com/LucasArais/SempreAqui';
 
-/** Fecha os Ajustes e abre outra tela do app. */
 function ir(rota: Href) {
-  router.back();
-  setTimeout(() => router.push(rota), 250);
+  router.push(rota);
 }
 
 /** Ajustes: quem está usando, a família (foto, dados dela, convite) e privacidade. */

@@ -7,8 +7,8 @@ O que mudou em cada ciclo, do mais recente para o mais antigo.
 **Para a família**
 - Ajudante: a aba Ajuda virou um chat. Dá para perguntar "como ela está?", "como foi a semana?", "ela tem dormido bem?", "o que falta fazer?", "do que ela gosta?". Cada resposta diz de onde veio (Diário, semana, tarefas, Passaporte).
 - Na hora difícil, o Ajudante responde com o Apoio completo: 192 e aviso à família no risco, recusa gentil para remédio e diagnóstico, o que costuma funcionar e a fonte oficial.
-- Pergunta por voz. A conversa fica só no celular e dá para apagar.
-- Ajustes, no canto do cabeçalho de todas as abas: seu nome e papel, trocar a foto da família, dados dela, convite, IA no celular, privacidade, termo, fonte oficial e código aberto.
+- Pergunta por voz. O campo fica fixo embaixo, como num app de mensagens, e sobe com o teclado. A conversa fica só no celular e dá para apagar.
+- Ajustes, a 5ª aba, ao lado das outras: seu nome e papel, trocar a foto da família, dados dela, convite, IA no celular, privacidade, termo, fonte oficial e código aberto.
 
 **Bastidores**
 - `core/assistente.py` e rota `POST /assistente`: intenções reconhecidas por regras e respondidas com os dados da família, sem IA e sem custo. O que não reconhece volta com um contexto curto e verdadeiro; no iPhone com IA no aparelho, o modelo da Apple tenta responder só com esse contexto, e a resposta passa pelos guardrails.
