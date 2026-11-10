@@ -112,6 +112,15 @@ async function comPerguntasDoCelular(roteiro: Roteiro): Promise<Roteiro> {
   return { ...roteiro, perguntas, personalizada: true };
 }
 
+/** Ao voltar para a tela: se o dia virou, busca a conversa nova. */
+export function atualizarSeMudouODia() {
+  const data = estado.conversa?.roteiro?.data;
+  if (!estado.carregando && (!estado.conversa || (data && data !== hojeLocal()))) {
+    definir({ pulados: [] });
+    void carregarConversa([]);
+  }
+}
+
 /** Outra conversa hoje: pula o tema atual e pede o próximo. */
 export async function outraConversa() {
   const atual = estado.conversa?.roteiro?.tema_chave;

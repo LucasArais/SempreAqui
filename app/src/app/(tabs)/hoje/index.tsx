@@ -1,5 +1,6 @@
-import { router, Stack } from 'expo-router';
-import { useState } from 'react';
+import { router, Stack, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { View } from 'react-native';
 
 import {
   AttentionBadge,
@@ -16,8 +17,8 @@ import {
   SummaryCard,
   Text,
 } from '@/components';
-import { quemUsa, tarefas as tarefasIniciais } from '@/data/familia';
-import { useConversa } from '@/lib/conversa';
+import { quemUsa, reacoes, tarefas as tarefasIniciais } from '@/data/familia';
+import { atualizarSeMudouODia, useConversa } from '@/lib/conversa';
 import { fotoDaChave } from '@/lib/passaporte';
 import { useSemana } from '@/lib/semana';
 import { useSessao } from '@/lib/sessao';
@@ -40,7 +41,11 @@ export default function Hoje() {
   useAtualizarAoFocar();
   const ultimo = relatos[0];
   const { semana } = useSemana();
-  const roteiro = useConversa().conversa?.roteiro;
+  const { conversa } = useConversa();
+  const roteiro = conversa?.roteiro;
+  const feitaHoje = (conversa?.feitas_hoje ?? 0) > 0;
+  const reacaoDeHoje = reacoes.find((r) => r.id === conversa?.ultima_reacao);
+  useFocusEffect(useCallback(() => atualizarSeMudouODia(), []));
   // Quem mora longe (Rafael) quer saber como a mãe está: a semana vem primeiro.
   const quemCuida = (useSessao().papel ?? 'quem_cuida') === 'quem_cuida';
 
@@ -141,7 +146,23 @@ export default function Hoje() {
         </ListGroup>
       </Section>
 
-      {roteiro && (
+      {roteiro && feitaHoje && (
+        <Section titulo="Uma conversa para hoje">
+          <Card>
+            <View style={{ flexDirection: 'row', gap: espaco.s1, alignItems: 'center' }}>
+              <Icon nome="feito" cor={cores.success} />
+              <Text variante="headline" style={{ flex: 1 }}>
+                Conversa de hoje feita
+              </Text>
+            </View>
+            <Text variante="callout" cor="secondaryLabel">
+              {reacaoDeHoje ? `${reacaoDeHoje.rotulo}. ` : ''}Amanhã tem uma conversa nova, com outro tema.
+            </Text>
+          </Card>
+        </Section>
+      )}
+
+      {roteiro && !feitaHoje && (
         <Section titulo="Uma conversa para hoje">
           <MemoryCard
             legenda={roteiro.tema}
