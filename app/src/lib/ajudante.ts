@@ -1,4 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from './armazenamento-conta';
+import { aoTrocarConta, sessaoAtual } from './sessao';
 import * as Crypto from 'expo-crypto';
 import { useSyncExternalStore } from 'react';
 
@@ -68,6 +69,7 @@ export function apagarConversa() {
 }
 
 export async function perguntar(texto: string) {
+  const usuario = sessaoAtual().usuario;
   const pergunta = texto.trim();
   if (!pergunta || estado.pensando) return;
   const minha: Mensagem = { id: Crypto.randomUUID(), de: 'eu', texto: pergunta };
@@ -93,5 +95,8 @@ export async function perguntar(texto: string) {
       erro: true,
     };
   }
+  if (usuario !== sessaoAtual().usuario) return;
   definir({ mensagens: [...estado.mensagens, resposta], pensando: false });
 }
+
+aoTrocarConta(() => { estado = { mensagens: [], pensando: false, carregado: false }; ouvintes.forEach((o) => o()); });

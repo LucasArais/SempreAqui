@@ -1,10 +1,10 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from './armazenamento-conta';
 import { useSyncExternalStore } from 'react';
 
 import { api } from './api';
 import { personalizarPerguntas } from './ia-local';
 import { type Musica, passaporteAtual } from './passaporte';
-import { sessaoAtual } from './sessao';
+import { aoTrocarConta, sessaoAtual } from './sessao';
 
 /**
  * Conversa de hoje (reminiscência). O roteiro vem do backend (core/reminiscencia.py): um tema do
@@ -160,15 +160,20 @@ async function lerFila(): Promise<SessaoFeita[]> {
 }
 
 async function enviarFila() {
+  const usuario = sessaoAtual().usuario;
   const fila = await lerFila();
   if (!fila.length) return;
   const restantes: SessaoFeita[] = [];
   for (const s of fila) {
+    if (usuario !== sessaoAtual().usuario) return;
     try {
       await api.registrarConversa(s);
     } catch {
       restantes.push(s);
     }
   }
+  if (usuario !== sessaoAtual().usuario) return;
   await AsyncStorage.setItem(CHAVE_FILA, JSON.stringify(restantes)).catch(() => undefined);
 }
+
+aoTrocarConta(() => definir({ conversa: null, pulados: [], carregando: false }));

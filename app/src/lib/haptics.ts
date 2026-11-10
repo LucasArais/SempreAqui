@@ -8,6 +8,9 @@ export const haptic = {
   toque() {
     if (ativo) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
   },
+  erro() {
+    if (ativo) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+  },
   sucesso() {
     if (ativo) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
   },

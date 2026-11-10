@@ -11,6 +11,8 @@ import {
   Clock,
   CloudOff,
   FileText,
+  Eye,
+  EyeOff,
   Hand,
   History,
   Heart,
@@ -52,6 +54,8 @@ type SF = SymbolViewProps['name'];
  * Em ações importantes, o ícone sempre vem acompanhado de texto.
  */
 const icones = {
+  olho: { sf: 'eye', lucide: Eye },
+  ocultar: { sf: 'eye.slash', lucide: EyeOff },
   gravar: { sf: 'mic.fill', lucide: Mic },
   parar: { sf: 'stop.fill', lucide: Square },
   onda: { sf: 'waveform', lucide: AudioLines },

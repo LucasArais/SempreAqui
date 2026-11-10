@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from '@/lib/armazenamento-conta';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
@@ -23,7 +23,7 @@ export default function Onboarding() {
   const [passo, setPasso] = useState(0);
   const [aceito, setAceito] = useState(false);
 
-  // A família pode ser configurada depois. O primeiro relato vem antes de qualquer cadastro.
+  // A conta já está autenticada quando o onboarding começa.
   async function terminar() {
     await AsyncStorage.setItem(CHAVE_ONBOARDING, new Date().toISOString()).catch(() => undefined);
     // Depois de apagar tudo, a pessoa entra de novo do zero.

@@ -16,13 +16,14 @@ import { carregarFamilia } from '@/lib/familia';
 import { carregarIaLocal } from '@/lib/ia-local';
 import { carregarPassaporte } from '@/lib/passaporte';
 import { entrar } from '@/lib/entrar';
+import { useSessao } from '@/lib/sessao';
 import { useTema } from '@/theme';
 
 // A tela de abertura nativa fica até a animação em JS assumir, sem piscar.
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 // Os modais (gravar, corrigir, onboarding) sempre abrem por cima das abas.
-export const unstable_settings = { anchor: '(tabs)' };
+export const unstable_settings = { anchor: 'index' };
 
 // Lembretes de tarefa aparecem mesmo com o app aberto.
 Notifications.setNotificationHandler({
@@ -31,6 +32,7 @@ Notifications.setNotificationHandler({
 
 export default function Raiz() {
   const { cores, escuro } = useTema();
+  const sessao = useSessao();
   // Inter só no Android. No iOS a fonte do sistema (SF Pro) já é o padrão.
   const [fontesProntas] = useFonts(
     Platform.OS === 'android' ? { Inter_400Regular, Inter_600SemiBold, Inter_700Bold } : {},
@@ -41,16 +43,21 @@ export default function Raiz() {
   }, [cores.background]);
 
   useEffect(() => {
-    // A IA do celular carrega antes da fila: relatos que ficaram no meio são organizados aqui.
-    void entrar()
-      .then(carregarIaLocal)
-      .then(() => {
-        void carregarPassaporte();
-        void carregarConversa();
-        void carregarFamilia();
-        return iniciarDiario();
-      });
+    void entrar();
   }, []);
+
+  useEffect(() => {
+    if (!sessao.pronta) return;
+    let cancelado = false;
+    void carregarIaLocal().then(() => {
+      if (cancelado) return;
+      void carregarPassaporte();
+      void carregarConversa();
+      void carregarFamilia();
+      void iniciarDiario();
+    });
+    return () => { cancelado = true; };
+  }, [sessao.pronta, sessao.usuario]);
 
   const [abrindo, setAbrindo] = useState(true);
   const terminarAbertura = useCallback(() => setAbrindo(false), []);
@@ -77,7 +84,12 @@ export default function Raiz() {
   return (
     <ThemeProvider value={tema}>
       <StatusBar style={escuro ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: cores.background } }}>
+      {sessao.restaurada && <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: cores.background } }}>
+        <Stack.Protected guard={!sessao.pronta}>
+          <Stack.Screen name="entrar" />
+        </Stack.Protected>
+        <Stack.Protected guard={sessao.pronta}>
+        <Stack.Screen name="index" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen
           name="gravar"
@@ -148,7 +160,8 @@ export default function Raiz() {
         <Stack.Screen name="termo" options={{ presentation: 'modal' }} />
         <Stack.Screen name="convite/index" options={{ presentation: 'modal', title: 'Convite' }} />
         <Stack.Screen name="convite/[codigo]" options={{ presentation: 'modal', title: 'Convite' }} />
-      </Stack>
+        </Stack.Protected>
+      </Stack>}
       <ToastHost />
       {abrindo && <Abertura aoTerminar={terminarAbertura} />}
     </ThemeProvider>

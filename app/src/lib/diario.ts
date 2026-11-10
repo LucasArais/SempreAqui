@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from './armazenamento-conta';
 import * as Crypto from 'expo-crypto';
 import { Directory, File, Paths } from 'expo-file-system';
 import * as Network from 'expo-network';
@@ -14,7 +14,7 @@ import {
   type ResultadoLocal,
   VERSAO_PROMPT_APARELHO,
 } from './ia-local';
-import { sessaoAtual } from './sessao';
+import { aoTrocarConta, sessaoAtual } from './sessao';
 
 /**
  * Estado do Diário compartilhado entre as telas.
@@ -66,13 +66,13 @@ function mesclar(servidor: Relato[], pendentes: Pendente[]) {
 
 /** Áudio que ficou só no celular (relatos organizados aqui), para ouvir de novo. */
 export function audioNoAparelho(id: string) {
-  const arquivo = new File(PASTA, `${id}.m4a`);
+  const arquivo = new File(pastaDaConta(), `${id}.m4a`);
   return arquivo.exists ? arquivo.uri : undefined;
 }
 
 function arquivoDoPendente(p: Pendente & { uri?: string }) {
   const nome = p.arquivo ?? p.uri?.split('/').pop() ?? `${p.id}.m4a`;
-  return new File(PASTA, nome);
+  return new File(pastaDaConta(), nome);
 }
 
 export function uriDoPendente(p: Pendente) {
@@ -89,7 +89,9 @@ type Estado = {
 const CHAVE_FILA = 'diario.fila.v1';
 const CHAVE_INSTALADO = 'app.instalado_em';
 const CHAVE_PRIMEIRO = 'diario.primeiro_enviado';
-const PASTA = new Directory(Paths.document, 'relatos');
+function pastaDaConta() {
+  return new Directory(Paths.document, `relatos-${sessaoAtual().usuario ?? 'sem-conta'}`);
+}
 
 let estado: Estado = { pendentes: [], relatos: [], online: true, carregado: false };
 const ouvintes = new Set<() => void>();
@@ -141,7 +143,7 @@ export function substituirRelato(relato: Relato) {
 export function removerRelatoLocal(id: string) {
   definir({ relatos: estado.relatos.filter((r) => r.id !== id) });
   try {
-    const audio = new File(PASTA, `${id}.m4a`);
+    const audio = new File(pastaDaConta(), `${id}.m4a`);
     if (audio.exists) audio.delete();
   } catch {
     // Já não existe.
@@ -150,10 +152,18 @@ export function removerRelatoLocal(id: string) {
 
 /** Começa a fila, a escuta da rede e carrega o histórico. Pode ser chamado várias vezes. */
 export async function iniciarDiario() {
-  if (iniciado) return;
+  if (!sessaoAtual().pronta) return;
+  if (iniciado) {
+    const salva = await AsyncStorage.getItem(CHAVE_FILA).catch(() => null);
+    const pendentes = salva ? JSON.parse(salva) as Pendente[] : [];
+    definir({ pendentes, relatos: mesclar([], pendentes) });
+    await atualizarRelatos();
+    void sincronizar();
+    return;
+  }
   iniciado = true;
   try {
-    PASTA.create({ idempotent: true, intermediates: true });
+    pastaDaConta().create({ idempotent: true, intermediates: true });
   } catch {
     // A pasta já existe.
   }
@@ -214,7 +224,7 @@ export async function guardarGravacao(
 ): Promise<string> {
   const id = Crypto.randomUUID();
   const origem = new File(uriTemporaria);
-  const destino = new File(PASTA, `${id}.m4a`);
+  const destino = new File(pastaDaConta(), `${id}.m4a`);
   try {
     origem.move(destino);
   } catch {
@@ -268,9 +278,11 @@ export async function organizarNoAparelho(id: string, aoMudarEtapa?: (etapa: Eta
 /** Envia o que está na fila. Para no primeiro sinal de falta de conexão. */
 export async function sincronizar() {
   if (sincronizando || !estado.pendentes.length || !sessaoAtual().pronta) return;
+  const usuario = sessaoAtual().usuario;
   sincronizando = true;
   try {
     for (const pendente of [...estado.pendentes]) {
+      if (usuario !== sessaoAtual().usuario) return;
       if (pendente.noAparelho) {
         if (!(await sincronizarDoAparelho(pendente))) break;
         continue;
@@ -299,6 +311,7 @@ export async function sincronizar() {
         }
         definir({ online: true });
       } catch (erro) {
+        if (usuario !== sessaoAtual().usuario) return;
         await salvarFila(
           estado.pendentes.map((p) => (p.id === pendente.id ? { ...p, tentativas: p.tentativas + 1 } : p)),
         );
@@ -382,8 +395,8 @@ export async function acompanhar(id: string, aoAtualizar?: (relato: Relato) => v
 /** Depois de apagar todos os dados: esvazia a fila, o histórico e a pasta de áudios do celular. */
 export async function limparTudoLocal() {
   try {
-    if (PASTA.exists) PASTA.delete();
-    PASTA.create({ idempotent: true, intermediates: true });
+    if (pastaDaConta().exists) pastaDaConta().delete();
+    pastaDaConta().create({ idempotent: true, intermediates: true });
   } catch {
     // Se não der para apagar a pasta, os arquivos ficam órfãos e somem com o app.
   }
@@ -409,3 +422,5 @@ export function useAtualizarAoFocar() {
     }, []),
   );
 }
+
+aoTrocarConta(() => definir({ pendentes: [], relatos: [], online: true, carregado: false }));

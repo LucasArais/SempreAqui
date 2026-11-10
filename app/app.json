@@ -65,7 +65,8 @@
           "cameraPermission": "O SempreAqui usa a câmera para fotografar lembranças para o Passaporte de Memória.",
           "microphonePermission": false
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "scheme": "sempreaqui",
     "experiments": {

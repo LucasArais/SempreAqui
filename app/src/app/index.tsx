@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from '@/lib/armazenamento-conta';
 import { Redirect } from 'expo-router';
 import { useEffect, useState } from 'react';
 

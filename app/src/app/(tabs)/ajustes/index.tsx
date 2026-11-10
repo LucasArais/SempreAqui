@@ -2,13 +2,14 @@ import Constants from 'expo-constants';
 import * as ImagePicker from 'expo-image-picker';
 import { type Href, router } from 'expo-router';
 import { useState } from 'react';
-import { Linking, Share } from 'react-native';
+import { Alert, Linking, Share } from 'react-native';
 
 import { Avatar, Coluna, LinkDaSecao, ListGroup, ListRow, mostrarToast, Photo, Screen, Section, Text } from '@/components';
 import { fotos } from '@/data/familia';
 import { abrirLink } from '@/lib/abrir';
 import { api, ErroApi } from '@/lib/api';
 import { meuNome, PAPEIS, useFamilia } from '@/lib/familia';
+import { sair } from '@/lib/sessao';
 import { haptic } from '@/lib/haptics';
 import { useIaLocal } from '@/lib/ia-local';
 import { enviarFoto, fotoDaChave, passaporteAtual, salvarPassaporte, usePassaporte } from '@/lib/passaporte';
@@ -93,6 +94,15 @@ export default function Ajustes() {
           />
           <ListRow titulo="Privacidade e dados da família" subtitulo="Baixar uma cópia ou apagar tudo" icone="documento" onPress={() => ir('/familia/privacidade')} />
           <ListRow titulo="Termo de uso dos dados" icone="texto" onPress={() => ir('/termo')} />
+        </ListGroup>
+      </Section>
+
+      <Section titulo="Conta">
+        <ListGroup>
+          <ListRow titulo="Sair da conta" icone="cadeado" onPress={() => Alert.alert('Sair da conta?', 'Você pode entrar de novo com seu e-mail e senha.', [
+            { text: 'Cancelar', style: 'cancel' },
+            { text: 'Sair', onPress: () => { void sair().catch(() => mostrarToast('Não consegui sair agora. Tente de novo.')); } },
+          ])} />
         </ListGroup>
       </Section>
 

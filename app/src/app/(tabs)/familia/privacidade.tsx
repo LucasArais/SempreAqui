@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from '@/lib/armazenamento-conta';
 import { File, Paths } from 'expo-file-system';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -55,7 +55,7 @@ export default function Privacidade() {
       await AsyncStorage.removeItem(CHAVE_ONBOARDING).catch(() => undefined);
       await sair();
       haptic.sucesso();
-      router.replace('/onboarding');
+      router.replace('/entrar');
       mostrarToast('Todos os dados da família foram apagados.');
     } catch {
       setApagando(false);

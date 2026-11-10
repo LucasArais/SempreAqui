@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from './armazenamento-conta';
 import * as Crypto from 'expo-crypto';
 import type { ImageSource } from 'expo-image';
 import { useSyncExternalStore } from 'react';
@@ -6,7 +6,7 @@ import { useSyncExternalStore } from 'react';
 import { fotos } from '@/data/familia';
 
 import { API_BASE, api, cabecalhos, ErroApi } from './api';
-import { sessaoAtual } from './sessao';
+import { aoTrocarConta, sessaoAtual } from './sessao';
 
 /**
  * Passaporte de Memória da família, no formato de backend/core/schemas/passaporte.py.
@@ -190,3 +190,5 @@ export function oQueFalta(p: Passaporte) {
   });
   return { vazias, preenchidas: QUE_FALTAM.length - vazias.length, total: QUE_FALTAM.length };
 }
+
+aoTrocarConta(() => definir({ passaporte: null, carregado: false }));

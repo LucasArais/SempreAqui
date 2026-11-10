@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import { File } from 'expo-file-system';
 
-import { sessaoAtual, supabase } from './sessao';
+import { sessaoAtual } from './sessao';
 
 /**
  * Cliente da API do SempreAqui.
@@ -23,11 +23,11 @@ function descobrirBase(): string {
 
 export const API_BASE = descobrirBase();
 
-/** Com login: o token. Sem Supabase configurado: a família de demonstração local. */
+/** Dados privados só são enviados com a sessão autenticada. */
 export function cabecalhos(): Record<string, string> {
   const { token } = sessaoAtual();
   if (token) return { Authorization: `Bearer ${token}` };
-  return supabase ? {} : { 'X-Familia': FAMILIA_DEMO };
+  return {};
 }
 
 export type Etapa = 'recebido' | 'transcrevendo' | 'organizando' | 'resumindo' | 'pronto' | 'erro';
@@ -91,6 +91,7 @@ export class ErroApi extends Error {
 }
 
 async function chamar<T>(caminho: string, init: RequestInit = {}): Promise<T> {
+  const usuario = sessaoAtual().usuario;
   let resposta: Response;
   try {
     resposta = await fetch(`${API_BASE}${caminho}`, {
@@ -102,6 +103,7 @@ async function chamar<T>(caminho: string, init: RequestInit = {}): Promise<T> {
     if (__DEV__) console.warn(`[api] ${init.method ?? 'GET'} ${caminho} falhou: ${String(erro)}`);
     throw new ErroApi('Sem conexão agora. Seu relato fica guardado no celular.', true);
   }
+  if (usuario !== sessaoAtual().usuario) throw new ErroApi('A conta foi alterada.');
   if (resposta.status === 204) return undefined as T;
   const corpo = await resposta.json().catch(() => null);
   if (!resposta.ok) {

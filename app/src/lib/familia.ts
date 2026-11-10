@@ -1,9 +1,9 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from './armazenamento-conta';
 import * as Notifications from 'expo-notifications';
 import { useSyncExternalStore } from 'react';
 
 import { api } from './api';
-import { sessaoAtual } from './sessao';
+import { aoTrocarConta, sessaoAtual } from './sessao';
 
 /**
  * Rede da Família: quem faz parte, as tarefas da semana e o feed do que aconteceu.
@@ -236,3 +236,5 @@ export function ehHoje(iso: string | null) {
 export function avisoDasUltimas24h(feed: ItemFeed[]) {
   return feed.find((i) => i.tipo === 'aviso' && Date.now() - new Date(i.quando).getTime() < 86400000);
 }
+
+aoTrocarConta(() => { estado = { membros: [], eu: null, tarefas: [], feed: [], carregado: false }; ouvintes.forEach((o) => o()); });

@@ -2,7 +2,7 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 
 import { api } from './api';
-import { sessaoAtual } from './sessao';
+import { aoTrocarConta, sessaoAtual } from './sessao';
 
 export type DiaSemana = {
   data: string;
@@ -57,3 +57,5 @@ export function useSemana() {
 
   return { semana, erro, carregar };
 }
+
+aoTrocarConta(() => { emCache = null; });

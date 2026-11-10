@@ -1,17 +1,13 @@
 import { api } from './api';
-import { definirFamilia, garantirLogin, marcarErroSessao, marcarSemSupabase, supabase } from './sessao';
+import { definirFamilia, garantirLogin, marcarErroSessao } from './sessao';
 
-/** Login anônimo (se preciso) e entrada na família. Usado ao abrir o app e depois de apagar tudo. */
+/** Restaura o login e mantém a criação/entrada na família já existente no backend. */
 export async function entrar() {
   try {
-    if (!supabase) {
-      marcarSemSupabase();
-      return;
-    }
-    await garantirLogin();
+    if (!(await garantirLogin())) return;
     const { familia, papel } = await api.sessao();
     definirFamilia(familia, papel);
   } catch {
-    marcarErroSessao('Não consegui entrar agora. Seus relatos ficam guardados no celular.');
+    marcarErroSessao('Não consegui abrir sua família agora. Confira sua conexão e tente de novo.');
   }
 }
