@@ -232,6 +232,36 @@ class ProvedorOpenRouter:
             return modelo.model_validate_json(_limpar_json(texto))
 
 
+class ProvedorLocal(ProvedorOpenRouter):
+    """Modelo rodando na própria máquina (llama.cpp `llama-server`, API compatível com OpenAI).
+
+    Serve para medir o mesmo Llama 3.2 3B que o Android usa no aparelho, sem custo e sem
+    mandar dado nenhum para fora. LLM_LOCAL_URL aponta para o servidor (padrão: porta 8090).
+    """
+
+    def __init__(self, url: str | None = None) -> None:
+        import os
+
+        self.URL = (url or os.getenv("LLM_LOCAL_URL", "http://localhost:8090")).rstrip(
+            "/"
+        ) + "/v1/chat/completions"
+        self.modelo = os.getenv("LLM_LOCAL_MODEL", "llama-3.2-3b")
+        self._chave = "local"
+        self._coleta = "deny"
+
+    def _chamar(self, mensagens: list[dict], **extra) -> str:
+        import httpx
+
+        corpo = {"model": self.modelo, "messages": mensagens, "temperature": 0.2, **extra}
+        try:
+            resposta = httpx.post(self.URL, json=corpo, timeout=300)
+        except httpx.HTTPError as erro:
+            raise ErroProvedorIA(f"Modelo local fora do ar: {erro}") from erro
+        if resposta.status_code != 200:
+            raise ErroProvedorIA(f"Modelo local respondeu {resposta.status_code}")
+        return (resposta.json()["choices"][0]["message"]["content"] or "").strip()
+
+
 def _limpar_json(texto: str) -> str:
     """Alguns modelos embrulham o JSON em blocos de código."""
     texto = texto.strip()
@@ -268,10 +298,19 @@ class ProvedorFalso:
         return modelo.model_validate_json(json.dumps(self.estruturado))
 
 
+def provedor_da_naomi() -> ProvedorIA:
+    """Nuvem da Naomi: o mesmo OpenRouter, com o modelo de texto mais barato (NAOMI_MODEL)."""
+    if config().llm_provider == "openrouter":
+        return ProvedorOpenRouter(modelo=config().naomi_model)
+    return provedor_padrao()
+
+
 def provedor_padrao() -> ProvedorIA:
     nome = config().llm_provider
     if nome == "openrouter":
         return ProvedorOpenRouter()
     if nome == "gemini":
         return ProvedorGemini()
+    if nome == "local":
+        return ProvedorLocal()
     raise ErroProvedorIA(f"Provedor de IA desconhecido: {nome!r}")

@@ -29,6 +29,44 @@ Os números vêm do Relatório Nacional sobre a Demência no Brasil, do Ministé
 
 Por trás dos números, o padrão se repete. Uma filha concentra tudo. Os irmãos que moram longe querem ajudar, mas não sabem como nem o que está acontecendo. Nas consultas, ninguém lembra direito como foram as últimas semanas. E aos poucos a pessoa deixa de ser vista como alguém com história, gostos e jeito próprio, e passa a ser vista só como paciente.
 
+## Para quem é
+
+**Quem:** a família que cuida em casa de alguém com Alzheimer ou outra demência. No centro, quem cuida no dia a dia (em geral uma filha, que mora junto). Em volta, os irmãos, netos e sobrinhos que querem ajudar, muitas vezes de longe. E a própria pessoa que vive com demência, que continua sendo alguém com história.
+
+**Quantos:**
+
+- **32,1 milhões** de brasileiros têm 60 anos ou mais (Censo 2022, IBGE).
+- Cerca de **8,5%** deles vivem com demência, **mais de 2 milhões de pessoas**, e **mais de 80%** ainda não têm diagnóstico (Relatório Nacional sobre a Demência, 2024).
+- Atrás de cada pessoa há uma família inteira. Em **83,6%** dos casos o cuidado é informal e sem pagamento, e **57%** de quem cuida são filhos ou filhas.
+
+**Onde moram:** em casa, com a família, em todo o país. A demência é mais frequente no Norte e no Nordeste, perto de 10% dos idosos, e menos no Sul, 7,3%. Em número de pessoas, o Sudeste concentra mais, porque é onde vive a maior parte dos idosos. A família quase sempre está espalhada: uma filha mora junto e um irmão vive em outra cidade. A maioria depende do SUS, por isso o app fala do Cartão SUS, das UBS e dos programas oficiais.
+
+### Mapa de empatia de quem cuida
+
+Personas que guiam cada decisão: **Cláudia**, 52 anos, cuida da mãe e abre o app às 23h, cansada, com uma mão. **Rafael**, 28 anos, irmão em Recife, quer saber como a mãe está sem precisar ligar. **Dona Isabel**, 81 anos, vive com Alzheimer.
+
+| | Cláudia (cuida no dia a dia) |
+|---|---|
+| **Pensa e sente** | "Se eu não fizer, ninguém faz." Culpa por perder a paciência, medo de não perceber uma piora, solidão. 45% de quem cuida têm sintomas de ansiedade ou depressão. |
+| **Ouve** | "Qualquer coisa me avisa" dos irmãos. Conselhos soltos no WhatsApp. Pouco tempo com o médico, que pergunta "como foram as últimas semanas?". |
+| **Vê** | A mãe que às vezes não a reconhece. Remédios, consultas e papéis acumulando. Os irmãos longe da rotina. |
+| **Fala e faz** | Mais de 10 horas de cuidado por dia, e 65,7% ainda mantêm outro trabalho. Manda áudio no WhatsApp porque não tem tempo de escrever. |
+| **Dores** | Sobrecarga (71,4% têm sinais), noites mal dormidas, não lembrar os detalhes na consulta, não saber o que fazer na hora difícil, não ter com quem dividir. |
+| **Ganhos que busca** | Contar o dia em um áudio e ter tudo organizado. Chegar na consulta com a semana na mão. Dividir tarefas sem precisar pedir de novo. Ver a mãe ainda como a pessoa que ela é. |
+
+**Rafael**, de longe, quer ajudar mas não sabe como nem o que está acontecendo. **Dona Isabel** precisa ser tratada pelo nome e pela história, não só como paciente.
+
+Fontes: [Censo 2022, IBGE](https://www.ibge.gov.br/novo-portal-destaques/38244-ibge-divulga-hoje-em-1-de-novembro-o-texto-censo-demografico-2022-populacao-por-idade-e-sexo-pessoas-de-60-anos-ou-mais-de-idade.html), [Relatório Nacional sobre a Demência](https://bvsms.saude.gov.br/bvs/publicacoes/relatorio_nacional_demencia_brasil.pdf) e [ReNaDe](https://www12.senado.leg.br/noticias/arquivos/2024/06/07/pesquisa-cuidados-demencia.pdf). Mais em [docs/problema.md](docs/problema.md).
+
+## Quem faz e por que
+
+**Falamos de perto do problema.** O SempreAqui nasceu de um vizinho que conhecemos desde a infância. Há cerca de um ano ele começou a mostrar sintomas de Alzheimer, e acompanhamos de perto o que a família passou a viver: uma pessoa sobrecarregada, parentes querendo ajudar sem saber como, e consultas em que ninguém lembrava direito das últimas semanas.
+
+**A equipe:**
+
+- **IA em produção:** um integrante coloca IA em produção para marcas muito conhecidas, como Burger King, Subway e Starbucks. É dele a parte de IA, app e infraestrutura.
+- **Sistemas hospitalares:** o outro trabalha com sistemas hospitalares e conhece por dentro como a informação de saúde circula, o que a equipe de saúde precisa ouvir e como integrar com o SUS.
+
 ## A solução
 
 O SempreAqui é um app de celular, pensado para ser usado por voz, que faz três coisas: guarda quem a pessoa é, organiza o dia a dia do cuidado e divide esse cuidado com a família.
@@ -88,7 +126,7 @@ O app é pensado com a IA no centro, inclusive na barra de abas:
 3. **Perceber:** a Naomi lê as semanas de relatos e avisa sozinha quando um padrão se repete.
 4. **Proteger:** regras que a IA não desliga. Risco vira 192 antes de qualquer IA, remédio e diagnóstico recebem recusa gentil, e toda resposta da IA só aparece se citar documentos reais e passar nos guardrails. Se não passar, a resposta das regras entra no lugar.
 
-E tudo é medido. No gabarito da Naomi, a IA acerta 18 de 18 perguntas (as regras sozinhas, 10 de 18), com 100% de segurança e zero violações de guardrail.
+E tudo é medido. No gabarito da Naomi, a IA acerta 17 de 18 perguntas sem errar nenhum fato (as regras sozinhas, 10 de 18), com 100% de segurança, zero violações de guardrail e o modelo aberto mais barato que passou no teste.
 
 ## Princípios
 
@@ -228,7 +266,7 @@ flowchart TB
         E[(Trechos oficiais<br/>com página e link)]
     end
 
-    M[Modelos via OpenRouter<br/>Gemini 3 Flash<br/>só como reserva]
+    M[Modelos via OpenRouter<br/>Gemini 3 Flash e gpt-oss-120b<br/>só como reserva]
 
     V --> ST --> LM --> GL --> Q
     GL --> T
@@ -259,7 +297,7 @@ Decisões e detalhes em [docs/arquitetura.md](docs/arquitetura.md).
 | IA no aparelho, Android | Whisper small (whisper.rn), Gemini Nano (ML Kit GenAI) ou Llama 3.2 3B (llama.rn); conversor de áudio nativo em Kotlin |
 | Backend | Python, FastAPI |
 | Orquestração de IA | LangGraph, um grafo por função |
-| Modelos na nuvem | Gemini 3 Flash via OpenRouter (escolhido por benchmark próprio de transcrição), só como reserva e só com provedores que não guardam dados |
+| Modelos na nuvem | Via OpenRouter, só com provedores que não guardam dados: Gemini 3 Flash para áudio e Diário (escolhido por benchmark próprio de transcrição) e gpt-oss-120b, modelo aberto, para a Naomi (o mais barato que não errou fatos no gabarito) |
 | Dados do SUS | Dados abertos do CNES (Ministério da Saúde) para unidades perto, IBGE para o município; mapa nativo com expo-maps e localização com expo-location |
 | Fontes oficiais | Acervo de trechos literais do Guia Prático do Cuidador (Ministério da Saúde), com página e link; busca por palavras, explicável e sem custo. pgvector entra quando o acervo crescer |
 | Banco | Supabase (Postgres) com Row Level Security por grupo familiar, ou SQLite local |
@@ -319,9 +357,28 @@ Métricas anônimas de uso, incluindo a taxa de correção dos campos da IA: `cu
 
 ## Como medimos a IA
 
-Cada etapa tem métrica e gabarito versionados: taxa de erro de palavras da transcrição, acurácia por campo do Diário, detecção de episódios e de risco, acerto da Naomi em 18 perguntas (dados, não inventar, segurança e conversa) e zero violações de guardrail no texto que a família recebe. O conjunto adversarial de guardrails roda no CI.
+Cada etapa tem métrica e gabarito versionados: taxa de erro de palavras da transcrição, acurácia por campo do Diário, detecção de episódios e de risco, acerto da Naomi em 18 perguntas (dados, não inventar, segurança e conversa: 17/18 com o gpt-oss-120b na nuvem, 18/18 com o Gemini 3 Flash, que custa o triplo, 10/18 só com regras e 10/18 com o Llama 3.2 3B rodando local) e zero violações de guardrail no texto que a família recebe. O conjunto adversarial de guardrails roda no CI.
 
 O primeiro benchmark com modelos reais mudou uma decisão: o modelo que usávamos inventava o começo de um relato e perdia uma queda, o que apagaria o alerta de 192. Trocamos para o que transcreve com 3,4% de erro e capta a queda sempre. Na prática, a família também avalia a IA: cada campo corrigido vira dado, e a taxa de correção é acompanhada semana a semana. Metodologia e resultados em [docs/avaliacao.md](docs/avaliacao.md).
+
+## Viabilidade: o MVP já roda
+
+O MVP do Demo Day já funciona no celular. Não é protótipo de tela:
+
+- **No ar hoje:** app para iPhone e Android, backend com API pública e banco com RLS. Diário por voz, Passaporte, Conversa do dia, Apoio na Hora Difícil, Rede da Família, SUS e a Naomi agente.
+- **IA medida:** gabaritos versionados para cada etapa, com 127 testes automáticos no CI. A Naomi acerta 17/18 no gabarito sem errar nenhum fato, a recusa médica e o 192 ficam em 100%, e o texto mostrado à família tem zero violações de guardrail.
+- **Sem fins lucrativos e de custo baixo:** o app é gratuito e de código aberto. A IA roda no próprio celular quando dá, e as regras respondem segurança e perguntas simples sem chamar a nuvem. Na nuvem, a Naomi usa o gpt-oss-120b, um modelo aberto: cerca de US$ 0,0009 por pergunta, uns US$ 0,13 por família ao mês. Escolhemos o mais barato que não errou fatos no gabarito, e o custo de cada modelo testado está em [docs/avaliacao.md](docs/avaliacao.md). A nuvem usa coleta de dados desligada, e a infraestrutura usa planos gratuitos (Cloudflare e Supabase).
+
+**O que falta, nas semanas do programa:**
+
+1. Testes com famílias reais (o roteiro está em [docs/testes-usuarios](docs/testes-usuarios)).
+2. Acessibilidade e polimento.
+3. Deploy estável.
+4. O roteiro do Demo Day.
+
+Cada ciclo entrega algo de ponta a ponta, então o app conta uma história completa a qualquer momento.
+
+**Por que a equipe dá conta:** a parte difícil, colocar IA confiável em produção, é o trabalho diário de quem constrói o app. A parte de saúde e integração com hospitais e SUS vem de quem trabalha com sistemas hospitalares.
 
 ## Roadmap até o Demo Day
 
@@ -343,6 +400,30 @@ Trabalhamos em ciclos curtos, cada um entregando uma funcionalidade de ponta a p
 O que mudou em cada ciclo está no [CHANGELOG](CHANGELOG.md).
 
 Detalhes em [docs/roadmap.md](docs/roadmap.md).
+
+## Impacto social
+
+**A mudança que queremos:** que nenhuma família cuide sozinha de quem vive com Alzheimer, e que a pessoa continue sendo vista pela sua história.
+
+| | Hoje | Com o SempreAqui | Como medimos |
+|---|---|---|---|
+| **Quem cuida** | Uma pessoa carrega tudo: 10 horas por dia, 71% com sinais de sobrecarga, 45% com ansiedade ou depressão | Conta o dia num áudio de um minuto e divide tarefas com a família sem precisar pedir de novo | Diários por semana (meta: 4 ou mais), tarefas assumidas por outra pessoa |
+| **Quem mora longe** | Recebe notícias soltas e não sabe como ajudar | Vê a semana, assume uma tarefa com "Eu assumo" e manda um "obrigado" | Familiares ativos por família, tarefas assumidas de longe |
+| **A pessoa que vive com demência** | Vira "paciente"; cuidador novo, centro-dia ou hospital não sabem do que ela gosta | Passaporte de Memória e Conversa do dia, que nunca pergunta "você lembra?" | Sessões de conversa e a reação dela a cada uma |
+| **O SUS** | Consulta curta, família tentando lembrar das últimas semanas | Chega com a lista "Para levar na consulta" e o Cartão SUS à mão; o app aponta UBS, CAPS e programas oficiais | Listas geradas antes de consulta, buscas por unidades perto |
+| **Na hora difícil** | Sem saber se é emergência | Orientação do Guia oficial, 192 quando há risco e nenhuma orientação médica inventada | Recusa médica e 192 medidos em 100% no gabarito |
+
+**Para quem não costuma ter acesso:**
+- **Grátis e sem fins lucrativos.** A IA no celular e as regras reduzem o custo para centavos por família ao mês, então dá para manter gratuito.
+- **Por voz.** Quem cuida já manda áudio no WhatsApp, e o app não exige saber escrever bem nem ter tempo para isso.
+- **Funciona sem internet e em Android de entrada.** Cada função usa a IA que o aparelho tiver; sem nenhuma, a nuvem entra como reserva.
+- **Ligado ao SUS.** A maioria das famílias depende dele.
+
+**Escala:** o código é aberto (MIT), e a família de demonstração e os gabaritos estão no repositório. Prefeituras, UBS, ONGs e associações de familiares podem usar e adaptar sem pagar licença. Com mil famílias, a IA custa cerca de US$ 130 por mês na nuvem, e a infraestrutura roda em planos gratuitos.
+
+**Privacidade como parte do impacto:** os dados de saúde da família não treinam modelo nenhum, as métricas são anônimas e agregadas, e a IA nunca dá diagnóstico nem fala de remédio ou dose ([docs/etica-e-seguranca.md](docs/etica-e-seguranca.md)).
+
+**Como acompanhamos:** os indicadores de uso já são coletados de forma anônima ([docs/metricas.md](docs/metricas.md)), e nos testes com famílias durante o programa vemos quantas tarefas passaram a ser divididas e se a lista ajudou na consulta. O impacto se soma aos [Objetivos de Desenvolvimento Sustentável](#objetivos-de-desenvolvimento-sustentável) 3, 5 e 10.
 
 ## Objetivos de Desenvolvimento Sustentável
 

@@ -56,7 +56,7 @@ from core import apoio, avisos, campos, guardrails, naomi, prompts, reminiscenci
 from core.auth import TokenInvalido, usuario_do_token
 from core.cadastro import router as router_cadastro
 from core.config import config
-from core.llm import ErroProvedorIA, ProvedorIA, provedor_padrao
+from core.llm import ErroProvedorIA, ProvedorIA, provedor_da_naomi, provedor_padrao
 from core.passaporte_html import renderizar as renderizar_passaporte
 from core.pdf import pdf_consulta
 from core.repositorio import (
@@ -132,6 +132,10 @@ def obter_repositorio() -> Repositorio:
 
 def obter_fabrica_provedor() -> Callable[[], ProvedorIA]:
     return provedor_padrao
+
+
+def obter_fabrica_naomi() -> Callable[[], ProvedorIA]:
+    return provedor_da_naomi
 
 
 def obter_provedor() -> ProvedorIA:
@@ -1082,7 +1086,7 @@ def perguntar_ao_ajudante(
     pergunta: Pergunta,
     familia_id: str = Depends(obter_familia),
     repo: Repositorio = Depends(obter_repositorio),
-    fabrica: Callable[[], ProvedorIA] = Depends(obter_fabrica_provedor),
+    fabrica: Callable[[], ProvedorIA] = Depends(obter_fabrica_naomi),
 ) -> dict:
     """A Naomi: IA com os dados da família e fontes, regras como rede de segurança (core/naomi.py).
     A pergunta e a conversa não são guardadas."""
@@ -1127,7 +1131,7 @@ _cache_avisos: dict[tuple, dict] = {}
 def avisos_da_naomi(
     familia_id: str = Depends(obter_familia),
     repo: Repositorio = Depends(obter_repositorio),
-    fabrica: Callable[[], ProvedorIA] = Depends(obter_fabrica_provedor),
+    fabrica: Callable[[], ProvedorIA] = Depends(obter_fabrica_naomi),
 ) -> dict:
     """Padrões que a Naomi percebeu nos relatos (core/avisos.py). Refeito quando chega relato novo."""
     relatos = _relatos_recentes(repo, familia_id, dias=avisos.DIAS)

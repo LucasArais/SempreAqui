@@ -8,6 +8,8 @@ que o sustentam, e só é mostrado se:
 - citar ao menos 3 relatos que existem (padrão é repetição, não um dia ruim);
 - passar nos guardrails (sem diagnóstico, sem remédio, sem termos desrespeitosos).
 
+Se a IA não achar nada que passe na validação, os detectores por contagem entram no lugar.
+
 A IA aponta o fato e sugere o próximo passo ("vale contar à equipe de saúde", "dá para dividir
 essa tarefa"); nunca diz o que o padrão significa. Sem provedor de IA, ou se a IA falhar,
 detectores simples por contagem dão os mesmos tipos de aviso.
@@ -99,7 +101,9 @@ def gerar(relatos: list[dict], passaporte: dict, hoje: date, provedor: ProvedorI
         try:
             resposta = provedor.gerar_estruturado(prompt, SISTEMA, Avisos)
             bons = [_pronto(a, ids) for a in resposta.avisos if not validar(a, ids)]
-            return {"avisos": bons[:3], "motor": "ia"}
+            if bons:
+                return {"avisos": bons[:3], "motor": "ia"}
+            # Nada que passe na validação: os detectores por contagem ainda podem achar algo.
         except (ErroProvedorIA, ValueError):
             pass
     return {"avisos": detectores(recentes, chamada)[:3], "motor": "regras"}
@@ -167,11 +171,17 @@ def detectores(recentes: list[dict], chamada: str) -> list[dict]:
     )
     if ajudou:
         coisa, n = ajudou.most_common(1)[0]
+        escrito = next(  # como a família escreveu, com os nomes próprios em maiúscula
+            a.strip()
+            for r in recentes
+            for a in (r.get("registro") or {}).get("o_que_ajudou") or []
+            if a.strip().lower() == coisa
+        )
         if n >= MINIMO_EVIDENCIAS:
             avisos.append(
                 {
                     "titulo": "O que tem funcionado",
-                    "texto": f"{coisa[0].upper() + coisa[1:]} ajudou em {n} relatos do último mês. Vale repetir nos momentos difíceis.",
+                    "texto": f"{escrito[0].upper() + escrito[1:]} ajudou em {n} relatos do último mês. Vale repetir nos momentos difíceis.",
                     "tipo": "o_que_funciona",
                     "evidencias": [
                         r["id"]

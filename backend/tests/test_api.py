@@ -3,7 +3,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from api.main import app, obter_fabrica_provedor, obter_repositorio
+from api.main import app, obter_fabrica_naomi, obter_fabrica_provedor, obter_repositorio
 from core.llm import ErroProvedorIA, ProvedorFalso
 from core.repositorio import Repositorio
 from tests.conftest import REGISTRO_QUEDA, REGISTRO_TRANQUILO
@@ -39,6 +39,7 @@ def ambiente(tmp_path):
     estado = {"fabrica": lambda: provedor}
     app.dependency_overrides[obter_repositorio] = lambda: repo
     app.dependency_overrides[obter_fabrica_provedor] = lambda: lambda: estado["fabrica"]()
+    app.dependency_overrides[obter_fabrica_naomi] = lambda: lambda: estado["fabrica"]()
     yield TestClient(app), repo, provedor, estado
     app.dependency_overrides.clear()
 

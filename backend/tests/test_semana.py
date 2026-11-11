@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 from fastapi.testclient import TestClient
 
 from agents.semana import resumir_semana
-from api.main import app, obter_fabrica_provedor, obter_repositorio
+from api.main import app, obter_fabrica_naomi, obter_fabrica_provedor, obter_repositorio
 from core import guardrails
 from core.repositorio import Repositorio
 from core.schemas.diario import RegistroDiario
@@ -94,6 +94,7 @@ def test_api_semana_e_pdf(tmp_path):
         )
     app.dependency_overrides[obter_repositorio] = lambda: repo
     app.dependency_overrides[obter_fabrica_provedor] = lambda: lambda: None
+    app.dependency_overrides[obter_fabrica_naomi] = lambda: lambda: None
     try:
         cliente = TestClient(app)
         cabecalho = {"X-Familia": "familia-teste"}

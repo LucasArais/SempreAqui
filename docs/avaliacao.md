@@ -99,13 +99,13 @@ O Apoio é determinístico de propósito: na hora difícil, previsibilidade vale
 
 `uv run python -m evals.avaliar_naomi` sobe a API num banco temporário com a família de demonstração (Passaporte e 25 relatos em quatro semanas) e faz as 18 perguntas de [evals/naomi/casos.yaml](../backend/evals/naomi/casos.yaml) pela mesma rota que o app usa.
 
-| Grupo | O que mede | Só regras | IA (Gemini 3 Flash) |
-|---|---|---|---|
-| Dados (10) | A resposta traz o que está registrado e cita a fonte certa | 2/10 | 10/10 |
-| Não inventar (2) | Tipo sanguíneo e nome do médico, que não estão registrados, viram "não sei" | 2/2 | 2/2 |
-| Segurança (4) | Risco com 192; dose e "piorou?" com recusa; confusão de repente com UBS ou UPA | 4/4 | 4/4 |
-| Conversa (2) | Pergunta de seguimento ("e de música?") e a origem do nome | 2/2 | 2/2 |
-| **Total** | | **10/18 (56%)** | **18/18 (100%)** |
+| Grupo | O que mede | Só regras | IA local (Llama 3.2 3B) | Nuvem: gpt-oss-120b (em uso) | Nuvem: Gemini 3 Flash |
+|---|---|---|---|---|---|
+| Dados (10) | A resposta traz o que está registrado e cita a fonte certa | 2/10 | 2/10 | 9/10 | 10/10 |
+| Não inventar (2) | Tipo sanguíneo e nome do médico, que não estão registrados, viram "não sei" | 2/2 | 2/2 | 2/2 | 2/2 |
+| Segurança (4) | Risco com 192; dose e "piorou?" com recusa; confusão de repente com UBS ou UPA | 4/4 | 4/4 | 4/4 | 4/4 |
+| Conversa (2) | Pergunta de seguimento ("e de música?") e a origem do nome | 2/2 | 2/2 | 2/2 | 2/2 |
+| **Total** | | **10/18 (56%)** | **10/18 (56%)** | **17/18 (94%)** | **18/18 (100%)** |
 
 Zero violações de guardrail nos dois modos; 2 segundos por pergunta com a IA. Das 18 respostas, 10 vieram da IA e 8 das regras (segurança, saudação e nome ficam nas regras de propósito).
 
@@ -115,7 +115,20 @@ O que a avaliação mudou:
 
 **Avisos.** Na mesma família, a IA apontou os três padrões semeados: agitação à tarde (8 relatos), cansaço de quem cuida (3 relatos seguidos) e as músicas do Roberto Carlos ajudando (11 relatos). Cada aviso foi conferido contra os relatos citados. Os detectores sem IA acham os mesmos três.
 
-**Limites:** 18 perguntas numa família fictícia. O próximo passo é crescer o gabarito com perguntas reais das famílias que testam o app (sem guardar dados) e medir a Naomi também com a IA do celular.
+**IA local, sem internet e sem custo.** `LLM_PROVIDER=local uv run python -m evals.avaliar_naomi` roda o mesmo gabarito no mesmo Llama 3.2 3B (Q4_K_M) que o Android usa, servido pelo llama.cpp no próprio computador. O modelo muitas vezes acerta o conteúdo ("a Dona Isabel fica mais agitada à tarde"), mas não cita de onde tirou. Toda resposta sem fonte real é recusada, e as regras respondem no lugar. Resultado: empata com as regras (10/18), com segurança em 4/4 e zero violações. Ou seja, um modelo pequeno não piora a Naomi, só não acrescenta. Nos avisos, ele achou a agitação à tarde e as músicas do Roberto Carlos, mas com textos vagos ("parece estar em um padrão"). Conclusão: com os modelos que cabem no celular hoje, a Naomi agente fica na nuvem, e o celular continua organizando o relato do Diário, onde o 3B acerta 83%.
+
+**Custo por pergunta (o projeto é sem fins lucrativos).** O mesmo gabarito, com o consumo real de tokens medido na API (cerca de 3.700 tokens de entrada e 180 de saída por pergunta que chega à IA):
+
+| Modelo na nuvem | Acerto | Erros | Custo por pergunta | 150 perguntas por família ao mês |
+|---|---|---|---|---|
+| Gemini 3 Flash | 18/18 | nenhum | US$ 0,0025 | US$ 0,37 |
+| Gemini 2.5 Flash Lite | 16/18 | errou o dia da semana de uma noite difícil e a conta de um aviso | US$ 0,0004 | US$ 0,07 |
+| **gpt-oss-120b (em uso)** | **17/18** | uma pergunta ficou com as regras; nenhum fato errado | US$ 0,0009 | US$ 0,13 |
+| Llama 3.2 3B local | 10/18 | não cita fontes, as regras respondem | zero | zero |
+
+**Escolha: Llama no celular, gpt-oss-120b na nuvem.** O SempreAqui é sem fins lucrativos, então o critério é o menor custo que não erra fatos sobre a família. O gpt-oss-120b é um modelo aberto (Apache 2.0) que custa um terço do Gemini 3 Flash e não inventou nada: no único caso que perdeu ("como foi a última noite difícil?"), a resposta não citou a fonte e as regras responderam no lugar. O Flash Lite é mais barato, mas errou fatos, e por isso ficou de fora. Nos avisos, o gpt-oss não gerou padrão que passasse na validação, e os detectores por contagem entraram no lugar e acharam os três padrões (agitação à tarde, cansaço de quem cuida, músicas do Roberto Carlos). O Diário continua no Gemini 3 Flash, porque precisa ouvir áudio e foi escolhido no benchmark de transcrição. Com mil famílias fazendo 5 perguntas por dia, a Naomi custa cerca de US$ 130 por mês. O modelo fica em `NAOMI_MODEL` no `.env`, e o gabarito diz na hora se uma troca serve.
+
+**Limites:** 18 perguntas numa família fictícia. O próximo passo é crescer o gabarito com perguntas reais das famílias que testam o app (sem guardar dados) e repetir a medida com a IA local quando houver modelos melhores para o celular.
 
 ### Modelos abertos para a IA no Android (10/11/2026)
 

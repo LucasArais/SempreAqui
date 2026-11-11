@@ -2,6 +2,7 @@
 
 Uso (a partir de backend/, com OPENROUTER_API_KEY ou GEMINI_API_KEY no .env):
     uv run python -m evals.avaliar_naomi [--sem-ia]
+    LLM_PROVIDER=local uv run python -m evals.avaliar_naomi   # Llama 3.2 3B no Mac (llama-server)
 
 Sobe a API num banco temporário com os relatos e o Passaporte de demonstração e faz as
 perguntas de evals/naomi/casos.yaml pela rota /assistente, como o app faz. Mede:
@@ -32,9 +33,9 @@ os.environ["ACEITAR_X_FAMILIA"] = "1"
 import yaml  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
-from api.main import app, obter_fabrica_provedor, obter_repositorio  # noqa: E402
+from api.main import app, obter_fabrica_naomi, obter_fabrica_provedor, obter_repositorio  # noqa: E402
 from core import apoio, guardrails  # noqa: E402
-from core.llm import ErroProvedorIA, provedor_padrao  # noqa: E402
+from core.llm import ErroProvedorIA, provedor_da_naomi, provedor_padrao  # noqa: E402
 from core.repositorio import Repositorio  # noqa: E402
 from demo import seed  # noqa: E402
 
@@ -83,7 +84,7 @@ def main() -> int:
     sem_ia = "--sem-ia" in sys.argv
     if not sem_ia:
         try:
-            provedor_padrao()
+            provedor_da_naomi()
         except ErroProvedorIA as erro:
             print(f"Sem provedor de IA ({erro}). Use --sem-ia para medir só as regras.")
             return 1
@@ -98,6 +99,9 @@ def main() -> int:
     app.dependency_overrides[obter_repositorio] = lambda: repo
     app.dependency_overrides[obter_fabrica_provedor] = lambda: (
         sem_provedor if sem_ia else provedor_padrao
+    )
+    app.dependency_overrides[obter_fabrica_naomi] = lambda: (
+        sem_provedor if sem_ia else provedor_da_naomi
     )
     cliente = TestClient(app)
 
@@ -138,7 +142,8 @@ def main() -> int:
     total_ok = sum(g[0] for g in por_grupo.values())
     resultado = {
         "data": date.today().isoformat(),
-        "modo": "regras" if sem_ia else "ia",
+        "modo": "regras" if sem_ia else ("local" if os.getenv("LLM_PROVIDER") == "local" else "ia"),
+        "modelo": None if sem_ia else getattr(provedor_da_naomi(), "modelo", None),
         "acerto": f"{total_ok}/{len(casos)} ({100 * total_ok / len(casos):.0f}%)",
         "por_grupo": {k: f"{v[0]}/{v[1]}" for k, v in por_grupo.items()},
         "motores": motores,
@@ -155,7 +160,9 @@ def main() -> int:
         "casos": linhas,
     }
     RESULTADOS.mkdir(exist_ok=True)
-    saida = RESULTADOS / f"naomi-{resultado['modo']}-{resultado['data']}.json"
+    nome = (resultado["modelo"] or "").split("/")[-1].removesuffix("-preview")
+    sufixo = nome if resultado["modo"] == "ia" else resultado["modo"]
+    saida = RESULTADOS / f"naomi-{sufixo}-{resultado['data']}.json"
     saida.write_text(json.dumps(resultado, ensure_ascii=False, indent=2), encoding="utf-8")
     resumo = {k: v for k, v in resultado.items() if k != "casos"}
     print(json.dumps(resumo, ensure_ascii=False, indent=2))

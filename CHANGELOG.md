@@ -12,6 +12,7 @@ O que mudou em cada ciclo, do mais recente para o mais antigo.
 - A assistente ganhou nome, a Naomi, em homenagem a Naomi Feil, criadora do método Validation. Fica no centro da barra de abas, com avatar próprio, e conta a origem do nome quando perguntam (e em Ajustes, Por que Naomi?).
 - Naomi agente: LLM com busca nos dados da família (Diário, Passaporte, semana, tarefas, conversa do dia, SUS e Guia do Cuidador), resposta com fontes conferidas, ações do app e memória da conversa. Regras como rede de segurança que a IA não desliga.
 - A Naomi percebeu: avisos no Hoje com padrões do último mês de relatos, cada um com pelo menos 3 relatos como prova.
+- Naomi na nuvem com o gpt-oss-120b, modelo aberto (`NAOMI_MODEL`): 17/18 sem errar fatos, um terço do custo do Gemini 3 Flash. Gabarito também roda com o Llama 3.2 3B local (`LLM_PROVIDER=local`), que empata com as regras (10/18). Avisos sem padrão validado pela IA usam os detectores por contagem.
 - Avaliação da Naomi (`evals/avaliar_naomi.py`): 18/18 com IA contra 10/18 só com regras, 100% de segurança, zero violações. A avaliação achou e corrigiu uma falha: confusão de repente agora sempre orienta procurar a UBS ou a UPA.
 - Servidor com endereço fixo pelo túnel nomeado da Cloudflare.
 

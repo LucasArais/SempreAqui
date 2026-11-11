@@ -26,6 +26,7 @@ class Config:
     openrouter_api_key: str | None
     openrouter_model: str
     openrouter_coleta_dados: str
+    naomi_model: str
     dados_dir: Path
     repositorio: str
     supabase_url: str | None
@@ -50,6 +51,9 @@ def config() -> Config:
         openrouter_model=os.getenv("OPENROUTER_MODEL", "google/gemini-3-flash-preview"),
         # "deny": só provedores que não guardam nem treinam com os dados. Obrigatório com dados reais.
         openrouter_coleta_dados=os.getenv("OPENROUTER_COLETA_DADOS", "deny"),
+        # A Naomi e os avisos só leem texto: modelo aberto e mais barato, medido no gabarito
+        # (evals/avaliar_naomi.py). O Diário continua no OPENROUTER_MODEL, que ouve áudio.
+        naomi_model=os.getenv("NAOMI_MODEL", "openai/gpt-oss-120b"),
         dados_dir=RAIZ_BACKEND / os.getenv("DADOS_DIR", "dados"),
         # "supabase" (padrão quando configurado) ou "local" (SQLite em DADOS_DIR)
         repositorio=os.getenv("REPOSITORIO", "supabase"),
