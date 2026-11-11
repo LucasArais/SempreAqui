@@ -6,6 +6,15 @@ O que mudou em cada ciclo, do mais recente para o mais antigo.
 
 
 
+
+## Naomi: a IA no centro do app (novembro de 2026)
+
+- A assistente ganhou nome, a Naomi, em homenagem a Naomi Feil, criadora do método Validation. Fica no centro da barra de abas, com avatar próprio, e conta a origem do nome quando perguntam (e em Ajustes, Por que Naomi?).
+- Naomi agente: LLM com busca nos dados da família (Diário, Passaporte, semana, tarefas, conversa do dia, SUS e Guia do Cuidador), resposta com fontes conferidas, ações do app e memória da conversa. Regras como rede de segurança que a IA não desliga.
+- A Naomi percebeu: avisos no Hoje com padrões do último mês de relatos, cada um com pelo menos 3 relatos como prova.
+- Avaliação da Naomi (`evals/avaliar_naomi.py`): 18/18 com IA contra 10/18 só com regras, 100% de segurança, zero violações. A avaliação achou e corrigiu uma falha: confusão de repente agora sempre orienta procurar a UBS ou a UPA.
+- Servidor com endereço fixo pelo túnel nomeado da Cloudflare.
+
 ## Gemini Nano e Llama 3.2 3B no Android (novembro de 2026)
 
 - O Android escolhe sozinho o motor da IA no celular, sempre de graça: Gemini Nano onde existe (vem com o Android; o app só baixa o Whisper), Llama 3.2 3B nos celulares com 6 GB de RAM ou mais, nuvem nos demais.

@@ -52,7 +52,7 @@ from agents.diario import (
     violacoes_do_resumo,
 )
 from agents.semana import resumir_semana
-from core import apoio, assistente, campos, guardrails, prompts, reminiscencia, sus
+from core import apoio, avisos, campos, guardrails, naomi, prompts, reminiscencia, sus
 from core.auth import TokenInvalido, usuario_do_token
 from core.cadastro import router as router_cadastro
 from core.config import config
@@ -1059,8 +1059,22 @@ async def transcrever_apoio(
 # Ajudante (chat da família) ------------------------------------------------
 
 
+class MensagemAnterior(BaseModel):
+    de: str = Field(max_length=20)
+    texto: str = Field(max_length=1000)
+
+
 class Pergunta(BaseModel):
     texto: str = Field(min_length=1, max_length=1000)
+    historico: list[MensagemAnterior] = Field(default_factory=list, max_length=12)
+
+
+def _provedor_ou_nada(fabrica: Callable[[], ProvedorIA]) -> ProvedorIA | None:
+    """A Naomi funciona sem IA na nuvem: sem chave ou com erro de configuração, só as regras."""
+    try:
+        return fabrica()
+    except ErroProvedorIA:
+        return None
 
 
 @app.post("/assistente", dependencies=[limite("assistente", 20, 300)])
@@ -1068,8 +1082,10 @@ def perguntar_ao_ajudante(
     pergunta: Pergunta,
     familia_id: str = Depends(obter_familia),
     repo: Repositorio = Depends(obter_repositorio),
+    fabrica: Callable[[], ProvedorIA] = Depends(obter_fabrica_provedor),
 ) -> dict:
-    """Responde com o que está registrado e diz de onde veio. A pergunta não é guardada."""
+    """A Naomi: IA com os dados da família e fontes, regras como rede de segurança (core/naomi.py).
+    A pergunta e a conversa não são guardadas."""
     hoje = _hoje()
     fatos = _fatos_da_semana(repo, familia_id, None)
     resumo_semana = next(
@@ -1092,9 +1108,42 @@ def perguntar_ao_ajudante(
         ),
         "hoje": hoje,
     }
-    resposta = assistente.responder(pergunta.texto, ctx)
-    repo.registrar_evento("assistente_pergunta", familia_id, rotulo=resposta["tipo"])
+    resposta = naomi.responder(
+        pergunta.texto,
+        ctx,
+        _provedor_ou_nada(fabrica),
+        [m.model_dump() for m in pergunta.historico],
+    )
+    repo.registrar_evento(
+        "assistente_pergunta", familia_id, rotulo=f"{resposta['tipo']}:{resposta.get('motor')}"
+    )
     return resposta
+
+
+_cache_avisos: dict[tuple, dict] = {}
+
+
+@app.get("/naomi/avisos", dependencies=[limite("avisos", 20, 300)])
+def avisos_da_naomi(
+    familia_id: str = Depends(obter_familia),
+    repo: Repositorio = Depends(obter_repositorio),
+    fabrica: Callable[[], ProvedorIA] = Depends(obter_fabrica_provedor),
+) -> dict:
+    """Padrões que a Naomi percebeu nos relatos (core/avisos.py). Refeito quando chega relato novo."""
+    relatos = _relatos_recentes(repo, familia_id, dias=avisos.DIAS)
+    hoje = _hoje()
+    chave = (familia_id, hoje, len(relatos), relatos[0]["id"] if relatos else None)
+    if chave not in _cache_avisos:
+        resultado = avisos.gerar(
+            relatos, _passaporte(repo, familia_id), hoje, _provedor_ou_nada(fabrica)
+        )
+        if len(_cache_avisos) > 500:
+            _cache_avisos.clear()
+        _cache_avisos[chave] = resultado
+        repo.registrar_evento(
+            "naomi_avisos", familia_id, rotulo=f"{resultado['motor']}:{len(resultado['avisos'])}"
+        )
+    return _cache_avisos[chave]
 
 
 # Rede da Família -----------------------------------------------------------

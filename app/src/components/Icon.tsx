@@ -18,6 +18,7 @@ import {
   Heart,
   House,
   Image as ImageIcon,
+  Info,
   Leaf,
   LifeBuoy,
   Link,
@@ -34,6 +35,7 @@ import {
   Plus,
   Share,
   Smile,
+  Sparkles,
   Square,
   Sun,
   Trash2,
@@ -95,6 +97,8 @@ const icones = {
   desfazer: { sf: 'arrow.uturn.backward', lucide: Undo2 },
   historico: { sf: 'clock.arrow.circlepath', lucide: History },
   lixeira: { sf: 'trash', lucide: Trash2 },
+  naomi: { sf: 'sparkles', lucide: Sparkles },
+  info: { sf: 'info.circle', lucide: Info },
 } satisfies Record<string, { sf: SF; lucide: LucideIcon }>;
 
 export type NomeIcone = keyof typeof icones;

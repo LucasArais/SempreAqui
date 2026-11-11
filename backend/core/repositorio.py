@@ -149,6 +149,7 @@ EVENTOS_PERMITIDOS = {
     "relato_enviado_offline",
     "apoio_pedido",
     "assistente_pergunta",
+    "naomi_avisos",
 }
 
 _SAL = "sempreaqui-metricas-v1"

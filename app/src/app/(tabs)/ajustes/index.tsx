@@ -110,7 +110,8 @@ export default function Ajustes() {
 
       <Section titulo="Sobre">
         <ListGroup rodape={`SempreAqui ${Constants.expoConfig?.version ?? ''}. Não substitui a equipe de saúde. Em risco, ligue 192.`}>
-          <ListRow titulo="Fonte oficial do Ajudante" subtitulo="Guia Prático do Cuidador, Ministério da Saúde" icone="link" onPress={() => abrirLink(FONTE_OFICIAL)} />
+          <ListRow titulo="Por que Naomi?" subtitulo="Uma homenagem a Naomi Feil, que ensinou a acolher em vez de corrigir" icone="texto" onPress={() => ir('/naomi')} />
+          <ListRow titulo="Fonte oficial da Naomi" subtitulo="Guia Prático do Cuidador, Ministério da Saúde" icone="link" onPress={() => abrirLink(FONTE_OFICIAL)} />
           <ListRow titulo="Código aberto" subtitulo="Licença MIT, no GitHub" icone="link" onPress={() => abrirLink(CODIGO_ABERTO)} />
           <ListRow
             titulo="Modelos de IA no celular"

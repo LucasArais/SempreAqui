@@ -174,12 +174,13 @@ export const api = {
     chamar<{ grupo: string; unidades: import('./sus').Unidade[]; fonte: string }>(
       `/sus/unidades?lat=${q.lat}&lon=${q.lon}&cidade=${encodeURIComponent(q.cidade)}&uf=${q.uf}&grupo=${q.grupo}`,
     ),
-  assistente: (texto: string) =>
+  assistente: (texto: string, historico: { de: 'eu' | 'naomi'; texto: string }[] = []) =>
     chamar<import('./ajudante').RespostaAjudante>('/assistente', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ texto }),
+      body: JSON.stringify({ texto, historico }),
     }),
+  avisosDaNaomi: () => chamar<{ avisos: import('./ajudante').AvisoNaomi[]; motor: string }>('/naomi/avisos'),
   apoio: (texto: string) =>
     chamar<import('./apoio').RespostaApoio>('/apoio', {
       method: 'POST',

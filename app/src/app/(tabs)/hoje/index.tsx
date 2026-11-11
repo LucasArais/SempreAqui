@@ -5,6 +5,7 @@ import { Pressable, View } from 'react-native';
 import {
   AcoesRapidas,
   AttentionBadge,
+  AvisosNaomi,
   Avatar,
   CartaoExpansivel,
   Card,
@@ -113,7 +114,7 @@ export default function Hoje() {
         </Card>
         <AcoesRapidas
           acoes={[
-            { titulo: 'Pedir ajuda', icone: 'texto', dica: 'Abre o Ajudante: agitação, recusa, noite difícil', onPress: () => router.push('/ajuda') },
+            { titulo: 'Pedir ajuda', icone: 'texto', dica: 'Abre a Naomi: agitação, recusa, noite difícil', onPress: () => router.push('/ajuda') },
             { titulo: '192', icone: 'telefone', cor: cores.emergency, dica: 'Liga para o SAMU', onPress: () => void ligarEmergencia() },
           ]}
         />
@@ -123,6 +124,8 @@ export default function Hoje() {
           </Text>
         </Pressable>
       </View>
+
+      <AvisosNaomi chave={`${relatos.length}-${ultimo?.id ?? ''}`} />
 
       {(roteiro || tarefasHoje.length > 0) && (
         <Section titulo="Para hoje" acao={<LinkDaSecao titulo="Ver tudo" onPress={() => router.push('/familia')} />}>

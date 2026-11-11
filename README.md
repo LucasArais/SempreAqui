@@ -38,14 +38,15 @@ O SempreAqui é um app de celular, pensado para ser usado por voz, que faz três
 | **Diário Inteligente** | Quem cuida grava um áudio contando o dia. Sai um registro de sono, alimentação, humor, agitação, episódios e remédios, cada campo corrigível com um toque, um resumo para a família, a semana com o que mudou em relação ao habitual e uma lista "Para levar na consulta" em PDF. Funciona sem internet. | Transcreve e extrai campos estruturados, no próprio iPhone quando dá; aprende com as correções da família |
 | **Passaporte de Memória** | Quem ela é, como se comunica, pessoas importantes, rotina, o que acalma, o que agita, músicas, comidas e lembranças com foto. A família conta falando ou escrevendo e confere antes de salvar; o app mostra o que falta. Sai em PDF de uma página e em link somente leitura para cuidador, centro-dia ou hospital. | Separa nas seções o que a família contou; a família marca o que entra |
 | **Conversa do dia** | Uma conversa de 5 a 10 minutos, em tela cheia e letra grande, com foto, música no YouTube e perguntas gentis. Muda todo dia, nunca pergunta "você lembra?" e guarda como ela reagiu para escolher as próximas. | Roteiros revisados escolhidos por regras; no iPhone, a IA reescreve as perguntas para ela, com validação |
-| **Ajudante** | Um chat para a família: "como ela está?", "como foi a semana?", "o que falta fazer?", "ela está agitada, o que eu faço?". Cada resposta diz de onde veio. Na hora difícil, traz o que costuma funcionar com ela e o que dizem as fontes oficiais; em risco, 192 e aviso à família. Remédio e diagnóstico recebem recusa gentil. | Responde com os dados registrados e trechos oficiais literais; no iPhone, a IA cobre o que as regras não reconhecem, validada pelos guardrails |
-| **SUS** | Cartão SUS e UBS de referência no Passaporte, programas do SUS para o Alzheimer, Meu SUS Digital e telefones oficiais. Em emergência, mapa com hospitais, UPAs, UBS e CAPS mais próximos, do cadastro oficial do SUS, com rota e telefone. | Dados abertos do Ministério da Saúde (CNES) e do IBGE; o Ajudante responde sobre o cartão e as unidades perto |
+| **Naomi** | A assistente, no centro do app. Um chat para a família: "como ela está?", "como foi a semana?", "o que falta fazer?", "ela está agitada, o que eu faço?". Cada resposta diz de onde veio. Na hora difícil, traz o que costuma funcionar com ela e o que dizem as fontes oficiais; em risco, 192 e aviso à família. Remédio e diagnóstico recebem recusa gentil. | Agente com LLM e busca nos dados da família (RAG): entende qualquer pergunta, lembra a conversa, cita a fonte de cada resposta e leva à tela certa. Risco, remédio e diagnóstico ficam nas regras, que a IA não desliga |
+| **A Naomi percebeu** | Sem ninguém perguntar, a Naomi lê o último mês de relatos e avisa no Hoje: "a agitação tem aparecido à tarde em 8 relatos; vale contar à equipe de saúde", "quem cuida está muito cansado; que tal dividir uma tarefa?". | IA lê os relatos e aponta padrões; cada aviso precisa citar 3 relatos reais e passar nos guardrails |
+| **SUS** | Cartão SUS e UBS de referência no Passaporte, programas do SUS para o Alzheimer, Meu SUS Digital e telefones oficiais. Em emergência, mapa com hospitais, UPAs, UBS e CAPS mais próximos, do cadastro oficial do SUS, com rota e telefone. | Dados abertos do Ministério da Saúde (CNES) e do IBGE; a Naomi responde sobre o cartão e as unidades perto |
 | **Rede da Família** | Convite pelo WhatsApp, papéis, tarefas da semana com "Eu assumo" em um toque e lembrete no celular, feed do que aconteceu com "Obrigado" e avisos urgentes. Cada pessoa com nome e foto. | Os resumos do Diário e as conversas viram o feed que mantém todos por perto |
 
 <p align="center">
   <img src="design/screens/01-hoje-claro.png" alt="Hoje: contar o dia, pedir ajuda, 192 e o que há para hoje" width="200">
   <img src="design/screens/04-relato-claro.png" alt="Relato organizado pela IA, cada campo corrigível com um toque" width="200">
-  <img src="design/screens/16-ajudante-apoio-claro.png" alt="Ajudante na hora difícil: o que costuma funcionar e trechos oficiais com link" width="200">
+  <img src="design/screens/16-ajudante-apoio-claro.png" alt="Naomi na hora difícil: o que costuma funcionar e trechos oficiais com link" width="200">
   <img src="design/screens/13-familia-claro.png" alt="Família: tarefas com Eu assumo e o que aconteceu" width="200">
 </p>
 
@@ -53,7 +54,7 @@ O SempreAqui é um app de celular, pensado para ser usado por voz, que faz três
 
 ## O app, tela por tela
 
-Cinco abas: **Hoje**, **Memórias**, **Família**, **Ajudante** e **Ajustes**. Cada tela tem uma ação principal clara; o resto fica em listas e em links no título das seções.
+Cinco abas: **Hoje**, **Memórias**, **Naomi** (a assistente, no meio e em destaque), **Família** e **Ajustes**. Cada tela tem uma ação principal clara; o resto fica em listas e em links no título das seções.
 
 | Hoje | Contar o dia | Relato organizado | Corrigir com um toque |
 |---|---|---|---|
@@ -62,16 +63,32 @@ Cinco abas: **Hoje**, **Memórias**, **Família**, **Ajudante** e **Ajustes**. C
 | <img src="design/screens/07-relato-risco-claro.png" alt="Situação de risco" width="170"> | <img src="design/screens/06-diario-claro.png" alt="Diário" width="170"> | <img src="design/screens/02-semana-claro.png" alt="Semana e consulta" width="170"> | <img src="design/screens/08-memorias-claro.png" alt="Passaporte de Memória" width="170"> |
 | **Contar uma memória** | **Lembrança com foto** | **Conversa do dia** | **Como foi a conversa** |
 | <img src="design/screens/09-contar-memoria-claro.png" alt="Contar uma memória" width="170"> | <img src="design/screens/10-editar-memoria-claro.png" alt="Lembrança com foto" width="170"> | <img src="design/screens/11-sessao-claro.png" alt="Conversa do dia" width="170"> | <img src="design/screens/12-sessao-reacao-claro.png" alt="Como foi a conversa" width="170"> |
-| **Família** | **Pedir ajuda com uma tarefa** | **Ajudante** | **Ajudante na hora difícil** |
-| <img src="design/screens/13-familia-claro.png" alt="Família" width="170"> | <img src="design/screens/14-nova-tarefa-claro.png" alt="Pedir ajuda com uma tarefa" width="170"> | <img src="design/screens/15-ajudante-claro.png" alt="Ajudante" width="170"> | <img src="design/screens/16-ajudante-apoio-claro.png" alt="Ajudante na hora difícil" width="170"> |
+| **Família** | **Pedir ajuda com uma tarefa** | **Naomi** | **Naomi na hora difícil** |
+| <img src="design/screens/13-familia-claro.png" alt="Família" width="170"> | <img src="design/screens/14-nova-tarefa-claro.png" alt="Pedir ajuda com uma tarefa" width="170"> | <img src="design/screens/15-ajudante-claro.png" alt="Naomi" width="170"> | <img src="design/screens/16-ajudante-apoio-claro.png" alt="Naomi na hora difícil" width="170"> |
 | **Ajustes** | **Privacidade e dados** | **Primeira abertura** | **Termo em linguagem simples** |
 | <img src="design/screens/17-ajustes-claro.png" alt="Ajustes" width="170"> | <img src="design/screens/18-privacidade-claro.png" alt="Privacidade e dados" width="170"> | <img src="design/screens/19-onboarding-claro.png" alt="Primeira abertura" width="170"> | <img src="design/screens/20-termo-claro.png" alt="Termo em linguagem simples" width="170"> |
+
+
+### Por que Naomi
+
+A assistente tem o nome de **Naomi Feil** (1932 a 2023), assistente social e gerontóloga. Nascida em Munique, deixou a Alemanha nazista com a família em 1937 e cresceu num lar de idosos em Cleveland, onde o pai era administrador e a mãe cuidava do serviço social. Entre 1963 e 1980 criou o **método Validation**: em vez de corrigir a pessoa idosa desorientada, acolher o sentimento por trás do que ela diz. Escreveu *Validation: The Feil Method* (1982) e fundou o Validation Training Institute.
+
+É assim que a Naomi do SempreAqui tenta ajudar: primeiro acolher, depois mostrar o que costuma funcionar. O nome é uma homenagem; o projeto não tem ligação com o instituto. A história também está no app, em Ajustes → Por que Naomi?
 
 ## Por que IA
 
 Quem cuida não tem tempo de preencher formulário. Tem tempo de mandar um áudio de dois minutos no fim do dia, do mesmo jeito que manda para a irmã no WhatsApp. A IA é o que transforma esse áudio desorganizado em informação útil: um registro estruturado, um resumo carinhoso para quem mora longe, uma comparação com as semanas anteriores e uma lista objetiva para o médico.
 
 Sem IA, o SempreAqui seria mais um app de anotações que ninguém atualiza. Com IA, o esforço de quem cuida continua sendo só falar, e toda a família passa a enxergar o cuidado.
+
+O app é pensado com a IA no centro, inclusive na barra de abas:
+
+1. **Ouvir:** o relato falado vira registro estruturado, no próprio celular quando dá.
+2. **Conversar:** a Naomi entende qualquer pergunta, busca no Diário, no Passaporte, nas tarefas, no Guia Prático do Cuidador e nos dados do SUS, e responde citando a fonte.
+3. **Perceber:** a Naomi lê as semanas de relatos e avisa sozinha quando um padrão se repete.
+4. **Proteger:** regras que a IA não desliga. Risco vira 192 antes de qualquer IA, remédio e diagnóstico recebem recusa gentil, e toda resposta da IA só aparece se citar documentos reais e passar nos guardrails. Se não passar, a resposta das regras entra no lugar.
+
+E tudo é medido. No gabarito da Naomi, a IA acerta 18 de 18 perguntas (as regras sozinhas, 10 de 18), com 100% de segurança e zero violações de guardrail.
 
 ## Princípios
 
@@ -141,7 +158,7 @@ O cuidado de quem vive com Alzheimer no Brasil passa pelo SUS: o diagnóstico, o
 - Ficam no Passaporte de Memória, em "Saúde e SUS".
 - O número do Cartão Nacional de Saúde é conferido pelo dígito verificador oficial: 15 dígitos, começando com 1, 2, 7, 8 ou 9, e a soma ponderada múltipla de 11. Número digitado errado não entra.
 - Vai para o PDF do passaporte (para o hospital ou o cuidador) e para o PDF "Para levar na consulta". **Nunca aparece no link compartilhado.**
-- O Ajudante responde "qual o cartão SUS dela?" com o número e o caminho para o Meu SUS Digital.
+- A Naomi responde "qual o cartão SUS dela?" com o número e o caminho para o Meu SUS Digital.
 
 **Programas e serviços do SUS** (tela "SUS", em Memórias ou Ajustes; todos os links conferidos no ar)
 
@@ -164,7 +181,7 @@ O cuidado de quem vive com Alzheimer no Brasil passa pelo SUS: o diagnóstico, o
 - Em emergência, quando a distância é parecida, vem antes o que é do SUS (não cobra) e o que funciona 24 horas. Hospitais particulares continuam na lista, sem o selo do SUS.
 - Como UBS só entram unidades **públicas que atendem pelo SUS**: no cadastro, clínicas particulares às vezes usam o mesmo tipo de unidade.
 - Mapa nativo (Apple Maps) e lista com distância, "24 horas" e "Atende pelo SUS". Um toque dá a rota no Mapas ou liga para a unidade.
-- Atalhos: "Hospitais e UPAs perto de você" no Hoje, "Hospitais e UPAs perto" quando o Ajudante reconhece risco, e a pergunta "tem hospital perto?" no Ajudante.
+- Atalhos: "Hospitais e UPAs perto de você" no Hoje, "Hospitais e UPAs perto" quando a Naomi reconhece risco, e a pergunta "tem hospital perto?" na Naomi.
 - A lista de cada cidade fica guardada no servidor por 7 dias. A primeira busca numa cidade leva alguns segundos; as seguintes são imediatas.
 
 **Privacidade**
@@ -200,7 +217,7 @@ flowchart TB
             D[Diário<br/>LangGraph]
             P[Passaporte]
             R[Conversa do dia<br/>regras]
-            A[Ajudante e Apoio<br/>regras + fontes]
+            A[Naomi agente<br/>LLM + RAG + regras]
             RF[Rede da Família]
         end
         L[Camada de provedores de IA]
@@ -227,7 +244,8 @@ flowchart TB
 - **Caminho no aparelho (construído no iPhone e no Android):** transcrição, extração estruturada e resumo rodam no celular. No iPhone, com a IA da Apple; no Android, com Whisper e Gemini Nano ou Llama 3.2 3B. Para o backend vai só a transcrição e o registro, e ele reaplica os guardrails e recalcula o risco antes de salvar. Detalhes em [docs/ia-no-aparelho.md](docs/ia-no-aparelho.md).
 - **Caminho na nuvem (reserva):** cada função é um grafo LangGraph com etapas pequenas e verificáveis. O do Diário transcreve, extrai um JSON validado com Pydantic, avalia risco, resume e revisa com guardrails.
 - **Conversa do dia:** montada sem IA, a partir do Passaporte, com roteiros revisados que mudam todo dia e aprendem com a reação registrada pela família. No iPhone, a IA do aparelho reescreve as perguntas e uma validação barra "lembra", "recorda" e "esqueceu".
-- **Ajudante e Apoio:** determinísticos de propósito. Reconhecem a pergunta, respondem com os dados da família e dizem de onde veio; na hora difícil, cruzam Passaporte e Diário e citam trechos oficiais literais. As avaliações medem 100% de recusa médica e de fonte (veja [docs/avaliacao.md](docs/avaliacao.md)).
+- **Naomi agente** ([core/naomi.py](backend/core/naomi.py)), em quatro camadas: (1) rede de segurança sem IA, com risco, remédio, diagnóstico e situações difíceis no Apoio, que cita trechos oficiais literais; (2) busca: os dados da família viram documentos com id (Passaporte, relatos do mês, semana, tarefas, conversa do dia, SUS, Guia do Cuidador); (3) o LLM responde num JSON com o texto, os ids das fontes, uma ação do app e sugestões; (4) validação: sem fonte que exista ou com violação de guardrail, a resposta das regras entra no lugar. A conversa vai junto para entender "e de música?", e nada é guardado no servidor.
+- **A Naomi percebeu** ([core/avisos.py](backend/core/avisos.py)): a IA lê os relatos dos últimos 30 dias e aponta até 3 padrões, cada um com pelo menos 3 relatos como prova. Sem IA, detectores por contagem dão os mesmos tipos de aviso.
 - **Rede da Família:** convites por código, tarefas, feed e avisos, com o mesmo isolamento por família no banco.
 
 Decisões e detalhes em [docs/arquitetura.md](docs/arquitetura.md).
@@ -290,6 +308,7 @@ uv run pytest
 uv run python -m evals.avaliar_guardrails
 uv run python -m evals.avaliar_diario
 uv run python -m evals.avaliar_apoio      # recusa médica, risco, fontes
+uv run python -m evals.avaliar_naomi      # Naomi agente e avisos, com a IA de verdade (--sem-ia: só regras)
 uv run python -m evals.comparar_modelos_aparelho modelo.gguf   # modelos abertos para o Android (precisa do llama.cpp)
 uv run python -m evals.comparar_transcricao google/gemini-3-flash-preview
 ```
@@ -300,7 +319,7 @@ Métricas anônimas de uso, incluindo a taxa de correção dos campos da IA: `cu
 
 ## Como medimos a IA
 
-Cada etapa tem métrica e gabarito versionados: taxa de erro de palavras da transcrição, acurácia por campo do Diário, detecção de episódios e de risco, e zero violações de guardrail no texto que a família recebe. O conjunto adversarial de guardrails roda no CI.
+Cada etapa tem métrica e gabarito versionados: taxa de erro de palavras da transcrição, acurácia por campo do Diário, detecção de episódios e de risco, acerto da Naomi em 18 perguntas (dados, não inventar, segurança e conversa) e zero violações de guardrail no texto que a família recebe. O conjunto adversarial de guardrails roda no CI.
 
 O primeiro benchmark com modelos reais mudou uma decisão: o modelo que usávamos inventava o começo de um relato e perdia uma queda, o que apagaria o alerta de 192. Trocamos para o que transcreve com 3,4% de erro e capta a queda sempre. Na prática, a família também avalia a IA: cada campo corrigido vira dado, e a taxa de correção é acompanhada semana a semana. Metodologia e resultados em [docs/avaliacao.md](docs/avaliacao.md).
 

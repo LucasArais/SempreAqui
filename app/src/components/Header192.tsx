@@ -7,7 +7,7 @@ import { espaco, tamanho, useTema } from '@/theme';
 import { Icon } from './Icon';
 import { Text } from './Text';
 
-/** 192 sempre a um toque no cabeçalho do Ajudante, sem ocupar a conversa. */
+/** 192 sempre a um toque no cabeçalho da Naomi, sem ocupar a conversa. */
 export function Header192() {
   const { cores } = useTema();
   return (

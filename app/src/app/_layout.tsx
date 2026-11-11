@@ -173,6 +173,7 @@ export default function Raiz() {
         <Stack.Screen name="sessao" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="onboarding" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
         <Stack.Screen name="termo" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="naomi" options={{ presentation: 'modal' }} />
         <Stack.Screen name="sus" options={{ presentation: 'modal', headerShown: true, title: 'SUS', headerLargeTitleEnabled: false }} />
         <Stack.Screen name="perto" options={{ presentation: 'modal', headerShown: true, title: 'Perto de você', headerLargeTitleEnabled: false }} />
         <Stack.Screen name="convite/index" options={{ presentation: 'modal', title: 'Convite' }} />

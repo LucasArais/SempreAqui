@@ -1,4 +1,4 @@
-"""Ajudante: o chat da família sobre o cuidado.
+"""Naomi (o Ajudante): o chat da família sobre o cuidado.
 
 Responde só com o que está registrado no SempreAqui (Diário, semana, tarefas, Passaporte,
 conversa do dia) e diz de onde veio cada resposta. Não inventa e não interpreta saúde:
@@ -31,7 +31,18 @@ PERGUNTAS_SUGERIDAS = [
 ]
 
 _INTENCOES: list[tuple[str, list[str]]] = [
-    ("saudacao", [r"^(oi|ola|bom dia|boa tarde|boa noite|e ai|tudo bem)\b[\s!?.]*$"]),
+    ("saudacao", [r"^(oi|ola|bom dia|boa tarde|boa noite|e ai|tudo bem)( naomi)?\b[\s!?.]*$"]),
+    (
+        "nome",
+        [
+            r"naomi feil",
+            r"origem do (seu )?nome",
+            r"(seu|teu|esse) nome",
+            r"(por que|porque|pq|por q).*(naomi|chama)",
+            r"quem (foi|era|e) (a )?naomi",
+            r"como (voce|vc) se chama",
+        ],
+    ),
     (
         "perto",
         [
@@ -194,19 +205,30 @@ def responder(pergunta: str, ctx: dict) -> dict:
         base,
     )
     sobre_dados = tema in ("sono", "alimentacao", "humor", "remedios", "semana", "hoje")
-    if classe in ("risco", "medica") or (situacoes and (pede_ajuda or not sobre_dados)):
+    # Confusão de repente pede atendimento: vai para o Apoio mesmo se a frase fala de "hoje".
+    urgente = "confusao_subita" in situacoes
+    if classe in ("risco", "medica") or urgente or (situacoes and (pede_ajuda or not sobre_dados)):
         r = apoio.responder(pergunta, p, relatos)
         return {"tipo": "apoio", "apoio": r, "texto": None, "origem": None}
 
     if tema == "saudacao":
         return _resposta(
-            f"Oi! Eu sou o Ajudante do SempreAqui. Posso contar como a {chamada} está, como foi a semana, "
+            f"Oi! Eu sou a Naomi, a assistente do SempreAqui. Posso contar como a {chamada} está, como foi a semana, "
             "o que falta fazer e o que costuma ajudar. Pergunte do seu jeito.",
             sugestoes=PERGUNTAS_SUGERIDAS[:4],
         )
+    if tema == "nome":
+        return _resposta(
+            "Meu nome é uma homenagem a Naomi Feil (1932 a 2023), assistente social e gerontóloga. "
+            "Ela fugiu da Alemanha nazista ainda criança e cresceu num lar de idosos em Cleveland, nos "
+            "Estados Unidos, onde o pai era o administrador. Ali criou o método Validation: em vez de "
+            "corrigir a pessoa desorientada, acolher o sentimento por trás do que ela diz. É assim que eu "
+            "tento ajudar: primeiro acolher, depois mostrar o que costuma funcionar com quem você cuida.",
+            acao="ver_naomi",
+        )
     if tema == "o_que_sabe":
         return _resposta(
-            "Eu respondo com o que a família registrou: o Diário, a semana, as tarefas, o Passaporte e a conversa do dia. "
+            "Eu sou a Naomi. Eu respondo com o que a família registrou: o Diário, a semana, as tarefas, o Passaporte e a conversa do dia. "
             "Não digo o que um sintoma significa nem indico remédio: isso é com a equipe de saúde. Em risco, ligue 192.",
             sugestoes=PERGUNTAS_SUGERIDAS,
         )

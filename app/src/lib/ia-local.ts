@@ -348,13 +348,13 @@ export async function personalizarPerguntas(contexto: {
 }
 
 /**
- * Pergunta que o Ajudante do servidor não reconheceu: a IA do celular tenta responder só com o
+ * Pergunta que a Naomi do servidor não reconheceu: a IA do celular tenta responder só com o
  * contexto verdadeiro que o servidor mandou. A resposta passa pelos guardrails; se falhar, nada.
  */
 export async function responderNoAparelho(pergunta: string, contexto: string): Promise<string | null> {
   if (!IaLocal || !iaLocalPronta()) return null;
   try {
-    const prompt = `Responda à pergunta da família usando SOMENTE os fatos abaixo. Se os fatos não respondem, diga exatamente: "Não sei responder isso com o que está registrado." No máximo 3 frases curtas. Não dê diagnóstico, não fale de remédio ou dose, não interprete sintomas.
+    const prompt = `Você é a Naomi, a assistente do SempreAqui. Responda à pergunta da família usando SOMENTE os fatos abaixo. Se os fatos não respondem, diga exatamente: "Não sei responder isso com o que está registrado." No máximo 3 frases curtas. Não dê diagnóstico, não fale de remédio ou dose, não interprete sintomas.
 
 Fatos registrados:
 ${contexto}

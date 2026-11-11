@@ -17,10 +17,23 @@ export type RespostaAjudante = {
   texto: string | null;
   origem: string | null;
   sugestoes?: string[];
-  acao?: 'ver_semana' | 'ver_tarefas' | 'nova_tarefa' | 'ver_passaporte' | 'abrir_conversa' | 'ver_sus' | 'ver_perto';
+  acao?: 'ver_semana' | 'ver_tarefas' | 'nova_tarefa' | 'ver_passaporte' | 'abrir_conversa' | 'ver_sus' | 'ver_perto' | 'ver_naomi';
   relato_id?: string;
   apoio?: RespostaApoio;
   contexto?: string;
+  /** 'ia' quando a resposta veio da IA (com fontes conferidas); 'regras' quando veio das regras. */
+  motor?: string;
+  /** Trechos do Guia Prático do Cuidador usados na resposta. */
+  links?: { fonte: string; url: string }[];
+};
+
+/** Padrão que a Naomi percebeu sozinha nos relatos (backend/core/avisos.py). */
+export type AvisoNaomi = {
+  titulo: string;
+  texto: string;
+  tipo: 'levar_a_consulta' | 'cuidar_de_quem_cuida' | 'o_que_funciona';
+  evidencias: string[];
+  acao: 'ver_semana' | 'nova_tarefa' | 'ver_passaporte' | null;
 };
 
 export type Mensagem = {
@@ -72,11 +85,17 @@ export async function perguntar(texto: string) {
   const usuario = sessaoAtual().usuario;
   const pergunta = texto.trim();
   if (!pergunta || estado.pensando) return;
+  // As últimas mensagens vão junto, para a Naomi entender "e de música?" depois de "do que ela gosta de comer?".
+  const historico = estado.mensagens
+    .filter((m) => !m.erro)
+    .slice(-6)
+    .map((m) => ({ de: m.de === 'eu' ? ('eu' as const) : ('naomi' as const), texto: (m.texto ?? m.resposta?.texto ?? '').slice(0, 1000) }))
+    .filter((m) => m.texto);
   const minha: Mensagem = { id: Crypto.randomUUID(), de: 'eu', texto: pergunta };
   definir({ mensagens: [...estado.mensagens, minha], pensando: true });
   let resposta: Mensagem;
   try {
-    const r = await api.assistente(pergunta);
+    const r = await api.assistente(pergunta, historico);
     if (r.tipo === 'nao_entendi' && r.contexto) {
       // A IA do celular tenta com os fatos verdadeiros que o servidor mandou.
       const local = await responderNoAparelho(pergunta, r.contexto);

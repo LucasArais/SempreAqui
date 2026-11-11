@@ -107,3 +107,20 @@ def test_perto_e_sus():
     assert perguntar("Onde fica a UBS mais próxima?")["acao"] == "ver_perto"
     assert perguntar("Qual o cartão SUS dela?")["acao"] == "ver_sus"
     assert perguntar("Ela caiu, tem hospital perto?")["tipo"] == "apoio", "risco vem antes"
+
+
+def test_naomi_conta_a_origem_do_nome():
+    for pergunta in [
+        "Por que você se chama Naomi?",
+        "qual a origem do seu nome?",
+        "quem foi Naomi Feil?",
+    ]:
+        r = assistente.responder(pergunta, CTX)
+        assert "Naomi Feil" in (r.get("texto") or ""), pergunta
+        assert r.get("acao") == "ver_naomi"
+
+
+def test_confusao_de_repente_vai_para_o_apoio_mesmo_falando_de_hoje():
+    r = perguntar("Desde hoje cedo ela está muito mais confusa que o normal, de repente")
+    assert r["tipo"] == "apoio"
+    assert "ligar_unidade" in r["apoio"]["acoes"]

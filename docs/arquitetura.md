@@ -93,6 +93,18 @@ Código: [`backend/agents/diario.py`](../backend/agents/diario.py).
 
 **Modelo escolhido por benchmark.** O benchmark de transcrição mostrou que o modelo padrão anterior perdia a queda do relato de risco. Escolhemos o modelo pela métrica que importa para a segurança, não pela fama.
 
+## Decisões da Naomi agente (11/11/2026)
+
+**IA no centro, regras como rede de segurança.** A Naomi responde com um LLM ([core/naomi.py](../backend/core/naomi.py)), mas risco, remédio, dose, diagnóstico, confusão de repente e pedidos de ajuda na hora difícil continuam no Apoio, sem IA. A IA nunca desliga essa camada, e perguntas de segurança nem chegam a ela.
+
+**RAG sem banco vetorial.** O que uma família registra em um mês cabe inteiro no contexto. Os dados viram documentos curtos com id (Passaporte, relatos, semana, tarefas, conversa do dia, SUS, Guia do Cuidador, a história do nome), e os trechos do Guia são escolhidos por palavras. É mais barato, explicável e sem etapa de indexação. Embeddings voltam à mesa quando o acervo oficial crescer.
+
+**Resposta só com fonte que existe.** O LLM devolve um JSON com o texto, os ids das fontes, uma ação do app e sugestões. A validação exige ao menos uma fonte real e zero violações de guardrail. Se falhar, ou se a IA disser que os documentos não respondem, entra a resposta das regras. A família sempre recebe algo seguro.
+
+**Ações em vez de chamadas livres.** A IA escolhe uma ação de uma lista fechada (ver a semana, pedir ajuda com uma tarefa, abrir o mapa, abrir o SUS...). O app mostra o botão, e quem toca é a família: a IA nunca age sozinha nos dados.
+
+**Avisos com prova.** A Naomi lê os relatos do mês e aponta padrões ([core/avisos.py](../backend/core/avisos.py)). Cada aviso precisa citar pelo menos 3 relatos reais e passar nos guardrails; o resultado fica em cache até chegar relato novo. Sem IA, detectores por contagem dão os mesmos tipos de aviso.
+
 ## Estrutura do repositório
 
 ```

@@ -75,7 +75,7 @@ export const SERVICOS_SUS: { secao: string; itens: ServicoSus[] }[] = [
     secao: 'Para entender e cuidar',
     itens: [
       { titulo: 'Alzheimer, no Ministério da Saúde', detalhe: 'O que é, sintomas e tratamento pelo SUS', url: 'https://www.gov.br/saude/pt-br/assuntos/saude-de-a-a-z/a/alzheimer' },
-      { titulo: 'Guia Prático do Cuidador', detalhe: 'Ministério da Saúde. A fonte das orientações do Ajudante', url: 'https://bvsms.saude.gov.br/bvs/publicacoes/guia_pratico_cuidador.pdf' },
+      { titulo: 'Guia Prático do Cuidador', detalhe: 'Ministério da Saúde. A fonte das orientações da Naomi', url: 'https://bvsms.saude.gov.br/bvs/publicacoes/guia_pratico_cuidador.pdf' },
       { titulo: 'Ouvidoria do SUS', detalhe: 'Reclamações, sugestões e informações. Telefone 136', url: 'https://www.gov.br/saude/pt-br/canais-de-atendimento/ouvsus' },
     ],
   },

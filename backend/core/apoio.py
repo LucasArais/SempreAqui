@@ -375,6 +375,10 @@ def responder(texto: str, passaporte: dict, relatos: list[dict]) -> dict:
         acoes.append("pedir_ajuda_familia")
     if "confusao_subita" in achadas and tipo != "risco":
         acoes.append("ligar_unidade")
+        aviso = aviso or (
+            "Mudança de repente pede atenção ainda hoje: procure a UBS ou a UPA. "
+            "Se houver risco agora, ligue 192 (SAMU)."
+        )
     sugestoes = [] if tipo == "risco" else _sugestoes(passaporte, relatos, achadas, chamada)
     return {
         "tipo": tipo,

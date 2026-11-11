@@ -5,7 +5,7 @@ import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, Share,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 
-import { EmergencyButton, Icon, Logo, mostrarToast, SecondaryButton, Text } from '@/components';
+import { EmergencyButton, Icon, mostrarToast, NaomiAvatar, SecondaryButton, Text } from '@/components';
 import { apoio as exemploApoio } from '@/data/familia';
 import { abrirLink, ligarEmergencia } from '@/lib/abrir';
 import { apagarConversa, carregarAjudante, type Mensagem, perguntar, type RespostaAjudante, useAjudante } from '@/lib/ajudante';
@@ -24,6 +24,7 @@ const ACOES: Record<NonNullable<RespostaAjudante['acao']>, { titulo: string; ir:
   ver_passaporte: { titulo: 'Abrir o Passaporte', ir: () => router.push('/memorias') },
   abrir_conversa: { titulo: 'Começar a conversa', ir: () => router.push('/sessao') },
   ver_sus: { titulo: 'Abrir os serviços do SUS', ir: () => router.push('/sus') },
+  ver_naomi: { titulo: 'Conhecer a história dela', ir: () => router.push('/naomi') },
   ver_perto: { titulo: 'Ver no mapa', ir: () => router.push({ pathname: '/perto', params: { grupo: 'emergencia' } }) },
 };
 
@@ -135,7 +136,7 @@ function Balao({ m, pedido, onPerguntar }: { m: Mensagem; pedido: string; onPerg
   const acao = r?.acao ? ACOES[r.acao] : null;
   return (
     <View style={{ flexDirection: 'row', gap: espaco.s1, alignItems: 'flex-start', maxWidth: '100%' }}>
-      <Logo tamanho={28} decorativa />
+      <NaomiAvatar />
       <View style={{ flex: 1, gap: espaco.s1, backgroundColor: cores.secondaryBackground, borderRadius: 20, borderTopLeftRadius: 6, padding: espaco.s2 }}>
         {m.texto && <Text variante="body">{m.texto}</Text>}
         {r?.tipo === 'apoio' && r.apoio ? (
@@ -145,9 +146,16 @@ function Balao({ m, pedido, onPerguntar }: { m: Mensagem; pedido: string; onPerg
             {r.texto && <Text variante="body">{r.texto}</Text>}
             {r.origem && (
               <Text variante="footnote" cor="secondaryLabel">
-                {r.origem}
+                {r.motor === 'ia' ? `✨ ${r.origem}` : r.origem}
               </Text>
             )}
+            {r.links?.map((l) => (
+              <Pressable key={l.url} onPress={() => void abrirLink(l.url)} accessibilityRole="link" hitSlop={6}>
+                <Text variante="footnote" cor="accentStrong">
+                  {l.fonte}
+                </Text>
+              </Pressable>
+            ))}
             {acao && <SecondaryButton titulo={acao.titulo} alinhamento="inicio" onPress={acao.ir} />}
             {r.relato_id && (
               <SecondaryButton titulo="Ver o relato" alinhamento="inicio" onPress={() => router.push({ pathname: '/hoje/diario/[id]', params: { id: r.relato_id! } })} />
@@ -161,7 +169,7 @@ function Balao({ m, pedido, onPerguntar }: { m: Mensagem; pedido: string; onPerg
 }
 
 /**
- * Ajudante: o chat da família sobre o cuidado. Responde com o que está registrado e diz de onde
+ * Naomi (o Ajudante): o chat da família sobre o cuidado. Responde com o que está registrado e diz de onde
  * veio; na hora difícil, vira o Apoio, com 192, fontes oficiais e o que costuma funcionar.
  */
 export default function Ajudante() {
@@ -233,10 +241,10 @@ export default function Ajudante() {
         contentContainerStyle={{ padding: margem, paddingBottom: espaco.s2, gap: espaco.s2 }}
       >
         <View style={{ flexDirection: 'row', gap: espaco.s1, alignItems: 'flex-start' }}>
-          <Logo tamanho={28} decorativa />
+          <NaomiAvatar />
           <View style={{ flex: 1, gap: espaco.s1, backgroundColor: cores.secondaryBackground, borderRadius: 20, borderTopLeftRadius: 6, padding: espaco.s2 }}>
             <Text variante="body">
-              Oi! Eu sou o Ajudante. Respondo com o que a família registrou sobre a {chamada} e, na hora difícil, digo o que costuma funcionar com ela. Não dou diagnóstico nem indico remédio. Emergência: toque no 192 lá em cima.
+              Oi! Eu sou a Naomi, a assistente do SempreAqui. Respondo com o que a família registrou sobre a {chamada} e, na hora difícil, digo o que costuma funcionar com ela. Não dou diagnóstico nem indico remédio. Emergência: toque no 192 lá em cima.
             </Text>
             {mensagens.length === 0 && <Chips itens={INICIAIS} onEscolher={enviar} />}
           </View>
@@ -250,7 +258,7 @@ export default function Ajudante() {
 
         {pensando && (
           <View style={{ flexDirection: 'row', gap: espaco.s1, alignItems: 'center' }}>
-            <Logo tamanho={28} decorativa />
+            <NaomiAvatar />
             <Text variante="callout" cor="secondaryLabel" accessibilityLiveRegion="polite">
               Procurando no que a família registrou...
             </Text>
@@ -276,7 +284,7 @@ export default function Ajudante() {
           <TextInput
             value={texto}
             onChangeText={setTexto}
-            placeholder={gravando ? 'Ouvindo... toque no quadrado para enviar' : 'Pergunte ao Ajudante'}
+            placeholder={gravando ? 'Ouvindo... toque no quadrado para enviar' : 'Pergunte à Naomi'}
             placeholderTextColor={cores.tertiaryLabel}
             multiline
             accessibilityLabel="Sua pergunta"

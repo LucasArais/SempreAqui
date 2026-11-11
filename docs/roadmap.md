@@ -89,7 +89,12 @@ Personas que guiam cada decisão: **Cláudia**, 52 anos, cuida da mãe e abre o 
 ## Ciclo 7: Polimento para o Demo Day
 
 - [x] Navegação mais simples: Hoje em ordem de urgência, atalho para ajuda, listas longas recolhidas
-- [x] Ajudante: chat da família com respostas que dizem de onde vieram, e o Apoio dentro dele
+- [x] Naomi agente: LLM com RAG nos dados da família, fontes conferidas, ações e memória da conversa
+- [x] A Naomi percebeu: avisos de padrões nos relatos, com prova
+- [x] Avaliação da Naomi com gabarito (18 perguntas)
+- [ ] Naomi no modo Validation: frases para acolher na hora difícil, a partir do que funcionou com a pessoa
+- [ ] Conversar com a Naomi por voz, de mãos livres
+- [x] Naomi (antes Ajudante): chat da família com respostas que dizem de onde vieram, e o Apoio dentro dele
 - [x] Ajustes como 5ª aba: perfil de quem usa, foto da família, convite e privacidade num lugar só
 
 - [ ] Revisão completa de acessibilidade (VoiceOver, TalkBack, fonte máxima, contraste)
