@@ -131,7 +131,10 @@ Mesma interface do módulo e mesma lógica em TypeScript (prompts, normalizaçã
 - Deixar campos como "não foi falado" mesmo quando o relato fala deles. A família corrige com um toque, e a correção entra no prompt seguinte.
 - Escrever "Não há sinais de alerta" dentro da lista de alertas. O app e o backend descartam frases que negam o alerta.
 - Devolver o relato inteiro no lugar do resumo, ou abrir com "Aqui está um resumo". Resumo acima de 500 caracteres é refeito; aberturas são removidas; sem nada concreto registrado, entra o resumo seguro montado sem IA.
+- Copiar o código interno do episódio ("desorientacao") para os alertas. O app troca pelo nome escrito certo.
 - O risco não depende do modelo: a checagem por palavras-chave roda no app e no backend.
+
+**Teste no emulador (10/11/2026).** Android 16, 6 GB de RAM, só CPU, relato de exemplo de 1 minuto: 117 s do áudio ao resumo com Whisper small e Llama 3.2 3B. Acertou o sono e registrou remédios e cansaço (o Qwen 1.5B deixava esses dois em branco), mas exagerou: remédios "só parte" e cansaço "muito", onde o gabarito diz "sim" e "algum". A família corrige com um toque. Celular de verdade, com processador mais rápido, tende a levar menos tempo.
 
 **Próximos passos:** medir em celulares reais de faixas diferentes, inclusive num aparelho com Gemini Nano (o emulador não tem), e testar o Whisper `large-v3-turbo` nos celulares mais fortes.
 

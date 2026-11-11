@@ -166,6 +166,16 @@ function numero(v: unknown, max: number, inteiro = false) {
 }
 
 // Palavras que precisam aparecer no relato para o campo de remédios valer alguma coisa.
+// Modelos pequenos às vezes copiam o código do episódio ("desorientacao") para os alertas.
+const NOME_DO_EPISODIO: Record<string, string> = {
+  queda: 'queda',
+  desorientacao: 'desorientação',
+  tentativa_de_sair: 'tentativa de sair de casa',
+  agressividade: 'agressividade',
+  alucinacao: 'alucinação',
+  recusa_de_cuidado: 'recusa de cuidado',
+  engasgo: 'engasgo',
+};
 const NEGA_ALERTA = /^(nao|nenhum|nenhuma|sem|nada)\b|nao (ha|houve|teve)\b/;
 const FALA_DE_REMEDIO = /\b(remedi|medica|comprimid|capsul|dose|pilul|gotas?\b|insulina)/;
 
@@ -215,7 +225,9 @@ function montarRegistro(bruto: Bruto): Registro {
     quem_cuida: { cansaco: escolha('quem_cuida.cansaco', o('quem_cuida').cansaco), observacao: texto(o('quem_cuida').observacao) },
     observacoes: lista(bruto.observacoes),
     // Modelos pequenos às vezes escrevem "Não há sinais de alerta" dentro da lista: isso não é alerta.
-    sinais_de_alerta: lista(bruto.sinais_de_alerta).filter((s) => !NEGA_ALERTA.test(normalizar(s))),
+    sinais_de_alerta: lista(bruto.sinais_de_alerta)
+      .filter((s) => !NEGA_ALERTA.test(normalizar(s)))
+      .map((s) => NOME_DO_EPISODIO[s.trim()] ?? s),
   };
 }
 
