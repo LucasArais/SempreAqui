@@ -172,9 +172,6 @@ Como funciona em cada plataforma:
 | **Llama 3.2 3B Instruct** | Llama 3.2 Community License | **20 de 24 (83%)** | 24 s |
 | Llama 3.2 1B Instruct | Llama 3.2 Community License | 7 de 24 (29%) | 14 s |
 | SmolLM3 3B | Apache 2.0 | 10 de 24 (42%), com JSON inválido em 1 relato | 39 s |
-| Qwen2.5 1.5B Instruct | Apache 2.0 | 1 de 24 (4%), com JSON inválido em 2 relatos | 22 s |
-
-O Qwen2.5 3B ficou de fora porque sua licença é só para pesquisa. A Llama 3.2 Community License permite uso gratuito, inclusive comercial, e só exige licença paga acima de 700 milhões de usuários por mês. Ela pede o crédito "Built with Llama", que está no app (Ajustes, Sobre) e aqui.
 
 Os dois lados usam a mesma interface do módulo nativo (`disponibilidade`, `transcrever`, `gerarRegistro`, `gerarTexto`, `gerarMemoria`, `gerarPerguntas`). Prompts, normalização, regras fixas, guardrails e fila são o mesmo código em TypeScript nas duas plataformas.
 
